@@ -48,6 +48,16 @@
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-light: var(--brand-light);
+  --color-ekos-nav: var(--ekos-nav);
+  --color-ekos-heading-gold: var(--ekos-heading-gold);
+  --color-ekos-customer-gold: var(--ekos-customer-gold);
+  --color-ekos-ink: var(--ekos-ink);
+  --color-ekos-slate: var(--ekos-slate);
+  --color-ekos-field-border: var(--ekos-field-border);
+  --color-ekos-field-text: var(--ekos-field-text);
+  --color-ekos-track: var(--ekos-track);
+  --color-ekos-divider: var(--ekos-divider);
+  --color-ekos-addon: var(--ekos-addon);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -69,8 +79,20 @@
 :root {
   --radius: 0.375rem;
 
-  /* #F7F5F0 page wash, white cards */
-  --background: oklch(0.9703 0.007 88.64);
+  /* Live EKOS page measurements */
+  --ekos-nav: oklch(0.3263 0.0379 169.05); /* #1B3A32 */
+  --ekos-heading-gold: oklch(0.6939 0.0996 67.09); /* #C99153 */
+  --ekos-customer-gold: oklch(0.6751 0.0945 58.69); /* #C68D59 */
+  --ekos-ink: oklch(0.2795 0.0368 260.03); /* #1E293B */
+  --ekos-slate: oklch(0.3717 0.0392 257.29); /* #334155 */
+  --ekos-field-border: oklch(0.8938 0.0036 264.53); /* #DADBDD */
+  --ekos-field-text: oklch(0.4938 0.0077 268.53); /* #606266 */
+  --ekos-track: oklch(0.8696 0 0); /* #D1D1D1 */
+  --ekos-divider: oklch(0.9067 0 0); /* #DDDDDD */
+  --ekos-addon: oklch(0.9702 0.0029 264.54); /* Fluent Forms addon grey */
+
+  /* White page, like ekosgroup.co.uk */
+  --background: oklch(1 0 0);
   --foreground: oklch(0.3002 0.0505 178.41);
 
   --card: oklch(1 0 0);
@@ -153,8 +175,70 @@
 
 @utility ekos-label {
   display: block;
-  font-weight: 700;
-  font-size: 0.875rem;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--color-ekos-ink);
+  margin-bottom: 0.4rem;
+}
+
+/* Form title – centred H2, Futura 30px / 900 */
+@utility ekos-form-title {
+  font-family: var(--font-heading);
+  font-size: 30px;
+  font-weight: 900;
   color: var(--color-brand);
-  margin-bottom: 0.375rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Step section headings – Futura 28px bold gold, left */
+@utility ekos-step-heading {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-ekos-heading-gold);
+  text-align: left;
+  line-height: 1.25;
+}
+
+@utility ekos-subheading {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-ekos-ink);
+}
+
+@utility ekos-subsubheading {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-ekos-ink);
+}
+
+/* Fluent Forms-style inputs */
+@utility ekos-input {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-ekos-field-border);
+  border-radius: 7px;
+  padding: 11px 15px;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--color-ekos-field-text);
+  height: auto;
+  box-shadow: none;
+}
+
+@utility ekos-btn {
+  background-color: var(--color-gold);
+  color: var(--color-gold-foreground);
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 4px;
+  height: auto;
+  box-shadow: none;
+  &:hover {
+    background-color: color-mix(in oklab, var(--color-gold) 88%, black);
+  }
 }
