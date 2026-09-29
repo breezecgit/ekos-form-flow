@@ -274,9 +274,10 @@ export const getSubmission = createServerFn({ method: "GET" })
       submission.form_type,
       (submission.data ?? {}) as Record<string, unknown>,
     );
+    const origin = await s.appOrigin();
     return {
       statement: statement ?? null,
-      directorLink: dToken?.token ? `${s.appOrigin()}/sign/${dToken.token}` : "",
+      directorLink: dToken?.token ? `${origin}/sign/${dToken.token}` : "",
       submission,
       sale,
       parks: parks ?? [],
@@ -284,8 +285,8 @@ export const getSubmission = createServerFn({ method: "GET" })
       audit: audit ?? [],
       welcomePackUrl,
       pdfUrl,
-      offsiteLink: token?.token ? `${s.appOrigin()}/sign/${token.token}` : "",
-      constructionLink: cToken?.token ? `${s.appOrigin()}/sign/${cToken.token}` : "",
+      offsiteLink: token?.token ? `${origin}/sign/${token.token}` : "",
+      constructionLink: cToken?.token ? `${origin}/sign/${cToken.token}` : "",
     };
   });
 
@@ -321,7 +322,7 @@ export const saveDraft = createServerFn({ method: "POST" })
       actorLabel: String(context.claims["email"] ?? ""),
       action: "Draft saved",
     });
-    const origin = s.appOrigin();
+    const origin = await s.appOrigin();
     const resumeLink = `${origin}/forms/${submission.form_type}/${data.submissionId}`;
     if (data.emailLink !== false) {
       const { data: profile } = await db

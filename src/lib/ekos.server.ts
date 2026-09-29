@@ -1,4 +1,3 @@
-import { getRequest } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { generateFormPdf, type PdfAttachment } from "@/lib/pdf/generate.server";
 import { getForm } from "@/lib/forms/registry";
@@ -32,21 +31,21 @@ export function needsDirectorWitness(formType: string): boolean {
 
 export const BUCKET = "ekos-documents";
 
-export function appOrigin(): string {
-  try {
-    const req = getRequest();
-    const origin = req?.headers.get("origin");
-    if (origin) return origin;
-    const host = req?.headers.get("host");
-    if (host) return `${host.includes("localhost") ? "http" : "https"}://${host}`;
-  } catch {
-    /* ignore */
-  }
-  return "https://project--bcc818c5-4e07-4ebe-94b2-ee00eb74094c.lovable.app";
+export const DEFAULT_APP_BASE_URL = "https://project--bcc818c5-4e07-4ebe-94b2-ee00eb74094c.lovable.app";
+
+/**
+ * Every link in emails / copied links is built from Admin > Settings "App base URL"
+ * (never the request origin – the editor preview needs a Lovable login).
+ */
+export async function appOrigin(): Promise<string> {
+  const { data } = await supabaseAdmin.from("app_settings").select("value").eq("key", "app_base_url").maybeSingle();
+  const url = String(((data?.value ?? {}) as Record<string, unknown>)["url"] ?? "").trim().replace(/\/+$/, "");
+  return /^https?:\/\//.test(url) ? url : DEFAULT_APP_BASE_URL;
 }
 
-export function logoUrl(): string {
-  return `${appOrigin()}/ekos-logo.png`;
+/** "Your" + form name without doubling ("Your Your Written Statement"). */
+export function yourForm(name: string): string {
+  return `Your ${name.replace(/^your\s+/i, "")}`;
 }
 
 export async function getSettingsMap(): Promise<Record<string, Record<string, unknown>>> {
@@ -173,7 +172,7 @@ export async function buildAndStorePdf(
   return { bytes, path, fileName };
 }
 
-export async function signedPdfUrl(path: string, seconds = 60 * 60 * 24 * 30) {
+export async function signedPdfUrl(path: string, seconds = 60 * 60 * 24 * 60) {
   const { data } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(path, seconds);
   return data?.signedUrl ?? "";
 }
@@ -214,6 +213,9 @@ export async function getOrCreateSigningToken(
     .eq("submission_id", submissionId)
     .eq("kind", kind)
     .is("used_at", null)
+    .gt("expires_at", new Date(Date.now() + 30 * 86400000).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (data?.token) return data.token;
   const token = newToken();
@@ -241,7 +243,7 @@ async function emailContext(submissionId: string) {
     ["Phone", phone],
     ["Park", parkName],
   ]);
-  return { submission, sale, values, parkName, contacts, name, email, formName, pdfLink, table, origin: appOrigin() };
+  return { submission, sale, values, parkName, contacts, name, email, formName, pdfLink, table, origin: await appOrigin() };
 }
 
 async function pdfAttachment(path: string | null) {
@@ -267,7 +269,8 @@ export async function sendReviewRequiredEmail(submissionId: string) {
       ${isWS ? p("<strong>Director and Witness signature required before completion.</strong>") + button("Sign the form", signLink) : ""}
       ${c.pdfLink ? button("Open the form PDF", c.pdfLink) : ""}
       ${outlineButton("View the tracker", `${c.origin}/admin/submissions/${submissionId}`)}
-      ${outlineButton("Log in to the website", `${c.origin}/auth`)}`,
+      ${outlineButton("Log in to the website", `${c.origin}/auth`)}
+      ${c.pdfLink ? p("The form PDF is also attached to this email.") : ""}`,
   });
 
   await sendEmail({
@@ -277,6 +280,7 @@ export async function sendReviewRequiredEmail(submissionId: string) {
       ? "New Customer Form Submission - Review & Signature Required"
       : "New Customer Form Submission - Review Required",
     html,
+    attachments: await pdfAttachment(c.submission.pdf_path),
     template: isWS ? "review_signature_required" : "review_required",
     submissionId,
   });
@@ -293,7 +297,7 @@ export async function sendOffsiteCustomerEmail(submissionId: string) {
   const token = await getOrCreateSigningToken(submissionId);
   const f = esc(c.formName);
   const html = emailShell({
-    heading: `Your ${f} is ready`,
+    heading: `${yourForm(f)} is ready`,
     bodyHtml: `
       ${goldBox(`Please review and sign your ${f}.`)}
       ${p("Thank you for choosing EKOS Homes. There are just two short steps to complete.")}
@@ -309,7 +313,7 @@ export async function sendOffsiteCustomerEmail(submissionId: string) {
     from: FROM_CUSTOMER,
     to: [c.email],
     cc: [c.contacts.sadie, c.contacts.sales, c.contacts.repEmail, c.contacts.parkInbox],
-    subject: `Your ${c.formName} is ready`,
+    subject: `${yourForm(c.formName)} is ready`,
     html,
     attachments: await pdfAttachment(c.submission.pdf_path),
     template: "offsite_ready_to_sign",
@@ -364,7 +368,7 @@ export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8
   const subject =
     c.submission.form_type === "identification"
       ? "Your Identification Checks are complete"
-      : `Your ${c.formName} is complete`;
+      : `${yourForm(c.formName)} is complete`;
   const html = emailShell({
     heading: esc(subject),
     bodyHtml: `
@@ -417,7 +421,7 @@ export async function sendResumeLinkEmail(submissionId: string, repEmail: string
   const html = emailShell({
     heading: "Your saved draft",
     bodyHtml: `
-      ${p(`Your ${esc(c.formName)} draft for ${esc(c.name || c.submission.order_number)} has been saved.`)}
+      ${p(`${esc(yourForm(c.formName))} draft for ${esc(c.name || c.submission.order_number)} has been saved.`)}
       ${button("Resume this form", `${c.origin}/forms/${c.submission.form_type}/${c.submission.id}`)}`,
   });
   await sendEmail({
