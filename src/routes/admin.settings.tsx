@@ -13,13 +13,13 @@ import { getSettings, saveSettings } from "@/lib/settings.functions";
 export const Route = createFileRoute("/admin/settings")({
   head: () => ({
     meta: [
-      { title: "Settings | EKOS Group" },
+      { title: "Settings | EKOS Customer Sales Form" },
       {
         name: "description",
         content:
           "Manage parks, sales people, notification emails, document links, the Director signature and the Google Drive folder.",
       },
-      { property: "og:title", content: "Settings | EKOS Group" },
+      { property: "og:title", content: "Settings | EKOS Customer Sales Form" },
       {
         property: "og:description",
         content:

@@ -16,12 +16,12 @@ import { WordDownloadButton } from "@/components/WordDownload";
 export const Route = createFileRoute("/admin/submissions/$id")({
   head: () => ({
     meta: [
-      { title: "Submission | EKOS Group" },
+      { title: "Submission | EKOS Customer Sales Form" },
       {
         name: "description",
         content: "Review a submitted EKOS Group sales form, its PDF, audit history and status.",
       },
-      { property: "og:title", content: "Submission | EKOS Group" },
+      { property: "og:title", content: "Submission | EKOS Customer Sales Form" },
       {
         property: "og:description",
         content: "Review a submitted EKOS Group sales form, its PDF, audit history and status.",

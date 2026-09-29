@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "EKOS Group Customer Sales Forms" },
+      { title: "EKOS Customer Sales Form" },
       {
         name: "description",
         content:
           "Staff portal for EKOS Group park home sales paperwork: reservations, identification checks, order forms and written statements.",
       },
-      { property: "og:title", content: "EKOS Group Customer Sales Forms" },
+      { property: "og:title", content: "EKOS Customer Sales Form" },
       {
         property: "og:description",
         content:

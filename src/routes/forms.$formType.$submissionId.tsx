@@ -13,12 +13,12 @@ import type { FormValues } from "@/lib/forms/types";
 export const Route = createFileRoute("/forms/$formType/$submissionId")({
   head: () => ({
     meta: [
-      { title: "Sales form | EKOS Group" },
+      { title: "Sales form | EKOS Customer Sales Form" },
       {
         name: "description",
         content: "Complete an EKOS Group customer sales form, save a draft, or submit for review.",
       },
-      { property: "og:title", content: "Sales form | EKOS Group" },
+      { property: "og:title", content: "Sales form | EKOS Customer Sales Form" },
       {
         property: "og:description",
         content: "Complete an EKOS Group customer sales form, save a draft, or submit for review.",

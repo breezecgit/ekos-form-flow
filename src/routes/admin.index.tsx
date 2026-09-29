@@ -12,12 +12,12 @@ import { WordDownloadLink } from "@/components/WordDownload";
 export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
-      { title: "Sales tracker | EKOS Group" },
+      { title: "Sales tracker | EKOS Customer Sales Form" },
       {
         name: "description",
         content: "Track every EKOS Group sale and the status of each form in the sales pack.",
       },
-      { property: "og:title", content: "Sales tracker | EKOS Group" },
+      { property: "og:title", content: "Sales tracker | EKOS Customer Sales Form" },
       {
         property: "og:description",
         content: "Track every EKOS Group sale and the status of each form in the sales pack.",

@@ -7,9 +7,9 @@ import { listEmailLog } from "@/lib/ekos.functions";
 export const Route = createFileRoute("/admin/emails")({
   head: () => ({
     meta: [
-      { title: "Email log | EKOS Group" },
+      { title: "Email log | EKOS Customer Sales Form" },
       { name: "description", content: "Every email the EKOS sales forms portal has sent." },
-      { property: "og:title", content: "Email log | EKOS Group" },
+      { property: "og:title", content: "Email log | EKOS Customer Sales Form" },
       {
         property: "og:description",
         content: "Every email the EKOS sales forms portal has sent.",
