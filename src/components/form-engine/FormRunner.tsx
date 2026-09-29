@@ -55,7 +55,7 @@ export function FormRunner({
 
   const total = steps.length;
   const percent = Math.round(((step + 1) / total) * 100);
-  const current = steps[step];
+  const current = steps[step] ?? steps[0]!;
 
   const setValue = (key: string, value: unknown) => {
     setTouchedKeys((prev) => new Set(prev).add(key));
@@ -206,7 +206,7 @@ function renderFields(
 ) {
   const out: React.ReactNode[] = [];
   for (let i = 0; i < fields.length; i++) {
-    const f = fields[i];
+    const f = fields[i]!;
     const next = fields[i + 1];
     if (f.sectionLabel) {
       out.push(
@@ -222,7 +222,7 @@ function renderFields(
             field={f}
             values={values}
             ctx={ctx}
-            error={errors[f.key]}
+            error={errors[f.key] ?? ""}
             parkLinks={parkLinks}
             onChange={setValue}
             disabled={busy}
@@ -231,7 +231,7 @@ function renderFields(
             field={next}
             values={values}
             ctx={ctx}
-            error={errors[next.key]}
+            error={errors[next.key] ?? ""}
             parkLinks={parkLinks}
             onChange={setValue}
             disabled={busy}
@@ -247,7 +247,7 @@ function renderFields(
         field={f}
         values={values}
         ctx={ctx}
-        error={errors[f.key]}
+        error={errors[f.key] ?? ""}
         parkLinks={parkLinks}
         onChange={setValue}
         disabled={busy}

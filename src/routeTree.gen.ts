@@ -10,12 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminEmailsRouteImport } from './routes/admin.emails'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as SignTokenRouteImport } from './routes/sign.$token'
+import { Route as AdminSubmissionsIdRouteImport } from './routes/admin.submissions.$id'
+import { Route as FormsFormTypeSubmissionIdRouteImport } from './routes/forms.$formType.$submissionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -28,35 +40,119 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEmailsRoute = AdminEmailsRouteImport.update({
+  id: '/emails',
+  path: '/emails',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const SignTokenRoute = SignTokenRouteImport.update({
+  id: '/sign/$token',
+  path: '/sign/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSubmissionsIdRoute = AdminSubmissionsIdRouteImport.update({
+  id: '/submissions/$id',
+  path: '/submissions/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const FormsFormTypeSubmissionIdRoute =
+  FormsFormTypeSubmissionIdRouteImport.update({
+    id: '/forms/$formType/$submissionId',
+    path: '/forms/$formType/$submissionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/admin/emails': typeof AdminEmailsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/sign/$token': typeof SignTokenRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/submissions/$id': typeof AdminSubmissionsIdRoute
+  '/forms/$formType/$submissionId': typeof FormsFormTypeSubmissionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/admin/emails': typeof AdminEmailsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/sign/$token': typeof SignTokenRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/submissions/$id': typeof AdminSubmissionsIdRoute
+  '/forms/$formType/$submissionId': typeof FormsFormTypeSubmissionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/admin/emails': typeof AdminEmailsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/sign/$token': typeof SignTokenRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/submissions/$id': typeof AdminSubmissionsIdRoute
+  '/forms/$formType/$submissionId': typeof FormsFormTypeSubmissionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/dashboard'
+    | '/admin/emails'
+    | '/admin/settings'
+    | '/sign/$token'
+    | '/admin/'
+    | '/admin/submissions/$id'
+    | '/forms/$formType/$submissionId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard'
-  id: '__root__' | '/' | '/auth' | '/dashboard'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/admin/emails'
+    | '/admin/settings'
+    | '/sign/$token'
+    | '/admin'
+    | '/admin/submissions/$id'
+    | '/forms/$formType/$submissionId'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/dashboard'
+    | '/admin/emails'
+    | '/admin/settings'
+    | '/sign/$token'
+    | '/admin/'
+    | '/admin/submissions/$id'
+    | '/forms/$formType/$submissionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
+  SignTokenRoute: typeof SignTokenRoute
+  FormsFormTypeSubmissionIdRoute: typeof FormsFormTypeSubmissionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -66,6 +162,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -82,13 +185,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/emails': {
+      id: '/admin/emails'
+      path: '/emails'
+      fullPath: '/admin/emails'
+      preLoaderRoute: typeof AdminEmailsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/sign/$token': {
+      id: '/sign/$token'
+      path: '/sign/$token'
+      fullPath: '/sign/$token'
+      preLoaderRoute: typeof SignTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/submissions/$id': {
+      id: '/admin/submissions/$id'
+      path: '/submissions/$id'
+      fullPath: '/admin/submissions/$id'
+      preLoaderRoute: typeof AdminSubmissionsIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/forms/$formType/$submissionId': {
+      id: '/forms/$formType/$submissionId'
+      path: '/forms/$formType/$submissionId'
+      fullPath: '/forms/$formType/$submissionId'
+      preLoaderRoute: typeof FormsFormTypeSubmissionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminEmailsRoute: typeof AdminEmailsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminSubmissionsIdRoute: typeof AdminSubmissionsIdRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminEmailsRoute: AdminEmailsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminSubmissionsIdRoute: AdminSubmissionsIdRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
+  SignTokenRoute: SignTokenRoute,
+  FormsFormTypeSubmissionIdRoute: FormsFormTypeSubmissionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

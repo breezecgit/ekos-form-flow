@@ -27,8 +27,13 @@ export const getSettings = createServerFn({ method: "GET" })
       db.from("sales_people").select("*").order("sort_order"),
       db.from("app_settings").select("*"),
     ]);
-    const map: Record<string, Record<string, unknown>> = {};
-    for (const row of settings ?? []) map[row.key] = (row.value ?? {}) as Record<string, unknown>;
+    const map: Record<string, Record<string, string>> = {};
+    for (const row of settings ?? []) {
+      const value = (row.value ?? {}) as Record<string, unknown>;
+      const flat: Record<string, string> = {};
+      for (const [k, v] of Object.entries(value)) flat[k] = v == null ? "" : String(v);
+      map[row.key] = flat;
+    }
     return { parks: parks ?? [], salesPeople: people ?? [], settings: map };
   });
 

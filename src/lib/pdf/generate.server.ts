@@ -241,7 +241,7 @@ async function drawSignature(
   date: string,
 ) {
   w.text(label, { size: 10, font: w.bold, color: BRAND, gap: 2 });
-  const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+  const base64 = dataUrl.includes(",") ? (dataUrl.split(",")[1] ?? "") : dataUrl;
   try {
     const img = await w.doc.embedPng(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)));
     const width = 190;

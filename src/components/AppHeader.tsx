@@ -7,8 +7,8 @@ export function AppHeader({
   isDirector,
   email,
 }: {
-  isDirector?: boolean;
-  email?: string;
+  isDirector?: boolean | undefined;
+  email?: string | undefined;
 }) {
   const router = useRouter();
   const signOut = async () => {

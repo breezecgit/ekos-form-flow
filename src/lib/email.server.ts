@@ -29,7 +29,7 @@ function toBase64(bytes: Uint8Array): string {
  * Sends through Resend (connector gateway). Never throws: delivery problems are
  * recorded in the email log so the tracker always shows what happened.
  */
-export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; error?: string }> {
+export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; error?: string | undefined }> {
   const recipients = Array.from(new Set(input.to.map((t) => (t || "").trim()).filter(Boolean)));
   if (!recipients.length) return { ok: false, error: "No recipients" };
 

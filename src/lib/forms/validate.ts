@@ -53,7 +53,7 @@ export function firstStepWithError(
   errors: Errors,
 ): number {
   for (let i = 0; i < def.steps.length; i++) {
-    if (def.steps[i].fields.some((f) => errors[f.key])) return i;
+    if (def.steps[i]!.fields.some((f) => errors[f.key])) return i;
   }
   return 0;
 }
