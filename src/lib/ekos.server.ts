@@ -87,6 +87,10 @@ export async function buildAndStorePdf(
   let section = "";
   for (const f of def.steps.flatMap((s) => s.fields)) {
     if (f.sectionLabel) section = f.sectionLabel;
+    if (f.type === "static") {
+      const heads = (f.content ?? []).filter((b) => b.kind === "subheading" || b.kind === "heading");
+      if (heads.length) section = (heads[heads.length - 1] as { text: string }).text;
+    }
     if (f.type !== "file" || !isVisible(f, values, pdfCtx)) continue;
     const list = Array.isArray(values[f.key]) ? (values[f.key] as UploadedFile[]) : [];
     for (const file of list) {
