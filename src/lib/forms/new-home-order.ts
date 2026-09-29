@@ -1,5 +1,5 @@
 import { parseMoney } from "@/lib/format";
-import type { FieldDef, FormDef, FormValues, RenderContext } from "./types";
+import type { FieldDef, FormDef, FormValues, OptionDef, RenderContext } from "./types";
 import {
   MOVE_IN_BLOCKS,
   REQUIRED_OPTS,
