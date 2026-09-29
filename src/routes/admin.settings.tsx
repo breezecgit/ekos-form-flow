@@ -291,14 +291,17 @@ function Field({
   label,
   value,
   onChange,
+  note,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  note?: boolean;
 }) {
   return (
     <div>
       <label className="ekos-label">{label}</label>
+      {note && <span className="mb-1 block text-xs text-muted-foreground">Redirected to test recipients while test mode is ON</span>}
       <Input value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
