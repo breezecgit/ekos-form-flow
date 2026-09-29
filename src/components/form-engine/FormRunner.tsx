@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { FieldInput } from "./FieldInput";
 import { MANDATORY_HELPER } from "@/lib/forms/registry";
 import type { FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
-import { isVisible } from "@/lib/forms/types";
+import { SUBSUB_HEADINGS, isVisible } from "@/lib/forms/types";
 import { validateAll, validateFields, type Errors } from "@/lib/forms/validate";
 import { todayISO } from "@/lib/format";
 import { toast } from "sonner";
@@ -75,7 +74,8 @@ export function FormRunner({
   const [busy, setBusy] = useState(false);
 
   const total = steps.length;
-  const percent = Math.round(((step + 1) / total) * 100);
+  // Fluent Forms truncates: 1/6 → 16%, 1/7 → 14%.
+  const percent = Math.floor(((step + 1) / total) * 100);
   const current = steps[step] ?? steps[0]!;
 
   const setValue = (key: string, value: unknown) => {
@@ -159,61 +159,87 @@ export function FormRunner({
   const isLast = step === total - 1;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8">
-      <div className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-10">
-        <h1 className="ekos-title text-3xl sm:text-4xl">{title ?? def.title}</h1>
-        {orderNumber && (
-          <p className="mt-2 text-center text-sm font-semibold text-gold">
-            Order Number {orderNumber}
-          </p>
-        )}
-        <p className="mt-3 text-center text-sm text-muted-foreground">{MANDATORY_HELPER}</p>
-        {headerExtra}
+    <div className="mx-auto w-full max-w-[1140px] px-4 py-10">
+      <h2 className="ekos-form-title">{title ?? def.title}</h2>
+      {orderNumber && (
+        <p className="mt-2 text-center text-sm font-semibold text-gold">Order Number {orderNumber}</p>
+      )}
+      <p className="mt-3 text-center text-sm text-ekos-field-text">{MANDATORY_HELPER}</p>
+      {headerExtra}
 
-        {total > 1 && (
-          <div className="mt-6">
-            <p className="mb-2 text-sm font-semibold text-brand">
-              Step {step + 1} of {total} – {percent}%
-            </p>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className="h-full rounded-full bg-brand transition-all"
-                style={{ width: `${percent}%` }}
-              />
+      {total > 1 && (
+        <div className="mt-8">
+          <p className="mb-2 font-heading text-[14.4px] font-bold text-brand">
+            Step {step + 1} of {total} - Step {step + 1}
+          </p>
+          <div
+            className="h-[21px] w-full overflow-hidden rounded-[4px] bg-ekos-track"
+            role="progressbar"
+            aria-valuenow={percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div
+              className="flex h-full items-center justify-end rounded-l-[4px] bg-brand pr-2 text-[12px] leading-none text-brand-foreground transition-all"
+              style={{ width: `${percent}%` }}
+            >
+              {percent}%
             </div>
           </div>
-        )}
-
-        {current.heading && (
-          <h2 className="ekos-title mt-8 text-2xl">{current.heading}</h2>
-        )}
-
-        <div className="mt-8 space-y-6">
-          {renderFields(stepFields, values, ctx, errors, parkLinks, setValue, busy, lockedKeys)}
         </div>
+      )}
 
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
+      {current.heading && <h2 className="ekos-step-heading mt-10">{current.heading}</h2>}
+
+      <div className="mt-8 space-y-6">
+        {renderFields(stepFields, values, ctx, errors, parkLinks, setValue, busy, lockedKeys)}
+      </div>
+
+      <div className="mt-10 space-y-4">
+        {onSaveDraft && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={handleSave}
+              className="ekos-btn rounded-[7px] px-5 py-2 disabled:opacity-50"
+            >
+              Save &amp; Resume
+            </button>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3">
           <div>
-            {onSaveDraft && (
-              <Button type="button" variant="resume" disabled={busy} onClick={handleSave}>
-                Save &amp; Resume
-              </Button>
+            {step > 0 && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={goPrev}
+                className="ekos-btn px-[30px] py-[15px] disabled:opacity-50"
+              >
+                Previous
+              </button>
             )}
           </div>
-          <div className="flex gap-3">
-            {step > 0 && (
-              <Button type="button" variant="outline" disabled={busy} onClick={goPrev}>
-                Previous
-              </Button>
-            )}
+          <div>
             {!isLast ? (
-              <Button type="button" variant="gold" disabled={busy} onClick={goNext}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={goNext}
+                className="ekos-btn px-[30px] py-[15px] disabled:opacity-50"
+              >
                 Next
-              </Button>
+              </button>
             ) : (
-              <Button type="button" variant="gold" disabled={busy} onClick={handleSubmit}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={handleSubmit}
+                className="ekos-btn px-[25px] py-3 disabled:opacity-50"
+              >
                 {busy ? "Please wait…" : submitLabel}
-              </Button>
+              </button>
             )}
           </div>
         </div>
@@ -239,9 +265,15 @@ function renderFields(
     const next = fields[i + 1];
     if (f.sectionLabel) {
       out.push(
-        <h3 key={`${f.key}-section`} className="font-heading text-xl font-semibold text-brand">
-          {f.sectionLabel}
-        </h3>,
+        SUBSUB_HEADINGS.has(f.sectionLabel) ? (
+          <h4 key={`${f.key}-section`} className="ekos-subsubheading">
+            {f.sectionLabel}
+          </h4>
+        ) : (
+          <h3 key={`${f.key}-section`} className="ekos-subheading">
+            {f.sectionLabel}
+          </h3>
+        ),
       );
     }
     if (f.half && next?.half) {
