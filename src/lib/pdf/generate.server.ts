@@ -6,6 +6,7 @@ import {
   StandardFonts,
   rgb,
 } from "pdf-lib";
+import { CHOICE_IMAGES_JPG_BASE64 } from "./choice-images";
 import { EKOS_LOGO_PNG_BASE64 } from "./logo-base64";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { ContentBlock, FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
@@ -260,6 +261,11 @@ function contentBlocks(w: Writer, blocks: ContentBlock[]) {
     } else if (b.kind === "bullets") {
       for (const item of b.items) w.text(`\u2022  ${item}`, { indent: 10, gap: 1 });
       w.y -= 4;
+    } else if (b.kind === "accordion") {
+      // Collapsible rows on the page are printed expanded so every word is in the PDF.
+      w.y -= 3;
+      w.text(b.title, { size: 10.5, font: w.bold, color: TEXT, gap: 3 });
+      contentBlocks(w, b.blocks);
     } else if (b.kind === "note") {
       w.text(b.text, { size: 9.5, color: MUTED, gap: 6 });
     } else {
@@ -385,6 +391,25 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     w.ensure(28);
     w.text(`${f.pdfLabel ?? f.label ?? f.key}`, { size: 10, font: w.bold, color: BRAND });
     if (f.help) w.text(f.help, { size: 8.5, color: MUTED });
+    const chosen = f.type === "radio" ? f.options?.find((o) => o.value === values[f.key]) : undefined;
+    const imgB64 = chosen?.image && chosen.image !== "blank" ? CHOICE_IMAGES_JPG_BASE64[chosen.image] : undefined;
+    if (imgB64) {
+      // Image-choice radio: show the chosen photo next to the answer.
+      try {
+        const img = await w.doc.embedJpg(Uint8Array.from(atob(imgB64), (c) => c.charCodeAt(0)));
+        const ih = 90;
+        const iw = (img.width / img.height) * ih;
+        w.ensure(ih + 10);
+        w.page.drawImage(img, { x: MARGIN, y: w.y - ih, width: iw, height: ih });
+        const top = w.y;
+        w.y = top - 14;
+        w.text(fieldValueText(f, values, grouped), { size: 11, indent: iw + 12 });
+        w.y = top - ih - 10;
+        return;
+      } catch {
+        /* fall through to text only */
+      }
+    }
     w.text(fieldValueText(f, values, grouped), { size: 11, gap: 8 });
   };
 
