@@ -49,7 +49,7 @@ export interface LinkDef {
   label: string;
   url?: string;
   /** Resolved per park from Settings when set. */
-  parkKey?: "brochure_url" | "site_licence_url" | "park_rules_url";
+  parkKey?: "brochure_url" | "site_licence_url" | "park_rules_url" | "welcome_pack_url";
   settingsKey?: string;
 }
 
@@ -65,6 +65,8 @@ export interface FieldDef {
   required?: boolean;
   /** Render two fields side by side. */
   half?: boolean;
+  /** Pre-selected value for new forms. */
+  defaultValue?: string;
   /** Date fields that default to today. */
   defaultToday?: boolean;
   /** Sub-heading rendered above this field. */
@@ -102,6 +104,8 @@ export interface FormDef {
   /** Stable key stored on the submission. */
   type: string;
   title: string;
+  /** Title on the off-site customer signing page. */
+  signingTitle?: string;
   steps: StepDef[];
 }
 

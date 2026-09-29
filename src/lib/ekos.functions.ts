@@ -158,11 +158,11 @@ async function buildPrefill(
   for (const row of earlier ?? []) Object.assign(merged, (row.data ?? {}) as Record<string, unknown>);
   const reservation = (earlier ?? []).find((r) => r.form_type === "reservation");
   const resData = (reservation?.data ?? {}) as Record<string, unknown>;
-  if (resData["total_cost"] !== undefined) merged["cost_new_home"] = resData["total_cost"];
+  if (resData["total_cost"] !== undefined && merged["cost_new_home"] === undefined) merged["cost_new_home"] = resData["total_cost"];
 
   const out: Record<string, unknown> = {};
   for (const f of def.steps.flatMap((s) => s.fields)) {
-    if (["signature", "file", "checkbox", "static", "links"].includes(f.type)) continue;
+    if (["signature", "checkbox", "static", "links"].includes(f.type)) continue;
     if (f.group || f.key === "status" || f.key.startsWith("rep_")) continue;
     const v = merged[f.key];
     if (v === undefined || v === null || v === "") continue;
@@ -232,6 +232,10 @@ export const getSubmission = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const submission = await assertAccess(data.submissionId, context.userId);
     const db = await admin();
+    const { data: linkRow } = await db.from("app_settings").select("value").eq("key", "links").maybeSingle();
+    const welcomePackUrl =
+      String(((linkRow?.value ?? {}) as Record<string, unknown>)["welcome_pack_url"] ?? "") ||
+      "https://ekosgroup.co.uk/ekos-welcome-pack";
     const [{ data: sale }, { data: parks }, director] = await Promise.all([
       db.from("sales").select("*").eq("id", submission.sale_id).maybeSingle(),
       db.from("parks").select("*").order("sort_order"),
@@ -257,6 +261,7 @@ export const getSubmission = createServerFn({ method: "GET" })
       parks: parks ?? [],
       isDirector: director,
       audit: audit ?? [],
+      welcomePackUrl,
       pdfUrl,
       offsiteLink: token?.token ? `${s.appOrigin()}/sign/${token.token}` : "",
       constructionLink: cToken?.token ? `${s.appOrigin()}/sign/${cToken.token}` : "",

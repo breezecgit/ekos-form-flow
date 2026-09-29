@@ -20,9 +20,9 @@
 ## Done (Forms 2 + 3)
 - Identification Checks (ID uploads embedded in PDF) – tested on/off site + Completed
 - New Home Order Form incl. Construction sign-off page – tested on/off site + Completed
+- Form 4: Unit Sale Agreement & Welcome Pack – tested on/off site + Completed
 
 ## Later messages
-- Form 4: Unit Sale Agreement & Welcome Pack
 - Form 5: Your Written Statement (different completion flow)
 - EKOS Customer Order Form Amendments
 

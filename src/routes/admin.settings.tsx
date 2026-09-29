@@ -52,6 +52,7 @@ function SettingsPage() {
   const [directorEmail, setDirectorEmail] = useState("");
   const [constructionEmail, setConstructionEmail] = useState("");
   const [driveFolder, setDriveFolder] = useState("");
+  const [welcomePack, setWelcomePack] = useState("");
   const [signature, setSignature] = useState("");
 
   useEffect(() => {
@@ -73,6 +74,10 @@ function SettingsPage() {
     setDirectorEmail(String(n["director_email"] ?? ""));
     setConstructionEmail(String(n["construction_email"] ?? ""));
     setDriveFolder(String(data.settings["google_drive"]?.["folder_id"] ?? ""));
+    setWelcomePack(
+      String(data.settings["links"]?.["welcome_pack_url"] ?? "") ||
+        "https://ekosgroup.co.uk/ekos-welcome-pack",
+    );
   }, [data]);
 
   const save = useMutation({
@@ -94,6 +99,7 @@ function SettingsPage() {
             construction_email: constructionEmail,
           },
           driveFolderId: driveFolder,
+          welcomePackUrl: welcomePack,
           directorSignatureDataUrl: signature || undefined,
         },
       }),
@@ -160,6 +166,15 @@ function SettingsPage() {
         <div className="mt-3">
           <SignaturePad value={signature} onChange={setSignature} />
         </div>
+      </section>
+
+      <section className="mt-6 rounded-xl border bg-card p-6">
+        <h2 className="ekos-title text-lg">Document links</h2>
+        <Field
+          label="Welcome Pack link (Unit Sale Agreement & Welcome Pack)"
+          value={welcomePack}
+          onChange={setWelcomePack}
+        />
       </section>
 
       <section className="mt-6 rounded-xl border bg-card p-6">

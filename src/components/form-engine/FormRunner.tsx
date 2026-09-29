@@ -17,6 +17,7 @@ interface Props {
   /** Restrict rendering to one signature group (customer / construction pages). */
   onlyGroup?: "customerSignature" | "constructionSignature";
   submitLabel?: string;
+  title?: string;
   onSaveDraft?: (values: FormValues) => Promise<void>;
   onSubmit: (values: FormValues) => Promise<void>;
   headerExtra?: React.ReactNode;
@@ -30,6 +31,7 @@ export function FormRunner({
   orderNumber,
   onlyGroup,
   submitLabel = "Submit Form",
+  title,
   onSaveDraft,
   onSubmit,
   headerExtra,
@@ -140,7 +142,7 @@ export function FormRunner({
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8">
       <div className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-10">
-        <h1 className="ekos-title text-3xl sm:text-4xl">{def.title}</h1>
+        <h1 className="ekos-title text-3xl sm:text-4xl">{title ?? def.title}</h1>
         {orderNumber && (
           <p className="mt-2 text-center text-sm font-semibold text-gold">
             Order Number {orderNumber}
@@ -294,6 +296,7 @@ function withDefaults(def: FormDef, initial: FormValues): FormValues {
   for (const f of def.steps.flatMap((s) => s.fields)) {
     if (values[f.key] !== undefined && values[f.key] !== "") continue;
     if (f.defaultToday) values[f.key] = todayISO();
+    else if (f.defaultValue) values[f.key] = f.defaultValue;
     else if (f.type === "multiselect" && values[f.key] === undefined) values[f.key] = [];
   }
   return values;
