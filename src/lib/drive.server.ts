@@ -34,7 +34,9 @@ export async function uploadPdfToDrive(
   body.set(tail, head.length + bytes.length);
 
   try {
-    const res = await fetch(`${GATEWAY}/upload/drive/v3/files?uploadType=multipart`, {
+    const res = await fetch(
+      `${GATEWAY}/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true`,
+      {
       method: "POST",
       headers: {
         Authorization: `Bearer ${lovableKey}`,
