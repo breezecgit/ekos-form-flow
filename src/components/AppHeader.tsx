@@ -4,12 +4,44 @@ import logo from "@/assets/ekos-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 
 const SITE = "https://ekosgroup.co.uk";
-const NAV: Array<{ label: string; href: string; dropdown?: boolean }> = [
-  { label: "Our Parks", href: `${SITE}/our-parks/`, dropdown: true },
-  { label: "About Us", href: `${SITE}/about-us/`, dropdown: true },
-  { label: "Your Move", href: `${SITE}/your-move/`, dropdown: true },
+type Sub = [string, string];
+const NAV: Array<{ label: string; href: string; items?: Sub[] }> = [
+  {
+    label: "Our Parks",
+    href: `${SITE}/our-parks/`,
+    items: [
+      ["Carlton Manor – Lowestoft, Suffolk", "carlton-manor"],
+      ["Castle View Court – Pevensey, East Sussex", "castle-view-court"],
+      ["Coastal Retreat – Weston-Super-Mare, Somerset", "coastal-retreat"],
+      ["Dales View – Barnoldswick, Lancashire", "dales-view"],
+      ["Happy Valley – Laleston, Bridgend", "happy-valley"],
+      ["Harvey’s Nurseries – Emmer Green, Reading", "harveys-nurseries"],
+      ["Haveringland Hall – Cawston, Norwich", "haveringland-hall"],
+      ["Merry Hill – Norwich, Norfolk", "merry-hill"],
+      ["Outhill View – Studley, Warwickshire", "outhill-view"],
+      ["Sun Valley – St Austell, Cornwall", "sun-valley"],
+      ["Walworth Retreat – Darlington, County Durham", "walworth-retreat"],
+      ["Widemouth Sands – Widemouth Bay Bude", "widemouth-sands"],
+    ],
+  },
+  {
+    label: "About Us",
+    href: `${SITE}/about-us/`,
+    items: [["Blog", "blog"], ["In The News", "in-the-news"], ["FAQ’s", "faqs"]],
+  },
+  {
+    label: "Your Move",
+    href: `${SITE}/your-move/`,
+    items: [
+      ["House Types", "ekos-house-types"],
+      ["Park Homes For Sale", "residential-park-homes-for-sale"],
+      ["Part Exchange", "part-exchange"],
+      ["Managed Move", "managed-move"],
+      ["Our Offers", "our-offers"],
+    ],
+  },
   { label: "Events", href: `${SITE}/events/` },
-  { label: "Contact Us", href: `${SITE}/contact-us/` },
+  { label: "Contact Us", href: `${SITE}/contact/` },
 ];
 
 /**
@@ -50,16 +82,32 @@ export function AppHeader({
         </div>
         <nav className="hidden flex-1 items-center justify-center gap-7 lg:flex">
           {NAV.map((n) => (
-            <a
-              key={n.label}
-              href={n.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 font-heading text-[13px] font-medium uppercase tracking-[0.14em] opacity-95 hover:text-gold"
-            >
-              {n.label}
-              {n.dropdown && <ChevronDown className="h-3.5 w-3.5" />}
-            </a>
+            <div key={n.label} className="group relative flex h-20 items-center">
+              <a
+                href={n.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 font-heading text-[13px] font-medium uppercase tracking-[0.14em] opacity-95 hover:text-gold"
+              >
+                {n.label}
+                {n.items && <ChevronDown className="h-3.5 w-3.5" />}
+              </a>
+              {n.items && (
+                <div className="invisible absolute left-1/2 top-full z-30 min-w-[280px] -translate-x-1/2 bg-ekos-nav py-2 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
+                  {n.items.map(([label, slug]) => (
+                    <a
+                      key={slug}
+                      href={`${SITE}/${slug}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block px-5 py-2 text-[13px] hover:text-gold"
+                    >
+                      {label}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
         {!publicPage && (
@@ -83,7 +131,7 @@ export function AppHeader({
       </div>
     </header>
     {/* clears the logo tab that hangs below the bar */}
-    <div aria-hidden className="h-10" />
+    <div aria-hidden className="h-16" />
     </>
 
   );
