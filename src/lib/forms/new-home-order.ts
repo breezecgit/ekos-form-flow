@@ -189,6 +189,7 @@ export const newHomeOrderForm: FormDef = {
           key: "decking_cost",
           label: "Decking Cost",
           type: "money",
+          defaultValue: "0",
           showIf: (v) => v["include_decking"] === "Yes",
         },
         {

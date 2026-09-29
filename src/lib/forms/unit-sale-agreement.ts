@@ -37,9 +37,9 @@ export const unitSaleAgreementForm: FormDef = {
       id: "step-1",
       fields: [
         ...parkDetailsFields(),
-        { key: "manager_name", label: "Park Manager / Regional Manager", type: "text" },
-        { key: "manager_phone", label: "Phone Number", type: "tel" },
-        { key: "manager_email", label: "Email", type: "email" },
+        { key: "manager_name", parkField: "manager_name", label: "Park Manager / Regional Manager", type: "text" },
+        { key: "manager_phone", parkField: "manager_phone", label: "Phone Number", type: "tel" },
+        { key: "manager_email", parkField: "manager_email", label: "Email", type: "email" },
       ],
     },
     {

@@ -91,6 +91,8 @@ export interface FieldDef {
   pdfHide?: boolean;
   /** Read-only once it has a value (park carried over from the sale). */
   lockIfSet?: boolean;
+  /** Park Details column (Settings) that autofills this field when the park is chosen. */
+  parkField?: string;
   /** Label shown in the PDF when different from the on-screen label. */
   pdfLabel?: string;
 }
