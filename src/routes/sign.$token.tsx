@@ -43,7 +43,7 @@ function SignPage() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader publicPage />
-      <main className="px-4 pb-8 pt-14">
+      <main className="px-4 py-8">
         {ctx.isLoading && <p className="text-center text-muted-foreground">Loading…</p>}
         {(ctx.isError || (ctx.data && "error" in ctx.data)) && !done && (
           <div className="mx-auto max-w-lg rounded-xl border bg-card p-6 text-center">
