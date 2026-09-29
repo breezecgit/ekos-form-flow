@@ -30,6 +30,8 @@ interface Props {
   disabled?: boolean | undefined;
   parkLinks: Record<string, string>;
   onChange: (key: string, value: unknown) => void;
+  /** Keys locked because they arrived already set (e.g. park carried from the sale). */
+  lockedKeys?: Set<string> | undefined;
 }
 
 export function FieldInput({
@@ -40,10 +42,14 @@ export function FieldInput({
   disabled,
   parkLinks,
   onChange,
+  lockedKeys,
 }: Props) {
   const value = values[field.key];
   const set = (v: unknown) => onChange(field.key, v);
-  const lockedPark = Boolean(field.lockIfSet) && String(value ?? "").trim() !== "";
+  const lockedPark =
+    Boolean(field.lockIfSet) &&
+    String(value ?? "").trim() !== "" &&
+    (lockedKeys ? lockedKeys.has(field.key) : true);
   if (lockedPark) disabled = true;
 
   if (field.type === "static") {
