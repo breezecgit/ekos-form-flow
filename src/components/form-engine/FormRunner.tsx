@@ -13,6 +13,8 @@ interface Props {
   ctx: RenderContext;
   initialValues: FormValues;
   parkLinks: Record<string, string>;
+  /** Park Details rows (Settings) used for park autofill. */
+  parks?: Array<Record<string, unknown>>;
   orderNumber?: string;
   /** Restrict rendering to one signature group (customer / construction pages). */
   onlyGroup?: "customerSignature" | "constructionSignature" | "directorSignature";
@@ -28,6 +30,7 @@ export function FormRunner({
   ctx,
   initialValues,
   parkLinks,
+  parks = [],
   orderNumber,
   onlyGroup,
   submitLabel = "Submit Form",
@@ -56,7 +59,7 @@ export function FormRunner({
   }, [def, onlyGroup]);
   const onlyCustomerSignature = Boolean(onlyGroup);
 
-  const [values, setValues] = useState<FormValues>(() => withDefaults(def, initialValues));
+  const [values, setValues] = useState<FormValues>(() => withDefaults(def, fillFromPark(def, initialValues, parks, false)));
   const [touchedKeys, setTouchedKeys] = useState<Set<string>>(new Set());
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Errors>({});
@@ -69,7 +72,11 @@ export function FormRunner({
   const setValue = (key: string, value: unknown) => {
     setTouchedKeys((prev) => new Set(prev).add(key));
     setValues((prev) => {
-      const next = { ...prev, [key]: value };
+      let next: FormValues = { ...prev, [key]: value };
+      // Choosing a park autofills its details (rep can still overwrite).
+      if (key === "park_name" || key === "park_name_confirm") {
+        next = fillFromPark(def, next, parks, true, String(value ?? ""));
+      }
       // Auto-calculated fields refresh until the rep overwrites them.
       for (const f of def.steps.flatMap((s) => s.fields)) {
         if (f.compute && !touchedKeys.has(f.key) && f.key !== key) {
@@ -292,6 +299,28 @@ function validateCustomerGroup(
     }
   }
   return errors;
+}
+
+function fillFromPark(
+  def: FormDef,
+  values: FormValues,
+  parks: Array<Record<string, unknown>>,
+  overwrite: boolean,
+  parkName?: string,
+): FormValues {
+  const name = parkName ?? String(values["park_name"] ?? values["park_name_confirm"] ?? "");
+  const park = parks.find((p) => p["name"] === name);
+  if (!park) return values;
+  const out: FormValues = { ...values };
+  for (const f of def.steps.flatMap((s) => s.fields)) {
+    if (!f.parkField) continue;
+    const v = String(park[f.parkField] ?? "");
+    const cur = out[f.key];
+    if (overwrite || cur === undefined || cur === null || String(cur).trim() === "") {
+      if (v || overwrite) out[f.key] = v;
+    }
+  }
+  return out;
 }
 
 function withDefaults(def: FormDef, initial: FormValues): FormValues {
