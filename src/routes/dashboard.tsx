@@ -13,12 +13,12 @@ import { formatDate } from "@/lib/format";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "My sales | EKOS Group Sales Forms" },
+      { title: "My sales | EKOS Customer Sales Form" },
       {
         name: "description",
         content: "Start a new sale, continue an existing sale and pick up saved drafts.",
       },
-      { property: "og:title", content: "My sales | EKOS Group Sales Forms" },
+      { property: "og:title", content: "My sales | EKOS Customer Sales Form" },
       {
         property: "og:description",
         content: "Start a new sale, continue an existing sale and pick up saved drafts.",

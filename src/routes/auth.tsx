@@ -9,12 +9,12 @@ import { useAuth } from "@/hooks/useAuth";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Staff login | EKOS Group Sales Forms" },
+      { title: "Staff login | EKOS Customer Sales Form" },
       {
         name: "description",
         content: "Sign in to the EKOS Group sales forms portal to create and review customer paperwork.",
       },
-      { property: "og:title", content: "Staff login | EKOS Group Sales Forms" },
+      { property: "og:title", content: "Staff login | EKOS Customer Sales Form" },
       {
         property: "og:description",
         content: "Sign in to the EKOS Group sales forms portal to create and review customer paperwork.",
