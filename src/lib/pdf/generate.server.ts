@@ -58,6 +58,7 @@ function clean(text: string): string {
     .replace(/\u00A0/g, " ")
     .replace(/\u2026/g, "...")
     .replace(/\u00D7/g, "x")
+    .replace(/\u2022/g, "\u00B7")
     // eslint-disable-next-line no-control-regex
     .replace(/[^\u0000-\u00FF]/g, "?");
 }

@@ -20,7 +20,7 @@ export function AppHeader({
     <header className="bg-brand text-brand-foreground">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
         <Link to="/dashboard" className="flex items-center gap-3">
-          <img src={logo} alt="EKOS Group" className="h-10 w-auto brightness-0 invert" />
+          <img src={logo} alt="EKOS Group" className="h-10 w-auto" />
         </Link>
         <nav className="flex flex-1 flex-wrap items-center gap-4 text-sm">
           <Link to="/dashboard" className="opacity-90 hover:opacity-100">

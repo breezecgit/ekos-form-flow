@@ -42,7 +42,7 @@ function SignPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-brand py-8 text-center">
-        <img src={logo} alt="EKOS Group" className="mx-auto h-14 w-auto brightness-0 invert" />
+        <img src={logo} alt="EKOS Group" className="mx-auto h-14 w-auto" />
       </div>
       <main className="px-4 py-8">
         {ctx.isLoading && <p className="text-center text-muted-foreground">Loading…</p>}
