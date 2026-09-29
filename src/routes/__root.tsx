@@ -79,13 +79,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "EKOS Customer Sales Form" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
+      { name: "description", content: "EKOS Group customer sales forms, signing and approvals." },
+      { name: "author", content: "EKOS Group" },
       { property: "og:title", content: "EKOS Customer Sales Form" },
       { property: "og:description", content: "EKOS Group customer sales forms, signing and approvals." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {

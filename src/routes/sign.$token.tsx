@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import logo from "@/assets/ekos-logo.png";
+import { AppHeader } from "@/components/AppHeader";
 import { FormRunner } from "@/components/form-engine/FormRunner";
 import { getForm } from "@/lib/forms/registry";
 import { getSigningContext, submitCustomerSignature } from "@/lib/signing.functions";
@@ -42,10 +42,8 @@ function SignPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-brand py-8 text-center">
-        <img src={logo} alt="EKOS Group" className="mx-auto h-14 w-auto" />
-      </div>
-      <main className="px-4 py-8">
+      <AppHeader publicPage />
+      <main className="px-4 pb-8 pt-14">
         {ctx.isLoading && <p className="text-center text-muted-foreground">Loading…</p>}
         {(ctx.isError || (ctx.data && "error" in ctx.data)) && !done && (
           <div className="mx-auto max-w-lg rounded-xl border bg-card p-6 text-center">
