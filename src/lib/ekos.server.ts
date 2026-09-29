@@ -45,8 +45,13 @@ export async function getPark(name: string) {
   return data;
 }
 
-export function parkLinksFrom(park: Awaited<ReturnType<typeof getPark>>) {
+export function parkLinksFrom(
+  park: Awaited<ReturnType<typeof getPark>>,
+  settings: Record<string, Record<string, unknown>> = {},
+) {
   return {
+    welcome_pack_url:
+      String(settings["links"]?.["welcome_pack_url"] ?? "") || "https://ekosgroup.co.uk/ekos-welcome-pack",
     brochure_url: park?.brochure_url ?? "",
     site_licence_url: park?.site_licence_url ?? "",
     park_rules_url: park?.park_rules_url ?? "",
@@ -130,7 +135,7 @@ export async function buildAndStorePdf(
     orderNumber: submission.order_number,
     park: parkName,
     customerName,
-    parkLinks: parkLinksFrom(park),
+    parkLinks: parkLinksFrom(park, settings),
     attachments,
     ...(directorSignature ? { directorSignature } : {}),
   });

@@ -66,6 +66,9 @@ function SignPage() {
         {ctx.data && !done && (
           <FormRunner
             def={getForm(ctx.data.formType)}
+            {...(ctx.data.kind === "customer" && getForm(ctx.data.formType).signingTitle
+              ? { title: getForm(ctx.data.formType).signingTitle }
+              : {})}
             ctx={{
               mode: ctx.data.kind === "construction" ? "construction" : "offsite",
               isDirector: false,

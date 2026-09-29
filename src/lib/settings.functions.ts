@@ -59,6 +59,7 @@ export const saveSettings = createServerFn({ method: "POST" })
           construction_email: z.string(),
         }),
         driveFolderId: z.string(),
+        welcomePackUrl: z.string().optional(),
         directorSignatureDataUrl: z.string().optional(),
       })
       .parse(d),
@@ -96,6 +97,13 @@ export const saveSettings = createServerFn({ method: "POST" })
     await db
       .from("app_settings")
       .upsert({ key: "notifications", value: data.notifications as never, updated_at: new Date().toISOString() });
+    if (data.welcomePackUrl !== undefined) {
+      await db.from("app_settings").upsert({
+        key: "links",
+        value: { welcome_pack_url: data.welcomePackUrl } as never,
+        updated_at: new Date().toISOString(),
+      });
+    }
     await db.from("app_settings").upsert({
       key: "google_drive",
       value: { folder_id: data.driveFolderId } as never,

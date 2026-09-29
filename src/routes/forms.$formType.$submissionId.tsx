@@ -87,6 +87,7 @@ function FormPage() {
     brochure_url: park?.brochure_url ?? "",
     site_licence_url: park?.site_licence_url ?? "",
     park_rules_url: park?.park_rules_url ?? "",
+    welcome_pack_url: sub.data.welcomePackUrl,
   };
 
   const locked = !submission.is_draft && submission.status !== "Disapproved";
