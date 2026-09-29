@@ -18,7 +18,7 @@ const req = (v: FormValues, key: string) => v[key] === "Required";
 
 const copyMoney = (key: string) => (v: FormValues) => {
   const n = parseMoney(v[key]);
-  return n === null ? "" : String(n);
+  return n === null ? "" : n.toLocaleString("en-GB", { maximumFractionDigits: 2 });
 };
 
 const COST_KEYS = [
@@ -30,6 +30,20 @@ const COST_KEYS = [
   "cost_decking_base",
   "cost_other",
 ];
+
+/** Step 4 Total Cost = sum of every cost box above it. */
+export function computeCostTotal(v: FormValues): string {
+  let total = 0;
+  let any = false;
+  for (const k of COST_KEYS) {
+    const n = parseMoney(v[k]);
+    if (n !== null) {
+      total += n;
+      any = true;
+    }
+  }
+  return any ? total.toLocaleString("en-GB", { maximumFractionDigits: 2 }) : "";
+}
 
 /** Construction sign-off fields: only on the construction page and once signed. */
 const constructionVisible = (v: FormValues, ctx: RenderContext) =>
@@ -270,19 +284,19 @@ export const newHomeOrderForm: FormDef = {
           key: "cost_steps",
           label: "Upgrading Steps",
           type: "money",
-          compute: (v) => String(500 * [req(v, "up_over_front"), req(v, "up_over_back")].filter(Boolean).length),
+          compute: (v) => (500 * [req(v, "up_over_front"), req(v, "up_over_back")].filter(Boolean).length).toLocaleString("en-GB"),
         },
         {
           key: "cost_shed",
           label: "Shed base and Electrics",
           type: "money",
-          compute: (v) => String((req(v, "shed_basic") ? 850 : 0) + (req(v, "shed_connected") ? 1250 : 0)),
+          compute: (v) => ((req(v, "shed_basic") ? 850 : 0) + (req(v, "shed_connected") ? 1250 : 0)).toLocaleString("en-GB"),
         },
         {
           key: "cost_decking_base",
           label: "Decking Base Extension",
           type: "money",
-          compute: (v) => String(req(v, "decking_base_extension") ? 2000 : 0),
+          compute: (v) => (req(v, "decking_base_extension") ? 2000 : 0).toLocaleString("en-GB"),
         },
         { key: "cost_other", label: "Other Costs", type: "money" },
         {
@@ -290,18 +304,7 @@ export const newHomeOrderForm: FormDef = {
           label: "Total Cost",
           type: "money",
           help: "Auto-calculated from the costs above. You can overwrite it.",
-          compute: (v) => {
-            let total = 0;
-            let any = false;
-            for (const k of COST_KEYS) {
-              const n = parseMoney(v[k]);
-              if (n !== null) {
-                total += n;
-                any = true;
-              }
-            }
-            return any ? String(total) : "";
-          },
+          compute: computeCostTotal,
         },
         { key: "cost_deposit", label: "Deposit Amount", type: "money", compute: copyMoney("deposit_amount") },
         {
