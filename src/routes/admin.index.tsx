@@ -7,6 +7,7 @@ import { StatusChip, chipStatus } from "@/components/StatusChip";
 import { listSales } from "@/lib/ekos.functions";
 import { FORM_ORDER, FORM_TITLES } from "@/lib/forms/registry";
 import { formatDate } from "@/lib/format";
+import { WordDownloadLink } from "@/components/WordDownload";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -105,6 +106,7 @@ function Tracker() {
             "In Review (Offsite)",
             "Awaiting customer signature",
             "Awaiting construction sign-off",
+            "Awaiting Director & Witness signatures",
             "Disapproved",
             "Completed",
           ].map((s) => (
@@ -134,6 +136,9 @@ function Tracker() {
                     <div className="mt-2">
                       <StatusChip status={chipStatus(sub)} />
                     </div>
+                    {sub && formType === "written_statement" && (
+                      <WordDownloadLink submissionId={sub.id} />
+                    )}
                     {sub && (
                       <Link
                         to="/admin/submissions/$id"

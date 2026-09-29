@@ -13,6 +13,11 @@ export function needsConstruction(formType: string): boolean {
   return formType === "new_home_order";
 }
 
+/** Written Statement: after the customer signs, Sadie + witness sign on a secure page. */
+export function needsDirectorWitness(formType: string): boolean {
+  return formType === "written_statement";
+}
+
 export const BUCKET = "ekos-documents";
 
 export function appOrigin(): string {
@@ -128,10 +133,12 @@ export async function buildAndStorePdf(
     };
   }
 
+  const { templatesForSubmission } = await import("@/lib/statement.server");
+  const tpl = await templatesForSubmission(submission.form_type, values);
   const bytes = await generateFormPdf({
     def,
     values,
-    ctx: { mode: "rep", isDirector: true },
+    ctx: { mode: "rep", isDirector: true, ...(tpl ? { templates: tpl.sections } : {}) },
     orderNumber: submission.order_number,
     park: parkName,
     customerName,
@@ -187,7 +194,7 @@ export function newToken(): string {
 
 export async function getOrCreateSigningToken(
   submissionId: string,
-  kind: "customer_offsite" | "construction" = "customer_offsite",
+  kind: "customer_offsite" | "construction" | "director" = "customer_offsite",
 ): Promise<string> {
   const { data } = await supabaseAdmin
     .from("signing_tokens")
@@ -277,6 +284,40 @@ export async function sendOffsiteCustomerEmail(submissionId: string) {
     html,
     attachments,
     template: "offsite_signature_request",
+    submissionId,
+  });
+}
+
+/** Written Statement: secure Director & Witness signing link – to Sadie only. */
+export async function sendDirectorWitnessEmail(submissionId: string) {
+  const { submission } = await loadSubmission(submissionId);
+  const def = getForm(submission.form_type);
+  const values = (submission.data ?? {}) as FormValues;
+  const settings = await getSettingsMap();
+  const director = String(settings["notifications"]?.["director_email"] ?? "") || "sadie@ekosgroup.co.uk";
+  const token = await getOrCreateSigningToken(submissionId, "director");
+  const origin = appOrigin();
+  const pdfLink = submission.pdf_path ? await signedPdfUrl(submission.pdf_path) : "";
+
+  const html = emailShell({
+    logoUrl: logoUrl(),
+    heading: "Director &amp; Witness Signatures Required",
+    bodyHtml: `
+      <p style="font-size:15px;line-height:1.6;">The customer has signed <strong>${def.title}</strong>. Please sign it with your witness present, using the secure link below.</p>
+      <table style="font-size:14px;line-height:1.8;">
+        <tr><td><strong>Order Number</strong></td><td style="padding-left:12px;">${submission.order_number}</td></tr>
+        <tr><td><strong>Customer</strong></td><td style="padding-left:12px;">${values["customer_name"] ?? ""}</td></tr>
+        <tr><td><strong>Park</strong></td><td style="padding-left:12px;">${values["park_name"] ?? ""}</td></tr>
+      </table>
+      ${button("Sign as Director with Witness", `${origin}/sign/${token}`)}
+      ${pdfLink ? `<p style="font-size:14px;"><a href="${pdfLink}">View the full statement (PDF)</a></p>` : ""}`,
+  });
+
+  await sendEmail({
+    to: [director],
+    subject: `Director & Witness Signatures Required – ${def.title} – ${submission.order_number}`,
+    html,
+    template: "director_witness_request",
     submissionId,
   });
 }
@@ -427,9 +468,9 @@ export async function sendResumeLinkEmail(submissionId: string, repEmail: string
 }
 
 /** Completion: merge Sadie's signature, email everyone, copy to Google Drive. */
-export async function runCompletion(submissionId: string) {
+export async function runCompletion(submissionId: string, opts: { storedSignature?: boolean } = {}) {
   const { bytes, fileName } = await buildAndStorePdf(submissionId, {
-    includeDirectorSignature: true,
+    includeDirectorSignature: opts.storedSignature !== false,
   });
   await sendCompletionEmails(submissionId, bytes, fileName);
 

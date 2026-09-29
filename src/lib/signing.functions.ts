@@ -49,34 +49,33 @@ export const getSigningContext = createServerFn({ method: "GET" })
     const { signedPdfUrl } = await import("@/lib/ekos.server");
     const values = (submission.data ?? {}) as Record<string, unknown>;
     return {
-      kind: row.kind === "construction" ? ("construction" as const) : ("customer" as const),
+      kind: kindOf(row.kind),
       formType: submission.form_type,
       orderNumber: submission.order_number,
       customerName: String(values["customer_name"] ?? ""),
       customerEmail: String(values["customer_email"] ?? ""),
       parkName: String(values["park_name"] ?? ""),
       secondCustomer: String(values["second_customer"] ?? ""),
+      customerSigned: Boolean(submission.customer_signed_at),
       pdfUrl: submission.pdf_path ? await signedPdfUrl(submission.pdf_path) : "",
     };
   });
 
-const CUSTOMER_KEYS = [
-  "customer_one_name",
-  "customer_one_signature",
-  "customer_one_date",
-  "second_customer",
-  "customer_two_name",
-  "customer_two_signature",
-  "customer_two_date",
-  "accept_terms",
-  "accept_extras",
-];
-const CONSTRUCTION_KEYS = ["construction_name", "construction_signature", "construction_date"];
+type Kind = "customer" | "construction" | "director";
+const GROUP = {
+  customer: "customerSignature",
+  construction: "constructionSignature",
+  director: "directorSignature",
+} as const;
+const MODE = { customer: "offsite", construction: "construction", director: "director" } as const;
 
-function pick(values: Record<string, unknown>, keys: string[]) {
-  const out: Record<string, unknown> = {};
-  for (const k of keys) if (values[k] !== undefined) out[k] = values[k];
-  return out;
+function kindOf(raw: string): Kind {
+  return raw === "construction" ? "construction" : raw === "director" ? "director" : "customer";
+}
+
+function isEmpty(type: string, v: unknown) {
+  if (type === "checkbox") return v !== true;
+  return v === undefined || v === null || String(v).trim() === "";
 }
 
 export const submitCustomerSignature = createServerFn({ method: "POST" })
@@ -94,19 +93,34 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
       throw e;
     }
     const { row, submission } = loaded;
+    const kind = kindOf(row.kind);
     const db = await admin();
     const s = await import("@/lib/ekos.server");
+    const { getForm } = await import("@/lib/forms/registry");
+    const { allFields, isRequired, isVisible } = await import("@/lib/forms/types");
+    const def = getForm(submission.form_type);
     const now = new Date().toISOString();
     const existing = (submission.data ?? {}) as Record<string, unknown>;
 
-    if (row.kind === "construction") {
-      const v = pick(data.values, CONSTRUCTION_KEYS);
-      if (!v["construction_name"] || !v["construction_signature"] || !v["construction_date"]) {
-        throw new Error("Name, signature and date are all required.");
-      }
+    // Only this page's own fields may be written, and every visible one is mandatory.
+    const fields = allFields(def).filter((f) => f.group === GROUP[kind]);
+    const v: Record<string, unknown> = {};
+    for (const f of fields) if (data.values[f.key] !== undefined) v[f.key] = data.values[f.key];
+    const merged = { ...existing, ...v };
+    const ctx = { mode: MODE[kind], isDirector: false };
+    const missing = fields.filter(
+      (f) => isRequired(f) && isVisible(f, merged, ctx) && isEmpty(f.type, merged[f.key]),
+    );
+    if (missing.length) {
+      throw new Error(
+        `Please complete every box before submitting (missing: ${missing.map((f) => f.label ?? f.key).join(", ")}).`,
+      );
+    }
+
+    if (kind === "construction") {
       await db
         .from("form_submissions")
-        .update({ data: { ...existing, ...v } as never, construction_signed_at: now, updated_at: now })
+        .update({ data: merged as never, construction_signed_at: now, updated_at: now })
         .eq("id", submission.id);
       await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
       await s.buildAndStorePdf(submission.id);
@@ -119,22 +133,40 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
       return { ok: true };
     }
 
-    const v = pick(data.values, CUSTOMER_KEYS);
-    if (!v["customer_one_signature"] || v["accept_terms"] !== true || v["accept_extras"] !== true) {
-      throw new Error("Please sign and tick both boxes before submitting.");
+    if (kind === "director") {
+      if (!submission.customer_signed_at) {
+        throw new Error("The customer must sign before the Director and witness.");
+      }
+      await db
+        .from("form_submissions")
+        .update({ data: merged as never, status: "Completed", is_draft: false, updated_at: now })
+        .eq("id", submission.id);
+      await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
+      await s.addAudit({
+        submissionId: submission.id,
+        actorLabel: `${String(v["director_name"])} (Director) with witness ${String(v["witness_name"])}`,
+        action: "Director and witness signed – Completed",
+        fromStatus: submission.status,
+        toStatus: "Completed",
+      });
+      await s.runCompletion(submission.id, { storedSignature: false });
+      return { ok: true };
     }
+
     await db
       .from("form_submissions")
-      .update({ data: { ...existing, ...v } as never, customer_signed_at: now, updated_at: now })
+      .update({ data: merged as never, customer_signed_at: now, updated_at: now })
       .eq("id", submission.id);
     await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
     await s.buildAndStorePdf(submission.id);
     await s.addAudit({
       submissionId: submission.id,
-      actorLabel: String(v["customer_one_name"] ?? "Customer"),
+      actorLabel: String(v["customer_one_name"] ?? v["occupier_one_name"] ?? "Customer"),
       action: "Customer signed off site",
     });
-    if (s.needsConstruction(submission.form_type) && !submission.construction_signed_at) {
+    if (s.needsDirectorWitness(submission.form_type)) {
+      await s.sendDirectorWitnessEmail(submission.id);
+    } else if (s.needsConstruction(submission.form_type) && !submission.construction_signed_at) {
       await s.sendConstructionEmail(submission.id);
     } else {
       await s.sendReviewRequiredEmail(submission.id);

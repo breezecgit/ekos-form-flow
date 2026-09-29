@@ -10,6 +10,7 @@ import { EKOS_LOGO_PNG_BASE64 } from "./logo-base64";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { ContentBlock, FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
 import { isVisible } from "@/lib/forms/types";
+import { STATEMENT_V1, classifyStatementLine } from "@/lib/forms/written-statement-text";
 
 const BRAND = rgb(0.027, 0.212, 0.18); // #07362E
 const GOLD = rgb(0.757, 0.561, 0.298); // #C18F4C
@@ -49,18 +50,45 @@ export interface GeneratePdfInput {
   directorSignature?: DirectorSignature;
 }
 
+async function drawAttachments(w: Writer, attachments: PdfAttachment[]) {
+  for (const att of attachments) {
+    if (att.mimeType === "application/pdf") {
+      try {
+        const src = await PDFDocument.load(att.bytes);
+        const pages = await w.doc.copyPages(src, src.getPageIndices());
+        w.newPage();
+        w.text(`Attached document: ${att.label ?? att.fileName}`, { size: 12, font: w.bold, color: BRAND });
+        for (const p of pages) w.doc.addPage(p);
+      } catch {
+        w.text(`Attached document (could not be embedded): ${att.fileName}`, { color: MUTED });
+      }
+    } else {
+      try {
+        const img = /png/i.test(att.mimeType) ? await w.doc.embedPng(att.bytes) : await w.doc.embedJpg(att.bytes);
+        w.newPage();
+        w.text(`Attached document: ${att.label ?? att.fileName}`, { size: 12, font: w.bold, color: BRAND, gap: 8 });
+        const scale = Math.min(CONTENT_W / img.width, (w.y - MARGIN) / img.height, 1);
+        const iw = img.width * scale;
+        const ih = img.height * scale;
+        w.page.drawImage(img, { x: MARGIN, y: w.y - ih, width: iw, height: ih });
+        w.y -= ih + 12;
+      } catch {
+        w.text(`Attached file: ${att.fileName}`, { color: MUTED });
+      }
+    }
+  }
+}
+
 /** Cleans characters the standard WinAnsi fonts cannot encode. */
 function clean(text: string): string {
+  // Curly quotes and dashes are kept: they exist in the PDF's standard font encoding,
+  // so legal wording prints exactly as written.
   return (text ?? "")
-    .replace(/\u2013|\u2014/g, "-")
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/[\u201C\u201D]/g, '"')
     .replace(/\u00A0/g, " ")
-    .replace(/\u2026/g, "...")
     .replace(/\u00D7/g, "x")
     .replace(/\u2022/g, "\u00B7")
     // eslint-disable-next-line no-control-regex
-    .replace(/[^\u0000-\u00FF]/g, "?");
+    .replace(/[^\u0000-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2026]/g, "?");
 }
 
 class Writer {
@@ -205,7 +233,7 @@ class Writer {
   }
 }
 
-function fieldValueText(f: FieldDef, values: FormValues): string {
+function fieldValueText(f: FieldDef, values: FormValues, attachedBelow = false): string {
   const v = values[f.key];
   if (v === undefined || v === null || v === "") return "-";
   if (f.type === "money") return formatMoney(v);
@@ -215,7 +243,7 @@ function fieldValueText(f: FieldDef, values: FormValues): string {
   if (f.type === "file") {
     const list = Array.isArray(v) ? (v as { name: string }[]) : [];
     return list.length
-      ? `${list.map((x) => x.name).join(", ")} (attached at the end of this document)`
+      ? `${list.map((x) => x.name).join(", ")} (${attachedBelow ? "attached below" : "attached at the end of this document"})`
       : "-";
   }
   return String(v);
@@ -301,95 +329,104 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   w.text(`Customer: ${customerName || "-"}`, { size: 10.5, align: "center", gap: 10 });
   w.rule();
 
-  // --- Steps --------------------------------------------------------------
-  for (const step of def.steps) {
-    const fields = step.fields.filter((f) => isVisible(f, values, ctx));
-    if (!fields.length) continue;
-    if (step.heading) {
-      w.ensure(40);
-      w.y -= 6;
-      w.text(step.heading, { size: 15, font: w.bold, color: BRAND, gap: 8 });
-    }
-    for (const f of fields) {
-      if (f.sectionLabel) {
-        w.y -= 4;
-        w.text(f.sectionLabel, { size: 12.5, font: w.bold, color: BRAND, gap: 4 });
-      }
-      if (f.type === "static") {
-        contentBlocks(w, f.content ?? []);
-        continue;
-      }
-      if (f.type === "links") {
-        for (const l of f.links ?? []) {
-          const url = l.parkKey ? parkLinks[l.parkKey] : l.url;
-          if (url) w.link(l.label, url);
-          else w.text(`${l.label} (link to follow)`, { font: w.bold, indent: 12, gap: 4 });
-        }
-        w.y -= 4;
-        continue;
-      }
-      if (f.type === "signature") {
-        const dataUrl = String(values[f.key] ?? "");
-        const meta = signatureMeta(f.key, values);
-        if (dataUrl) {
-          await drawSignature(w, f.label ?? "Signature", dataUrl, meta.name, meta.date);
-        } else {
-          w.text(`${f.label}: not signed`, { font: w.bold, color: MUTED, gap: 6 });
-        }
-        continue;
-      }
-      if (f.type === "checkbox") {
-        const ticked = values[f.key] === true;
-        if (f.help) w.text(f.help, { size: 10, font: w.bold, color: BRAND, gap: 2 });
-        w.text(`${ticked ? "[X]" : "[ ]"}  ${f.label ?? ""}`, { size: 10, gap: 6 });
-        continue;
-      }
-      w.ensure(28);
-      w.text(`${f.pdfLabel ?? f.label ?? f.key}`, { size: 10, font: w.bold, color: BRAND });
-      if (f.help) w.text(f.help, { size: 8.5, color: MUTED });
-      w.text(fieldValueText(f, values), { size: 11, gap: 8 });
-    }
-    w.rule();
-  }
+  const templates = ctx.templates ?? STATEMENT_V1;
+  const grouped = def.pdfLayout === "grouped";
 
-  // --- Attachments --------------------------------------------------------
-  for (const att of input.attachments ?? []) {
-    if (att.mimeType === "application/pdf") {
-      try {
-        const src = await PDFDocument.load(att.bytes);
-        const pages = await w.doc.copyPages(src, src.getPageIndices());
-        w.newPage();
-        w.text(`Attached document: ${att.label ?? att.fileName}`, {
-          size: 12,
-          font: w.bold,
-          color: BRAND,
-        });
-        for (const p of pages) w.doc.addPage(p);
-      } catch {
-        w.text(`Attached document (could not be embedded): ${att.fileName}`, { color: MUTED });
+  const renderField = async (f: FieldDef) => {
+    if (f.sectionLabel) {
+      w.y -= 4;
+      w.text(f.sectionLabel, { size: 12.5, font: w.bold, color: BRAND, gap: 4 });
+    }
+    if (f.type === "static") {
+      if (f.templateKey) {
+        for (const line of (templates[f.templateKey] ?? "").split("\n")) {
+          const style = classifyStatementLine(line);
+          if (style === "title") {
+            w.y -= 4;
+            w.text(line, { size: 12.5, font: w.bold, color: BRAND, align: "center", gap: 2 });
+          } else if (style === "heading") {
+            w.y -= 3;
+            w.text(line, { size: 10.5, font: w.bold, color: BRAND, gap: 2 });
+          } else {
+            w.text(line, { size: 9.5, gap: 2 });
+          }
+        }
+        w.y -= 4;
+      } else {
+        contentBlocks(w, f.content ?? []);
       }
-    } else {
-      try {
-        const img = /png/i.test(att.mimeType)
-          ? await w.doc.embedPng(att.bytes)
-          : await w.doc.embedJpg(att.bytes);
-        w.newPage();
-        w.text(`Attached document: ${att.label ?? att.fileName}`, {
-          size: 12,
-          font: w.bold,
-          color: BRAND,
-          gap: 8,
-        });
-        const maxW = CONTENT_W;
-        const maxH = w.y - MARGIN;
-        const scale = Math.min(maxW / img.width, maxH / img.height, 1);
-        const iw = img.width * scale;
-        const ih = img.height * scale;
-        w.page.drawImage(img, { x: MARGIN, y: w.y - ih, width: iw, height: ih });
-        w.y -= ih + 12;
-      } catch {
-        w.text(`Attached file: ${att.fileName}`, { color: MUTED });
+      return;
+    }
+    if (f.type === "links") {
+      for (const l of f.links ?? []) {
+        const url = l.parkKey ? parkLinks[l.parkKey] : l.url;
+        if (url) w.link(l.label, url);
+        else w.text(`${l.label} (link to follow)`, { font: w.bold, indent: 12, gap: 4 });
       }
+      w.y -= 4;
+      return;
+    }
+    if (f.type === "signature") {
+      const dataUrl = String(values[f.key] ?? "");
+      const meta = signatureMeta(f.key, values);
+      if (dataUrl) {
+        await drawSignature(w, f.label ?? "Signature", dataUrl, meta.name, meta.date);
+      } else {
+        w.text(`${f.label}: not signed`, { font: w.bold, color: MUTED, gap: 6 });
+      }
+      return;
+    }
+    if (f.type === "checkbox") {
+      const ticked = values[f.key] === true;
+      if (f.help) w.text(f.help, { size: 10, font: w.bold, color: BRAND, gap: 2 });
+      w.text(`${ticked ? "[X]" : "[ ]"}  ${f.label ?? ""}`, { size: 10, gap: 6 });
+      return;
+    }
+    w.ensure(28);
+    w.text(`${f.pdfLabel ?? f.label ?? f.key}`, { size: 10, font: w.bold, color: BRAND });
+    if (f.help) w.text(f.help, { size: 8.5, color: MUTED });
+    w.text(fieldValueText(f, values, grouped), { size: 11, gap: 8 });
+  };
+
+  if (!grouped) {
+    for (const step of def.steps) {
+      const fields = step.fields.filter((f) => isVisible(f, values, ctx) && !f.pdfHide);
+      if (!fields.length) continue;
+      if (step.heading) {
+        w.ensure(40);
+        w.y -= 6;
+        w.text(step.heading, { size: 15, font: w.bold, color: BRAND, gap: 8 });
+      }
+      for (const f of fields) await renderField(f);
+      w.rule();
+    }
+    await drawAttachments(w, input.attachments ?? []);
+  } else {
+    const all = def.steps
+      .flatMap((s) => s.fields)
+      .filter((f) => isVisible(f, values, ctx) && !f.pdfHide);
+    // (a) the full statement wording
+    for (const f of all) if (f.type === "static" && !f.pdfSection) await renderField(f);
+    // (b) customer / home entries + attachments
+    w.newPage();
+    w.text("Customer and Home Details", { size: 15, font: w.bold, color: BRAND, gap: 8 });
+    for (const f of all) {
+      if (f.type === "static" || f.type === "signature" || f.pdfSection) continue;
+      await renderField(f);
+    }
+    await drawAttachments(w, input.attachments ?? []);
+    // (c) every signature
+    w.newPage();
+    w.text("Signatures", { size: 15, font: w.bold, color: BRAND, gap: 8 });
+    const consumed = new Set<string>();
+    for (const f of all) {
+      if (f.type !== "signature") continue;
+      const base = f.key.replace(/_signature$/, "");
+      for (const k of [`${base}_name`, `${base}_date`, `${base}_sign_date`]) consumed.add(k);
+    }
+    for (const f of all) {
+      if (!(f.pdfSection || f.type === "signature") || consumed.has(f.key)) continue;
+      await renderField(f);
     }
   }
 

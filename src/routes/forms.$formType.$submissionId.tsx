@@ -118,7 +118,12 @@ function FormPage() {
         ) : (
           <FormRunner
             def={def}
-            ctx={{ mode: "rep", isDirector: Boolean(me.data?.isDirector), submissionId }}
+            ctx={{
+              mode: "rep",
+              isDirector: Boolean(me.data?.isDirector),
+              submissionId,
+              ...(sub.data.statement ? { templates: sub.data.statement.sections } : {}),
+            }}
             initialValues={values}
             parkLinks={parkLinks}
             orderNumber={submission.order_number}
@@ -140,7 +145,9 @@ function FormPage() {
               toast.success(
                 res.status === "In Review (Offsite)"
                   ? "Submitted. The customer has been emailed their signing link."
-                  : formType === "new_home_order"
+                  : formType === "written_statement"
+                    ? "Submitted. Sadie has been emailed the Director & Witness signing link."
+                    : formType === "new_home_order"
                     ? "Submitted. The Construction team has been emailed to sign."
                     : "Submitted for review.",
               );

@@ -15,7 +15,7 @@ interface Props {
   parkLinks: Record<string, string>;
   orderNumber?: string;
   /** Restrict rendering to one signature group (customer / construction pages). */
-  onlyGroup?: "customerSignature" | "constructionSignature";
+  onlyGroup?: "customerSignature" | "constructionSignature" | "directorSignature";
   submitLabel?: string;
   title?: string;
   onSaveDraft?: (values: FormValues) => Promise<void>;
@@ -40,7 +40,10 @@ export function FormRunner({
     if (!onlyGroup) {
       // Construction sign-off is its own page, never part of the staff form.
       return def.steps.filter(
-        (s) => !s.fields.every((f) => f.group === "constructionSignature"),
+        (s) =>
+          !s.fields.every(
+            (f) => f.group === "constructionSignature" || f.group === "directorSignature",
+          ),
       );
     }
     return [

@@ -179,6 +179,10 @@ async function buildPrefill(
   for (const k of ["customer_name", "customer_email", "customer_phone", "sales_person"] as const) {
     if (!out[k] && sale[k]) out[k] = sale[k];
   }
+  if (formType === "written_statement") {
+    if (sale.park_name) out["park_name_confirm"] = sale.park_name;
+    if (!out["party_customer_name"] && out["customer_name"]) out["party_customer_name"] = out["customer_name"];
+  }
   return out;
 }
 
@@ -187,7 +191,10 @@ async function lockPark(submission: { form_type: string; sale_id: string }, valu
   if (submission.form_type === "reservation") return values;
   const db = await admin();
   const { data: sale } = await db.from("sales").select("park_name").eq("id", submission.sale_id).maybeSingle();
-  return sale?.park_name ? { ...values, park_name: sale.park_name } : values;
+  if (!sale?.park_name) return values;
+  const out: Record<string, unknown> = { ...values, park_name: sale.park_name };
+  if (submission.form_type === "written_statement") out["park_name_confirm"] = sale.park_name;
+  return out;
 }
 
 export const uploadFile = createServerFn({ method: "POST" })
@@ -255,7 +262,15 @@ export const getSubmission = createServerFn({ method: "GET" })
       .is("used_at", null);
     const token = (tokens ?? []).find((t) => t.kind === "customer_offsite");
     const cToken = (tokens ?? []).find((t) => t.kind === "construction");
+    const dToken = (tokens ?? []).find((t) => t.kind === "director");
+    const { templatesForSubmission } = await import("@/lib/statement.server");
+    const statement = await templatesForSubmission(
+      submission.form_type,
+      (submission.data ?? {}) as Record<string, unknown>,
+    );
     return {
+      statement: statement ?? null,
+      directorLink: dToken?.token ? `${s.appOrigin()}/sign/${dToken.token}` : "",
       submission,
       sale,
       parks: parks ?? [],
@@ -340,8 +355,18 @@ export const submitForm = createServerFn({ method: "POST" })
     if (requested === "Completed" && !director) {
       throw new Error("Only the Director can mark a form as Completed.");
     }
+    const s0 = await server();
+    const isWS = s0.needsDirectorWitness(submission.form_type);
+    if (isWS && requested === "Completed") {
+      throw new Error("The Written Statement is completed when the Director and witness sign.");
+    }
     const status = requested;
     data.values = await lockPark(submission, data.values);
+    if (isWS) {
+      const { getStatementTemplate } = await import("@/lib/statement.server");
+      data.values["statement_version"] = (await getStatementTemplate()).version;
+    }
+    const signedOnSite = isWS && status === "In Review";
     await db
       .from("form_submissions")
       .update({
@@ -349,6 +374,7 @@ export const submitForm = createServerFn({ method: "POST" })
         status,
         is_draft: false,
         disapproval_note: null,
+        ...(signedOnSite ? { customer_signed_at: new Date().toISOString() } : {}),
         submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -368,6 +394,8 @@ export const submitForm = createServerFn({ method: "POST" })
 
     if (status === "In Review (Offsite)") {
       await s.sendOffsiteCustomerEmail(data.submissionId);
+    } else if (isWS) {
+      await s.sendDirectorWitnessEmail(data.submissionId);
     } else if (s.needsConstruction(submission.form_type) && !submission.construction_signed_at) {
       await s.sendConstructionEmail(data.submissionId);
     } else {
@@ -397,6 +425,11 @@ export const setStatus = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!submission) throw new Error("Submission not found");
     const s = await server();
+    if (data.status === "Completed" && s.needsDirectorWitness(submission.form_type)) {
+      throw new Error(
+        "The Written Statement is completed automatically when you and your witness sign on the Director & Witness signing page.",
+      );
+    }
 
     await db
       .from("form_submissions")
@@ -434,7 +467,7 @@ export const resendEmails = createServerFn({ method: "POST" })
     z
       .object({
         submissionId: z.string().uuid(),
-        kind: z.enum(["review", "offsite", "completion", "construction"]),
+        kind: z.enum(["review", "offsite", "completion", "construction", "director"]),
       })
       .parse(d),
   )
@@ -444,9 +477,11 @@ export const resendEmails = createServerFn({ method: "POST" })
     if (data.kind === "review") await s.sendReviewRequiredEmail(data.submissionId);
     if (data.kind === "offsite") await s.sendOffsiteCustomerEmail(data.submissionId);
     if (data.kind === "construction") await s.sendConstructionEmail(data.submissionId);
+    if (data.kind === "director") await s.sendDirectorWitnessEmail(data.submissionId);
     if (data.kind === "completion") {
+      const sub = await assertAccess(data.submissionId, context.userId);
       const built = await s.buildAndStorePdf(data.submissionId, {
-        includeDirectorSignature: true,
+        includeDirectorSignature: !s.needsDirectorWitness(sub.form_type),
       });
       await s.sendCompletionEmails(data.submissionId, built.bytes, built.fileName);
     }
