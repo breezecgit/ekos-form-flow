@@ -65,7 +65,7 @@ export const saveSettings = createServerFn({ method: "POST" })
         appBaseUrl: z.string().url().optional().or(z.literal("")),
         directorSignatureDataUrl: z.string().optional(),
         emailTestMode: z
-          .object({ enabled: z.boolean(), recipient: z.string().email() })
+          .object({ enabled: z.boolean(), recipient: z.string().refine((v) => v.split(/[,;\s]+/).filter(Boolean).every((x) => z.string().email().safeParse(x).success) && /@/.test(v), "Enter one or more valid email addresses, separated by commas") })
           .optional(),
       })
       .parse(d),
@@ -159,7 +159,7 @@ export const saveSettings = createServerFn({ method: "POST" })
         key: "email_test_mode",
         value: {
           enabled: data.emailTestMode.enabled ? "true" : "false",
-          recipient: data.emailTestMode.recipient.trim(),
+          recipient: data.emailTestMode.recipient.split(/[,;\s]+/).filter(Boolean).join(", "),
         } as never,
         updated_at: new Date().toISOString(),
       });

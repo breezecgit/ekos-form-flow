@@ -49,7 +49,7 @@ function EmailLog() {
         </Button>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        The test uses a sample sale (“Sample Customer (email test)”). While email test mode is on, every email goes only to the test recipient.
+        The test uses a sample sale (“Sample Customer (email test)”). While email test mode is on, every email goes only to the test recipients.
       </p>
       <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
         <table className="w-full text-sm">

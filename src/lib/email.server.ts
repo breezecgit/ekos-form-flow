@@ -51,10 +51,13 @@ function clean(list: string[] | undefined): string[] {
  * Sends through Resend (connector gateway). Never throws: delivery problems are
  * recorded in the email log (with recipients, CC and body) so it is always testable.
  */
-export const DEFAULT_TEST_RECIPIENT = "emma.frew@breezeconnection.co.uk";
+export const DEFAULT_TEST_RECIPIENT = "emma.frew@breezeconnection.co.uk, eilidh@breezeconnection.co.uk";
+export function parseRecipients(raw: string): string[] {
+  return Array.from(new Set(raw.split(/[,;\s]+/).map((x) => x.trim()).filter((x) => x.includes("@"))));
+}
 
 /** Test mode is ON unless the setting explicitly says "false" (fail-safe). */
-export async function getEmailTestMode(): Promise<{ enabled: boolean; recipient: string }> {
+export async function getEmailTestMode(): Promise<{ enabled: boolean; recipient: string; recipients: string[] }> {
   const { data } = await supabaseAdmin
     .from("app_settings")
     .select("value")
@@ -62,9 +65,12 @@ export async function getEmailTestMode(): Promise<{ enabled: boolean; recipient:
     .maybeSingle();
   const v = (data?.value ?? {}) as Record<string, unknown>;
   const recipient = String(v["recipient"] ?? "").trim();
+  let recipients = parseRecipients(recipient);
+  if (!recipients.length) recipients = parseRecipients(DEFAULT_TEST_RECIPIENT);
   return {
     enabled: String(v["enabled"] ?? "true") !== "false",
-    recipient: recipient.includes("@") ? recipient : DEFAULT_TEST_RECIPIENT,
+    recipient: recipients.join(", "),
+    recipients,
   };
 }
 
@@ -75,7 +81,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
   const intendedCc = clean(input.cc).filter((c) => !toKeys.has(c.toLowerCase()));
 
   const testMode = await getEmailTestMode();
-  const to = testMode.enabled ? [testMode.recipient] : intendedTo;
+  const to = testMode.enabled ? testMode.recipients : intendedTo;
   const cc = testMode.enabled ? [] : intendedCc;
   const subject = testMode.enabled
     ? `[TEST → To: ${intendedTo.join(", ") || "(none)"}; CC: ${intendedCc.join(", ") || "(none)"}] ${input.subject}`
