@@ -8,6 +8,13 @@
       "when": 1790689670626,
       "tag": "0000_ekos_core_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790689704378,
+      "tag": "0001_ekos_storage_policies",
+      "breakpoints": true
     }
   ]
 }
