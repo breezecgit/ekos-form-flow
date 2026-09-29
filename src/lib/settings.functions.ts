@@ -62,6 +62,7 @@ export const saveSettings = createServerFn({ method: "POST" })
         driveFormFolders: z.record(z.string(), z.string()).optional(),
         sheets: z.object({ enabled: z.boolean(), spreadsheet_id: z.string() }).optional(),
         welcomePackUrl: z.string().optional(),
+        appBaseUrl: z.string().url().optional().or(z.literal("")),
         directorSignatureDataUrl: z.string().optional(),
         emailTestMode: z
           .object({ enabled: z.boolean(), recipient: z.string().email() })
@@ -105,10 +106,18 @@ export const saveSettings = createServerFn({ method: "POST" })
     await db
       .from("app_settings")
       .upsert({ key: "notifications", value: data.notifications as never, updated_at: new Date().toISOString() });
+    if (data.appBaseUrl) {
+      await db.from("app_settings").upsert({
+        key: "app_base_url",
+        value: { url: data.appBaseUrl.replace(/\/+$/, "") } as never,
+        updated_at: new Date().toISOString(),
+      });
+    }
     if (data.welcomePackUrl !== undefined) {
+      const { data: cur } = await db.from("app_settings").select("value").eq("key", "links").maybeSingle();
       await db.from("app_settings").upsert({
         key: "links",
-        value: { welcome_pack_url: data.welcomePackUrl } as never,
+        value: { ...((cur?.value ?? {}) as Record<string, unknown>), welcome_pack_url: data.welcomePackUrl } as never,
         updated_at: new Date().toISOString(),
       });
     }

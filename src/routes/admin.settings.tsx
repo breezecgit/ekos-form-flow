@@ -55,6 +55,7 @@ function SettingsPage() {
   const [constructionEmail, setConstructionEmail] = useState("");
   const [driveFolder, setDriveFolder] = useState("");
   const [welcomePack, setWelcomePack] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
   const [signature, setSignature] = useState("");
   const [formFolders, setFormFolders] = useState<Record<string, string>>({});
   const [sheetsOn, setSheetsOn] = useState(false);
@@ -89,6 +90,7 @@ function SettingsPage() {
     const tm = data.settings["email_test_mode"] ?? {};
     setTestOn(String(tm["enabled"] ?? "true") !== "false");
     setTestRecipient(String(tm["recipient"] ?? "") || "emma.frew@breezeconnection.co.uk");
+    setBaseUrl(String(data.settings["app_base_url"]?.["url"] ?? ""));
     setWelcomePack(
       String(data.settings["links"]?.["welcome_pack_url"] ?? "") ||
         "https://ekosgroup.co.uk/ekos-welcome-pack",
@@ -123,6 +125,7 @@ function SettingsPage() {
           driveFormFolders: formFolders,
           sheets: { enabled: sheetsOn, spreadsheet_id: sheetId },
           welcomePackUrl: welcomePack,
+          appBaseUrl: baseUrl.trim(),
           directorSignatureDataUrl: signature || undefined,
           emailTestMode: { enabled: testOn, recipient: testRecipient.trim() },
         },
@@ -191,6 +194,15 @@ function SettingsPage() {
         <div className="mt-3">
           <SignaturePad value={signature} onChange={setSignature} />
         </div>
+      </section>
+
+      <section className="mt-6 rounded-xl border bg-card p-6">
+        <h2 className="ekos-title text-lg">App base URL</h2>
+        <p className="text-sm text-muted-foreground">
+          Every link in every email (sign form, open PDF, tracker, login, resume) starts with this
+          address. Use the published web address – never the editor preview.
+        </p>
+        <Field label="App base URL" value={baseUrl} onChange={setBaseUrl} />
       </section>
 
       <section className="mt-6 rounded-xl border bg-card p-6">
