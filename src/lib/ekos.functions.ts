@@ -83,7 +83,7 @@ export const createSale = createServerFn({ method: "POST" })
     const db = await admin();
     const { data: sale, error } = await db
       .from("sales")
-      .insert({ created_by: context.userId })
+      .insert({ created_by: context.userId, order_number: "" })
       .select()
       .single();
     if (error || !sale) throw new Error(error?.message ?? "Could not create the sale");
@@ -224,12 +224,12 @@ export const saveDraft = createServerFn({ method: "POST" })
 async function syncSale(saleId: string, values: Record<string, unknown>) {
   const db = await admin();
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (values["park_name"]) patch.park_name = String(values["park_name"]);
-  if (values["customer_name"]) patch.customer_name = String(values["customer_name"]);
-  if (values["customer_email"]) patch.customer_email = String(values["customer_email"]);
-  if (values["customer_phone"]) patch.customer_phone = String(values["customer_phone"]);
-  if (values["sales_person"]) patch.sales_person = String(values["sales_person"]);
-  if (values["deposit_date"]) patch.deposit_date = String(values["deposit_date"]);
+  if (values["park_name"]) patch['park_name'] = String(values["park_name"]);
+  if (values["customer_name"]) patch['customer_name'] = String(values["customer_name"]);
+  if (values["customer_email"]) patch['customer_email'] = String(values["customer_email"]);
+  if (values["customer_phone"]) patch['customer_phone'] = String(values["customer_phone"]);
+  if (values["sales_person"]) patch['sales_person'] = String(values["sales_person"]);
+  if (values["deposit_date"]) patch['deposit_date'] = String(values["deposit_date"]);
   await db.from("sales").update(patch as never).eq("id", saleId);
 }
 

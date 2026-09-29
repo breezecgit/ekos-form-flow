@@ -66,7 +66,7 @@ function AuthPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-brand py-8 text-center">
-        <img src={logo} alt="EKOS Group" className="mx-auto h-14 w-auto brightness-0 invert" />
+        <img src={logo} alt="EKOS Group" className="mx-auto h-14 w-auto" />
       </div>
       <main className="mx-auto max-w-md px-4 py-10">
         <div className="rounded-xl border bg-card p-6 shadow-sm">

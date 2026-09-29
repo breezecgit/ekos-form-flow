@@ -20,8 +20,8 @@ interface Props {
   field: FieldDef;
   values: FormValues;
   ctx: RenderContext;
-  error?: string;
-  disabled?: boolean;
+  error?: string | undefined;
+  disabled?: boolean | undefined;
   parkLinks: Record<string, string>;
   onChange: (key: string, value: unknown) => void;
 }
@@ -114,7 +114,7 @@ export function FieldInput({
       control = (
         <Select
           value={String(value ?? "")}
-          disabled={disabled}
+          disabled={disabled ?? false}
           onValueChange={(v) => set(v)}
         >
           <SelectTrigger id={field.key}>
@@ -125,7 +125,7 @@ export function FieldInput({
               <SelectItem
                 key={o.value}
                 value={o.value}
-                disabled={o.directorOnly && !ctx.isDirector}
+                disabled={Boolean(o.directorOnly) && !ctx.isDirector}
               >
                 {o.label ?? o.value}
                 {o.directorOnly && !ctx.isDirector ? " (Director only)" : ""}
@@ -234,7 +234,7 @@ export function FieldInput({
       control = (
         <SignaturePad
           value={typeof value === "string" ? value : ""}
-          disabled={disabled}
+          disabled={disabled ?? false}
           onChange={(v) => set(v)}
         />
       );

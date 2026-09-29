@@ -93,7 +93,7 @@ export async function buildAndStorePdf(
     }
   }
 
-  let directorSignature;
+  let directorSignature: import("@/lib/pdf/generate.server").DirectorSignature | undefined;
   if (opts.includeDirectorSignature) {
     const ds = settings["director_signature"] ?? {};
     let imageBytes: Uint8Array | undefined;
@@ -106,7 +106,7 @@ export async function buildAndStorePdf(
       name: String(ds["name"] ?? "Sadie Deveraux"),
       title: String(ds["title"] ?? "Director – authorised signatory of EKOS Group"),
       date: todayISO(),
-      imageBytes,
+      ...(imageBytes ? { imageBytes } : {}),
     };
   }
 
@@ -119,7 +119,7 @@ export async function buildAndStorePdf(
     customerName,
     parkLinks: parkLinksFrom(park),
     attachments,
-    directorSignature,
+    ...(directorSignature ? { directorSignature } : {}),
   });
 
   const fileName = pdfFileName(def.title, parkName, customerName, submission.order_number);

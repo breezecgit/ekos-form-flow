@@ -34,15 +34,18 @@ export async function uploadPdfToDrive(
   body.set(tail, head.length + bytes.length);
 
   try {
-    const res = await fetch(`${GATEWAY}/upload/drive/v3/files?uploadType=multipart`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": driveKey,
-        "Content-Type": `multipart/related; boundary=${boundary}`,
+    const res = await fetch(
+      `${GATEWAY}/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": driveKey,
+          "Content-Type": `multipart/related; boundary=${boundary}`,
+        },
+        body,
       },
-      body,
-    });
+    );
     if (!res.ok) {
       console.error(`Google Drive upload failed [${res.status}]: ${await res.text()}`);
       return null;

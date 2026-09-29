@@ -28,7 +28,7 @@ function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-brand py-10 text-center">
-        <img src={logo} alt="EKOS Group" className="mx-auto h-16 w-auto brightness-0 invert" />
+        <img src={logo} alt="EKOS Group" className="mx-auto h-16 w-auto" />
       </div>
       <main className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="ekos-title text-3xl">Customer Sales Forms</h1>
