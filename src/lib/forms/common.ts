@@ -34,11 +34,10 @@ export const STANDARD_BLOCKS: ContentBlock[] = (() => {
   return guide.slice(i, i + 3);
 })();
 
-/** "On Move-In Day" sub-heading, 5 bullets and the "Until the completion date…" paragraph. */
-export const MOVE_IN_BLOCKS: ContentBlock[] = (() => {
-  const i = guide.findIndex((b) => b.kind === "subheading" && b.text === "On Move-In Day");
-  return guide.slice(i);
-})();
+/** "On Move-In Day" collapsible row: 5 bullets and the "Until the completion date…" paragraph. */
+export const MOVE_IN_BLOCKS: ContentBlock[] = guide.filter(
+  (b) => b.kind === "accordion" && b.title === "On Move-In Day",
+);
 
 /** The six Important Information links. */
 export function importantLinksField(): FieldDef {

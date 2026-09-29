@@ -218,56 +218,86 @@ export const reservationForm: FormDef = {
               ],
             },
             { kind: "subheading", text: "What Happens Next Guide" },
-            { kind: "subheading", text: "Identification Checks" },
             {
-              kind: "paragraph",
-              text: "Two forms of identification will be required within the next two weeks:",
-            },
-            {
-              kind: "bullets",
-              items: [
-                "One form of photographic identification: either a valid passport or a valid UK driving licence.",
-                "One form of proof of address: either a recent council tax statement, bank statement, or utility bill showing the Customer's current residential address.",
-              ],
-            },
-            { kind: "subheading", text: "Decking" },
-            {
-              kind: "paragraph",
-              text: "We will copy you into an email introducing you to UK Sun Decks if you're interested in a decking quotation. If you purchase decking, this will be added onto your final payment with us.",
-            },
-            { kind: "subheading", text: "Omar" },
-            {
-              kind: "paragraph",
-              text: "We will copy you into an email introducing you to Omar to start designing your new home. If relevant, we will include an initial floor plan. Omar will agree a date with you either in person or via a video call to go through the design of your new home, including a full specification and choice of upgrades. Once you're comfortable with the specification, Omar will email you an order form detailing the cost of any upgrades. Your home will then go into build, and we will agree a move-in date for your new home.",
-            },
-            { kind: "subheading", text: "Part Exchange or Managed Move" },
-            {
-              kind: "paragraph",
-              text: "We will ask either Spring or Quick Move to contact you to arrange valuations and discuss the sale of your home. Once valuations have taken place, options will be presented for you to choose.",
-            },
-            { kind: "subheading", text: "Before Build" },
-            {
-              kind: "paragraph",
-              text: "When your home is ready to go into build, we will invite you to meet with us to sign off your order with Omar and to sign your New Home Order form with EKOS",
-            },
-            {
-              kind: "paragraph",
-              text: "Proof of funds will be required if paying partly or fully in cash, or if you're selling your own home privately.",
-            },
-            { kind: "subheading", text: "On Move-In Day" },
-            {
-              kind: "bullets",
-              items: [
-                "You will sign your written statement.",
-                "You will receive your welcome pack and keys.",
-                "Provide insurance documentation for your new home to EKOS.",
-                "Provide next of kin details to EKOS in case of emergencies.",
-                "You will sign your Unit Sale Agreement.",
+              kind: "accordion",
+              title: "Identification Checks",
+              blocks: [
+                {
+                  kind: "paragraph",
+                  text: "Two forms of identification will be required within the next two weeks:",
+                },
+                {
+                  kind: "bullets",
+                  items: [
+                    "One form of photographic identification: either a valid passport or a valid UK driving licence.",
+                    "One form of proof of address: either a recent council tax statement, bank statement, or utility bill showing the Customer's current residential address.",
+                  ],
+                },
               ],
             },
             {
-              kind: "paragraph",
-              text: "Until the completion date, we're unable to grant access to the property due to health, safety, and insurance requirements. However, we can provide photos and take any measurements you may need.",
+              kind: "accordion",
+              title: "Decking",
+              blocks: [
+                {
+                  kind: "paragraph",
+                  text: "We will copy you into an email introducing you to UK Sun Decks if you're interested in a decking quotation. If you purchase decking, this will be added onto your final payment with us.",
+                },
+              ],
+            },
+            {
+              kind: "accordion",
+              title: "Omar",
+              blocks: [
+                {
+                  kind: "paragraph",
+                  text: "We will copy you into an email introducing you to Omar to start designing your new home. If relevant, we will include an initial floor plan. Omar will agree a date with you either in person or via a video call to go through the design of your new home, including a full specification and choice of upgrades. Once you're comfortable with the specification, Omar will email you an order form detailing the cost of any upgrades. Your home will then go into build, and we will agree a move-in date for your new home.",
+                },
+              ],
+            },
+            {
+              kind: "accordion",
+              title: "Part Exchange or Managed Move",
+              blocks: [
+                {
+                  kind: "paragraph",
+                  text: "We will ask either Spring or Quick Move to contact you to arrange valuations and discuss the sale of your home. Once valuations have taken place, options will be presented for you to choose.",
+                },
+              ],
+            },
+            {
+              kind: "accordion",
+              title: "Before Build",
+              blocks: [
+                {
+                  kind: "paragraph",
+                  text: "When your home is ready to go into build, we will invite you to meet with us to sign off your order with Omar and to sign your New Home Order form with EKOS",
+                },
+                {
+                  kind: "paragraph",
+                  text: "Proof of funds will be required if paying partly or fully in cash, or if you're selling your own home privately.",
+                },
+              ],
+            },
+            {
+              kind: "accordion",
+              title: "On Move-In Day",
+              blocks: [
+                {
+                  kind: "bullets",
+                  items: [
+                    "You will sign your written statement.",
+                    "You will receive your welcome pack and keys.",
+                    "Provide insurance documentation for your new home to EKOS.",
+                    "Provide next of kin details to EKOS in case of emergencies.",
+                    "You will sign your Unit Sale Agreement.",
+                  ],
+                },
+                {
+                  kind: "paragraph",
+                  text: "Until the completion date, we're unable to grant access to the property due to health, safety, and insurance requirements. However, we can provide photos and take any measurements you may need.",
+                },
+              ],
             },
           ],
         },

@@ -72,6 +72,19 @@ const constructionFields: FieldDef[] = [
   },
 ];
 
+const STEPS_OPTS: OptionDef[] = [
+  { value: "Brick", image: "brick_composite" },
+  { value: "Composite", image: "composite" },
+];
+const HANDRAIL_OPTS: OptionDef[] = [
+  { value: "Metal", image: "brick_metal" },
+  { value: "Composite", image: "brick_composite" },
+];
+const UP_OVER_OPTS: OptionDef[] = [
+  { value: "Required", image: "up_over" },
+  { value: "Not Required", image: "blank" },
+];
+
 export const newHomeOrderForm: FormDef = {
   type: "new_home_order",
   title: "New Home Order Form",
@@ -167,10 +180,10 @@ export const newHomeOrderForm: FormDef = {
             { kind: "subheading", text: "Choosing my Steps and Handrails" },
           ],
         },
-        { key: "steps_front", label: "Steps Front", type: "radio", options: opts(["Brick", "Composite"]), half: true },
-        { key: "steps_back", label: "Steps Back", type: "radio", options: opts(["Brick", "Composite"]), half: true },
-        { key: "handrails_front", label: "Handrails Front", type: "radio", options: opts(["Metal", "Composite"]), half: true },
-        { key: "handrails_back", label: "Handrails Back", type: "radio", options: opts(["Metal", "Composite"]), half: true },
+        { key: "steps_front", label: "Steps Front", type: "radio", options: STEPS_OPTS, half: true },
+        { key: "steps_back", label: "Steps Back", type: "radio", options: STEPS_OPTS, half: true },
+        { key: "handrails_front", label: "Handrails Front", type: "radio", options: HANDRAIL_OPTS, half: true },
+        { key: "handrails_back", label: "Handrails Back", type: "radio", options: HANDRAIL_OPTS, half: true },
         {
           key: "extras_heading",
           type: "static",
@@ -203,7 +216,7 @@ export const newHomeOrderForm: FormDef = {
           key: "up_over_front",
           label: "Up and over steps - Front (£500)",
           type: "radio",
-          options: REQUIRED_OPTS,
+          options: UP_OVER_OPTS,
           sectionLabel: "Upgrading my Steps",
           half: true,
         },
@@ -211,7 +224,7 @@ export const newHomeOrderForm: FormDef = {
           key: "up_over_back",
           label: "Up and over steps - Back (£500)",
           type: "radio",
-          options: REQUIRED_OPTS,
+          options: UP_OVER_OPTS,
           half: true,
         },
         {

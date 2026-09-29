@@ -38,6 +38,8 @@ export interface OptionDef {
   label?: string;
   /** Hidden/disabled for reps — director only (e.g. "Completed"). */
   directorOnly?: boolean;
+  /** Photo tile shown above the radio (key into the choice-image set; "blank" = empty tile). */
+  image?: "brick_composite" | "composite" | "brick_metal" | "up_over" | "blank";
 }
 
 export type ContentBlock =
@@ -45,7 +47,19 @@ export type ContentBlock =
   | { kind: "subheading"; text: string }
   | { kind: "paragraph"; text: string }
   | { kind: "note"; text: string }
-  | { kind: "bullets"; items: string[] };
+  | { kind: "bullets"; items: string[] }
+  /** Collapsible "+" row on the page (closed by default); printed expanded in the PDF. */
+  | { kind: "accordion"; title: string; blocks: ContentBlock[] };
+
+/** Smaller sub-sub headings (Futura 16px bold) – everything else is a 20px sub-heading. */
+export const SUBSUB_HEADINGS = new Set([
+  "Choosing my Steps and Handrails",
+  "Decking",
+  "Omar Extras",
+  "Upgrading my Steps",
+  "Shed Base and Electrics",
+  "Decking Base Extension",
+]);
 
 export interface LinkDef {
   label: string;
