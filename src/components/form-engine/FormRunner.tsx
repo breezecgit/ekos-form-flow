@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { FieldInput } from "./FieldInput";
-import { MANDATORY_HELPER } from "@/lib/forms/registry";
+import { MANDATORY_HELPER, SIGNING_HELPER } from "@/lib/forms/registry";
 import type { FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
 import { SUBSUB_HEADINGS, isVisible } from "@/lib/forms/types";
 import { validateAll, validateFields, type Errors } from "@/lib/forms/validate";
