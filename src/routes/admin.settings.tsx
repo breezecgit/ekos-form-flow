@@ -156,7 +156,7 @@ function SettingsPage() {
               <p className="font-semibold text-brand">{p.name}</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Field label="Park address" value={p.address} onChange={(v) => setPark(p.id, "address", v)} />
-                <Field label="Park inbox email (used for all park emails)" value={p.inbox_email} onChange={(v) => setPark(p.id, "inbox_email", v)} />
+                <Field note={testOn} label="Park inbox email (used for all park emails)" value={p.inbox_email} onChange={(v) => setPark(p.id, "inbox_email", v)} />
                 <Field label="Brochure URL" value={p.brochure_url} onChange={(v) => setPark(p.id, "brochure_url", v)} />
                 <Field label="Site Licence URL" value={p.site_licence_url} onChange={(v) => setPark(p.id, "site_licence_url", v)} />
                 <Field label="Park Rules URL" value={p.park_rules_url} onChange={(v) => setPark(p.id, "park_rules_url", v)} />
@@ -169,6 +169,7 @@ function SettingsPage() {
       <section className="mt-6 rounded-xl border bg-card p-6">
         <h2 className="ekos-title text-lg">Sales people</h2>
         <p className="text-sm text-muted-foreground">One per line: Name | email. The rep gets emails at this address (and via the park inbox).</p>
+        {testOn && <span className="block text-xs font-normal text-warning-foreground bg-warning/40 rounded px-1 mt-1">Redirected to test recipients while test mode is ON</span>}
         <textarea
           className="mt-3 min-h-48 w-full rounded-md border bg-background p-3 text-sm"
           value={people}
@@ -179,9 +180,9 @@ function SettingsPage() {
       <section className="mt-6 rounded-xl border bg-card p-6">
         <h2 className="ekos-title text-lg">Notification emails</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <Field label="Sales inbox" value={salesEmail} onChange={setSalesEmail} />
-          <Field label="Director" value={directorEmail} onChange={setDirectorEmail} />
-          <Field label="Construction team" value={constructionEmail} onChange={setConstructionEmail} />
+          <Field note={testOn} label="Sales inbox" value={salesEmail} onChange={setSalesEmail} />
+          <Field note={testOn} label="Director" value={directorEmail} onChange={setDirectorEmail} />
+          <Field note={testOn} label="Construction team" value={constructionEmail} onChange={setConstructionEmail} />
         </div>
       </section>
 
