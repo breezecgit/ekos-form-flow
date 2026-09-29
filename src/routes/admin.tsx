@@ -28,6 +28,11 @@ function AdminLayout() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader isDirector={me.data?.isDirector} email={me.data?.email} />
+      {me.data?.emailTestMode.enabled && (
+        <div className="bg-warning px-4 py-2 text-center text-sm font-semibold text-warning-foreground">
+          Email test mode is ON – all emails go to {me.data.emailTestMode.recipient}
+        </div>
+      )}
       {me.data && !me.data.isDirector ? (
         <p className="p-8 text-center text-muted-foreground">
           This area is for the Director only.

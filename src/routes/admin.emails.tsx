@@ -49,10 +49,21 @@ function EmailLog() {
                   {new Date(row.created_at).toLocaleString("en-GB")}
                 </td>
                 <td className="p-3 text-xs">
+                  {row.test_mode && (
+                    <span className="mb-1 inline-block rounded bg-warning px-2 py-0.5 text-[10px] font-bold text-warning-foreground">
+                      TEST MODE
+                    </span>
+                  )}
                   <span className="block text-muted-foreground">{row.from_address}</span>
-                  <span className="block"><strong>To:</strong> {row.to_addresses.join(", ")}</span>
+                  <span className="block"><strong>{row.test_mode ? "Actually sent to:" : "To:"}</strong> {row.to_addresses.join(", ")}</span>
                   {row.cc_addresses?.length > 0 && (
                     <span className="block"><strong>CC:</strong> {row.cc_addresses.join(", ")}</span>
+                  )}
+                  {row.test_mode && (
+                    <>
+                      <span className="block"><strong>Intended To:</strong> {row.intended_to.join(", ") || "–"}</span>
+                      <span className="block"><strong>Intended CC:</strong> {row.intended_cc.join(", ") || "–"}</span>
+                    </>
                   )}
                 </td>
                 <td className="p-3">{row.subject}</td>
