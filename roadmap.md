@@ -7,7 +7,7 @@
 - Parks + sales people + settings seeded
 - Google Drive connector linked
 
-## In progress (this message)
+## Done (Form 1 + platform, tested end to end)
 - Branding / design system + EKOS logo + Jost headings
 - Shared form engine (steps, progress bar, validation, Save & Resume, signature pad, £ fields, discount maths)
 - Form 1: Customer Reservation Form (6 steps)
@@ -25,7 +25,11 @@
 - EKOS Customer Order Form Amendments
 
 ## Blocked / needs the user
+- Google Drive: connected account needs EDIT access to the EKOS Forms folder
 - Resend API key + verified sending domain for sales@ekosgroup.co.uk
 - Per-park Brochure / Site Licence / Park Rules URLs (blank = "link to follow")
 - Construction team notification email
 - Sadie's signature image upload (Admin > Settings)
+
+## Constraint
+- No Zapier: all automations live in this app.
