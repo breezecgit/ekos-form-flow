@@ -340,6 +340,36 @@ export type Database = {
           },
         ]
       }
+      statement_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          form_type: string
+          id: string
+          note: string
+          sections: Json
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          form_type?: string
+          id?: string
+          note?: string
+          sections: Json
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          form_type?: string
+          id?: string
+          note?: string
+          sections?: Json
+          version?: number
+        }
+        Relationships: []
+      }
       submission_files: {
         Row: {
           created_at: string

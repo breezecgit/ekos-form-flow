@@ -5,6 +5,7 @@ const STYLES: Record<string, string> = {
   "In Review (Offsite)": "bg-brand-light/15 text-brand",
   "Awaiting customer signature": "bg-gold/20 text-gold",
   "Awaiting construction sign-off": "bg-gold/20 text-gold",
+  "Awaiting Director & Witness signatures": "bg-gold/20 text-gold",
   Disapproved: "bg-destructive/15 text-destructive",
   Completed: "bg-brand text-brand-foreground",
 };
@@ -40,6 +41,13 @@ export function chipStatus(sub?: {
     (sub.status === "In Review" || sub.status === "In Review (Offsite)")
   ) {
     return "Awaiting construction sign-off";
+  }
+  if (
+    sub.form_type === "written_statement" &&
+    sub.customer_signed_at &&
+    (sub.status === "In Review" || sub.status === "In Review (Offsite)")
+  ) {
+    return "Awaiting Director & Witness signatures";
   }
   return sub.status;
 }

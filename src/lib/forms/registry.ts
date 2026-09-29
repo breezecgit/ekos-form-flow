@@ -3,6 +3,7 @@ import { reservationForm } from "./reservation";
 import { identificationForm } from "./identification";
 import { newHomeOrderForm } from "./new-home-order";
 import { unitSaleAgreementForm } from "./unit-sale-agreement";
+import { writtenStatementForm } from "./written-statement";
 
 /** Every form in the sales pack, in the order it is completed. */
 export const FORM_ORDER = [
@@ -26,6 +27,7 @@ const registry: Record<string, FormDef> = {
   identification: identificationForm,
   new_home_order: newHomeOrderForm,
   unit_sale_agreement: unitSaleAgreementForm,
+  written_statement: writtenStatementForm,
 };
 
 export function getForm(type: string): FormDef {

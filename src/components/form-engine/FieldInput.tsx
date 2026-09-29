@@ -1,3 +1,4 @@
+import { STATEMENT_V1, classifyStatementLine } from "@/lib/forms/written-statement-text";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,7 +47,7 @@ export function FieldInput({
   if (lockedPark) disabled = true;
 
   if (field.type === "static") {
-    return <StaticContent field={field} />;
+    return <StaticContent field={field} templates={ctx.templates} />;
   }
 
   if (field.type === "links") {
@@ -300,7 +301,40 @@ export function FieldInput({
   );
 }
 
-function StaticContent({ field }: { field: FieldDef }) {
+function StaticContent({
+  field,
+  templates,
+}: {
+  field: FieldDef;
+  templates?: Record<string, string> | undefined;
+}) {
+  if (field.templateKey) {
+    const body = templates?.[field.templateKey] ?? STATEMENT_V1[field.templateKey] ?? "";
+    return (
+      <div className="space-y-1.5">
+        {body.split("\n").map((line, i) => {
+          const style = classifyStatementLine(line);
+          if (style === "title")
+            return (
+              <p key={i} className="pt-2 text-center font-heading text-lg font-bold text-brand">
+                {line}
+              </p>
+            );
+          if (style === "heading")
+            return (
+              <p key={i} className="pt-2 font-heading font-semibold text-brand">
+                {line}
+              </p>
+            );
+          return (
+            <p key={i} className="text-sm leading-relaxed">
+              {line}
+            </p>
+          );
+        })}
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       {(field.content ?? []).map((b, i) => {

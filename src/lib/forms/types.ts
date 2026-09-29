@@ -9,10 +9,12 @@ export type FormValues = Record<string, unknown>;
 
 export interface RenderContext {
   /** 'rep' = staff filling the form, 'offsite' = customer signing page. */
-  mode: "rep" | "offsite" | "construction";
+  mode: "rep" | "offsite" | "construction" | "director";
   /** Needed for file uploads on the staff form. */
   submissionId?: string;
   isDirector: boolean;
+  /** Versioned legal wording (Written Statement) keyed by templateKey. */
+  templates?: Record<string, string>;
 }
 
 export type FieldType =
@@ -80,7 +82,13 @@ export interface FieldDef {
   /** Auto-calculated value (rep may overwrite). */
   compute?: (values: FormValues) => string;
   /** Marks the customer-signature group used by the off-site signing page. */
-  group?: "customerSignature" | "constructionSignature";
+  group?: "customerSignature" | "constructionSignature" | "directorSignature";
+  /** Static text pulled from the versioned statement template. */
+  templateKey?: string;
+  /** Grouped PDF layout: print this field in the final signatures section. */
+  pdfSection?: "signatures";
+  /** Never printed in the PDF (on-screen instructions only). */
+  pdfHide?: boolean;
   /** Read-only once it has a value (park carried over from the sale). */
   lockIfSet?: boolean;
   /** Label shown in the PDF when different from the on-screen label. */
@@ -106,6 +114,10 @@ export interface FormDef {
   title: string;
   /** Title on the off-site customer signing page. */
   signingTitle?: string;
+  /** Director & witness signing page title. */
+  directorSigningTitle?: string;
+  /** "grouped" = statement text first, then answers + attachments, then all signatures. */
+  pdfLayout?: "grouped";
   steps: StepDef[];
 }
 
