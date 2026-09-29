@@ -1,0 +1,11 @@
+ALTER TABLE public.parks
+  ADD COLUMN IF NOT EXISTS bank_account text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS sort_code text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS goldshield text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS company_name text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS company_number text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS phone text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS pitch_fee_review_date text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS manager_name text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS manager_phone text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS manager_email text NOT NULL DEFAULT '';
