@@ -86,6 +86,7 @@ export type Database = {
           id: string
           intended_cc: string[]
           intended_to: string[]
+          links: string[]
           status: string
           subject: string
           submission_id: string | null
@@ -102,6 +103,7 @@ export type Database = {
           id?: string
           intended_cc?: string[]
           intended_to?: string[]
+          links?: string[]
           status?: string
           subject?: string
           submission_id?: string | null
@@ -118,6 +120,7 @@ export type Database = {
           id?: string
           intended_cc?: string[]
           intended_to?: string[]
+          links?: string[]
           status?: string
           subject?: string
           submission_id?: string | null
