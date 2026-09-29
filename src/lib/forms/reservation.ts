@@ -63,7 +63,9 @@ export function computeTotalCost(values: FormValues): string {
 
 /** Customer signature fields are hidden on the original form when off site. */
 const onSiteOnly = (values: FormValues, ctx: { mode: string }) =>
-  ctx.mode === "offsite" || values["status"] === "In Review";
+  ctx.mode === "offsite" ||
+  values["status"] === "In Review" ||
+  Boolean(values["customer_one_signature"]);
 
 export const reservationForm: FormDef = {
   type: "reservation",

@@ -4,6 +4,7 @@ const STYLES: Record<string, string> = {
   "In Review": "bg-brand-light/15 text-brand",
   "In Review (Offsite)": "bg-brand-light/15 text-brand",
   "Awaiting customer signature": "bg-gold/20 text-gold",
+  "Awaiting construction sign-off": "bg-gold/20 text-gold",
   Disapproved: "bg-destructive/15 text-destructive",
   Completed: "bg-brand text-brand-foreground",
 };
@@ -25,11 +26,20 @@ export function chipStatus(sub?: {
   status: string;
   is_draft: boolean;
   customer_signed_at: string | null;
+  form_type?: string;
+  construction_signed_at?: string | null;
 }): string {
   if (!sub) return "Not started";
   if (sub.status === "Draft" || (sub.is_draft && sub.status !== "Disapproved")) return "Draft";
   if (sub.status === "In Review (Offsite)" && !sub.customer_signed_at) {
     return "Awaiting customer signature";
+  }
+  if (
+    sub.form_type === "new_home_order" &&
+    !sub.construction_signed_at &&
+    (sub.status === "In Review" || sub.status === "In Review (Offsite)")
+  ) {
+    return "Awaiting construction sign-off";
   }
   return sub.status;
 }

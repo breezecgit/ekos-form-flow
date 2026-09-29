@@ -31,7 +31,18 @@ function toBase64(bytes: Uint8Array): string {
  */
 export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; error?: string | undefined }> {
   const recipients = Array.from(new Set(input.to.map((t) => (t || "").trim()).filter(Boolean)));
-  if (!recipients.length) return { ok: false, error: "No recipients" };
+  if (!recipients.length) {
+    await supabaseAdmin.from("email_log").insert({
+      submission_id: input.submissionId ?? null,
+      to_addresses: [],
+      from_address: FROM_ADDRESS,
+      subject: input.subject,
+      template: input.template,
+      status: "no_recipient",
+      error: "No recipient email address – add it in Admin > Settings.",
+    });
+    return { ok: false, error: "No recipients" };
+  }
 
   const lovableKey = process.env["LOVABLE_API_KEY"];
   const resendKey = process.env["RESEND_API_KEY"];

@@ -1,5 +1,7 @@
 import type { FormDef } from "./types";
 import { reservationForm } from "./reservation";
+import { identificationForm } from "./identification";
+import { newHomeOrderForm } from "./new-home-order";
 
 /** Every form in the sales pack, in the order it is completed. */
 export const FORM_ORDER = [
@@ -20,6 +22,8 @@ export const FORM_TITLES: Record<string, string> = {
 
 const registry: Record<string, FormDef> = {
   reservation: reservationForm,
+  identification: identificationForm,
+  new_home_order: newHomeOrderForm,
 };
 
 export function getForm(type: string): FormDef {

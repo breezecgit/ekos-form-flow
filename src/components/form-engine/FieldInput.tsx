@@ -14,7 +14,12 @@ import { SignaturePad } from "@/components/SignaturePad";
 import { TERMS_URL } from "@/lib/forms/reservation";
 import type { FieldDef, FormValues, RenderContext } from "@/lib/forms/types";
 import { isRequired } from "@/lib/forms/types";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Paperclip, X } from "lucide-react";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { uploadFile } from "@/lib/ekos.functions";
+import type { UploadedFile } from "@/lib/forms/types";
 
 interface Props {
   field: FieldDef;
@@ -37,6 +42,8 @@ export function FieldInput({
 }: Props) {
   const value = values[field.key];
   const set = (v: unknown) => onChange(field.key, v);
+  const lockedPark = Boolean(field.lockIfSet) && String(value ?? "").trim() !== "";
+  if (lockedPark) disabled = true;
 
   if (field.type === "static") {
     return <StaticContent field={field} />;
@@ -202,6 +209,12 @@ export function FieldInput({
     case "checkbox":
       return (
         <div>
+          {field.help && (
+            <p className="ekos-label mb-2">
+              {field.help}
+              <span className="ml-1 text-destructive">*</span>
+            </p>
+          )}
           <label className="flex cursor-pointer items-start gap-3">
             <Checkbox
               checked={value === true}
@@ -239,6 +252,17 @@ export function FieldInput({
         />
       );
       break;
+    case "file":
+      control = (
+        <FileControl
+          fieldKey={field.key}
+          value={Array.isArray(value) ? (value as UploadedFile[]) : []}
+          submissionId={ctx.submissionId}
+          disabled={disabled ?? false}
+          onChange={set}
+        />
+      );
+      break;
     case "date":
       control = (
         <Input
@@ -268,6 +292,9 @@ export function FieldInput({
       {label}
       {field.help && <p className="mb-2 text-sm text-muted-foreground">{field.help}</p>}
       {control}
+      {lockedPark && (
+        <p className="mt-1 text-xs text-muted-foreground">Carried over from this sale – cannot be changed.</p>
+      )}
       {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
     </div>
   );
@@ -312,6 +339,94 @@ function StaticContent({ field }: { field: FieldDef }) {
           </p>
         );
       })}
+    </div>
+  );
+}
+
+function FileControl({
+  fieldKey,
+  value,
+  submissionId,
+  disabled,
+  onChange,
+}: {
+  fieldKey: string;
+  value: UploadedFile[];
+  submissionId?: string | undefined;
+  disabled: boolean;
+  onChange: (v: UploadedFile[]) => void;
+}) {
+  const uploadFn = useServerFn(uploadFile);
+  const [busy, setBusy] = useState(false);
+
+  const onFiles = async (files: FileList | null) => {
+    if (!files?.length || !submissionId) return;
+    setBusy(true);
+    try {
+      const added: UploadedFile[] = [];
+      for (const file of Array.from(files)) {
+        if (file.size > 15 * 1024 * 1024) {
+          toast.error(`${file.name} is larger than 15MB.`);
+          continue;
+        }
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result));
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(file);
+        });
+        const res = await uploadFn({
+          data: {
+            submissionId,
+            fieldKey,
+            fileName: file.name,
+            mimeType: file.type || "application/octet-stream",
+            base64: dataUrl.split(",")[1] ?? "",
+          },
+        });
+        added.push(res);
+      }
+      onChange([...value, ...added]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {value.map((f) => (
+        <div key={f.id} className="flex items-center justify-between rounded-md border bg-secondary px-3 py-2 text-sm">
+          <span className="flex items-center gap-2 truncate">
+            <Paperclip className="h-4 w-4 shrink-0" /> {f.name}
+          </span>
+          {!disabled && (
+            <button
+              type="button"
+              aria-label={`Remove ${f.name}`}
+              onClick={() => onChange(value.filter((x) => x.id !== f.id))}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ))}
+      <input
+        id={fieldKey}
+        type="file"
+        accept="image/png,image/jpeg,application/pdf"
+        multiple
+        disabled={disabled || busy || !submissionId}
+        onChange={(e) => {
+          void onFiles(e.target.files);
+          e.target.value = "";
+        }}
+        className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-4 file:py-2 file:font-semibold file:text-brand-foreground"
+      />
+      <p className="text-xs text-muted-foreground">
+        {busy ? "Uploading…" : "Photo (JPG/PNG) or PDF, up to 15MB. On an iPad you can take a photo."}
+      </p>
     </div>
   );
 }

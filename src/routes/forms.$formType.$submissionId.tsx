@@ -117,7 +117,7 @@ function FormPage() {
         ) : (
           <FormRunner
             def={def}
-            ctx={{ mode: "rep", isDirector: Boolean(me.data?.isDirector) }}
+            ctx={{ mode: "rep", isDirector: Boolean(me.data?.isDirector), submissionId }}
             initialValues={values}
             parkLinks={parkLinks}
             orderNumber={submission.order_number}
@@ -139,7 +139,9 @@ function FormPage() {
               toast.success(
                 res.status === "In Review (Offsite)"
                   ? "Submitted. The customer has been emailed their signing link."
-                  : "Submitted for review.",
+                  : formType === "new_home_order"
+                    ? "Submitted. The Construction team has been emailed to sign."
+                    : "Submitted for review.",
               );
               router.navigate({ to: "/dashboard" });
             }}
