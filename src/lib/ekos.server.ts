@@ -500,3 +500,107 @@ export async function runCompletion(submissionId: string, opts: { storedSignatur
 export function describeDate(d: string | null | undefined) {
   return d ? formatDate(d) : "";
 }
+
+// ------------------------------------------------------ email self-test ---
+
+const SAMPLE_EMAIL = "sample.customer@example.com";
+
+async function sampleSubmission(saleId: string, orderNumber: string, formType: string, userId: string, extra: Record<string, unknown>, customerSigned: boolean) {
+  const { data: existing } = await supabaseAdmin
+    .from("form_submissions")
+    .select("id")
+    .eq("sale_id", saleId)
+    .eq("form_type", formType)
+    .neq("status", "Completed")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existing) return existing.id;
+  const { data: model } = await supabaseAdmin
+    .from("form_submissions")
+    .select("data")
+    .eq("form_type", formType)
+    .neq("sale_id", saleId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const base = { ...((model?.data ?? {}) as Record<string, unknown>) };
+  for (const k of Object.keys(base)) if (/^(director|witness|construction)_/.test(k)) delete base[k];
+  const now = new Date().toISOString();
+  const { data: row, error } = await supabaseAdmin
+    .from("form_submissions")
+    .insert({
+      sale_id: saleId,
+      form_type: formType,
+      order_number: orderNumber,
+      status: "In Review (Offsite)",
+      is_draft: false,
+      submitted_at: now,
+      customer_signed_at: customerSigned ? now : null,
+      created_by: userId,
+      data: { ...base, ...extra, status: "In Review (Offsite)" } as never,
+    })
+    .select("id")
+    .single();
+  if (error || !row) throw new Error(`Could not create sample ${formType}: ${error?.message}`);
+  return row.id;
+}
+
+/** Director-only: renders every email template for a sample sale and sends it (test mode applies). */
+export async function sendAllTestEmails(userId: string, userEmail: string) {
+  let { data: sale } = await supabaseAdmin.from("sales").select("*").eq("customer_email", SAMPLE_EMAIL).maybeSingle();
+  if (!sale) {
+    const ins = await supabaseAdmin
+      .from("sales")
+      .insert({
+        order_number: "",
+        park_name: "Castle View",
+        customer_name: "Sample Customer (email test)",
+        customer_email: SAMPLE_EMAIL,
+        customer_phone: "07700 900000",
+        sales_person: "Ben Cook",
+        created_by: userId,
+      })
+      .select("*")
+      .single();
+    if (ins.error || !ins.data) throw new Error(`Could not create the sample sale: ${ins.error?.message}`);
+    sale = ins.data;
+  }
+  const extra = {
+    customer_name: sale.customer_name,
+    party_customer_name: sale.customer_name,
+    customer_email: SAMPLE_EMAIL,
+    customer_phone: sale.customer_phone,
+    park_name: sale.park_name,
+    park_name_confirm: sale.park_name,
+    sales_person: sale.sales_person,
+  };
+  const res = await sampleSubmission(sale.id, sale.order_number, "reservation", userId, extra, false);
+  const nho = await sampleSubmission(sale.id, sale.order_number, "new_home_order", userId, extra, true);
+  const ws = await sampleSubmission(sale.id, sale.order_number, "written_statement", userId, extra, true);
+  const resPdf = await buildAndStorePdf(res);
+  await buildAndStorePdf(nho);
+  await buildAndStorePdf(ws);
+
+  const steps: [string, () => Promise<unknown>][] = [
+    ["Sadie review (Review Required)", () => sendReviewRequiredEmail(res)],
+    ["Sadie review + Director & Witness signing (Written Statement)", () => sendDirectorWitnessEmail(ws)],
+    ["Customer ready to sign (off site)", () => sendOffsiteCustomerEmail(res)],
+    ["Customer ready to sign – Written Statement", () => sendOffsiteCustomerEmail(ws)],
+    ["Construction final sign-off", () => sendConstructionEmail(nho)],
+    ["Signature complete", () => sendSignatureCompleteEmail(res)],
+    ["Completed", () => sendCompletionEmails(res, resPdf.bytes, resPdf.fileName)],
+    ["Disapproved", () => sendDisapprovalEmail(res, "Sample note – email test only")],
+    ["Draft saved / resume link", () => sendResumeLinkEmail(res, userEmail)],
+  ];
+  const results: { label: string; ok: boolean; error?: string }[] = [];
+  for (const [label, fn] of steps) {
+    try {
+      await fn();
+      results.push({ label, ok: true });
+    } catch (e) {
+      results.push({ label, ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+  return { orderNumber: sale.order_number, results };
+}

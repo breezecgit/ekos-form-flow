@@ -509,3 +509,18 @@ export const listEmailLog = createServerFn({ method: "GET" })
       .limit(200);
     return data ?? [];
   });
+
+export const sendTestOfEveryEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const db = await admin();
+    const { data: role } = await db
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "director")
+      .maybeSingle();
+    if (!role) throw new Error("Director access is required.");
+    const s = await server();
+    return s.sendAllTestEmails(context.userId, String(context.claims["email"] ?? ""));
+  });
