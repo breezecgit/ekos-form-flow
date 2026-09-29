@@ -20,6 +20,8 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --color-background: var(--background);
+  --color-warning: oklch(0.88 0.16 90);
+  --color-warning-foreground: oklch(0.25 0.05 80);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);

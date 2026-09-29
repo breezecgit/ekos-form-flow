@@ -13,13 +13,13 @@ import { getSettings, saveSettings } from "@/lib/settings.functions";
 export const Route = createFileRoute("/admin/settings")({
   head: () => ({
     meta: [
-      { title: "Settings | EKOS Group" },
+      { title: "Settings | EKOS Customer Sales Form" },
       {
         name: "description",
         content:
           "Manage parks, sales people, notification emails, document links, the Director signature and the Google Drive folder.",
       },
-      { property: "og:title", content: "Settings | EKOS Group" },
+      { property: "og:title", content: "Settings | EKOS Customer Sales Form" },
       {
         property: "og:description",
         content:
@@ -59,6 +59,8 @@ function SettingsPage() {
   const [formFolders, setFormFolders] = useState<Record<string, string>>({});
   const [sheetsOn, setSheetsOn] = useState(false);
   const [sheetId, setSheetId] = useState("");
+  const [testOn, setTestOn] = useState(true);
+  const [testRecipient, setTestRecipient] = useState("emma.frew@breezeconnection.co.uk");
 
   useEffect(() => {
     if (!data) return;
@@ -84,6 +86,9 @@ function SettingsPage() {
     const gs = data.settings["google_sheets"] ?? {};
     setSheetsOn(String(gs["enabled"]) === "true");
     setSheetId(String(gs["spreadsheet_id"] ?? ""));
+    const tm = data.settings["email_test_mode"] ?? {};
+    setTestOn(String(tm["enabled"] ?? "true") !== "false");
+    setTestRecipient(String(tm["recipient"] ?? "") || "emma.frew@breezeconnection.co.uk");
     setWelcomePack(
       String(data.settings["links"]?.["welcome_pack_url"] ?? "") ||
         "https://ekosgroup.co.uk/ekos-welcome-pack",
@@ -119,10 +124,12 @@ function SettingsPage() {
           sheets: { enabled: sheetsOn, spreadsheet_id: sheetId },
           welcomePackUrl: welcomePack,
           directorSignatureDataUrl: signature || undefined,
+          emailTestMode: { enabled: testOn, recipient: testRecipient.trim() },
         },
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["settings"] });
+      qc.invalidateQueries({ queryKey: ["bootstrap"] });
       toast.success("Settings saved.");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -210,6 +217,35 @@ function SettingsPage() {
               onChange={(v) => setFormFolders((prev) => ({ ...prev, [f]: v }))}
             />
           ))}
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-xl border bg-card p-6">
+        <h2 className="ekos-title text-lg">Email test mode</h2>
+        <div className="mt-3 flex items-center gap-3">
+          <Switch
+            checked={testOn}
+            id="email-test-mode"
+            onCheckedChange={(v) => {
+              if (!v) {
+                const ok = window.confirm(
+                  "Turn email test mode OFF?\n\nReal emails will then go to customers, reps, park inboxes, Sadie, sales@ and the Construction team.",
+                );
+                if (!ok) return;
+              }
+              setTestOn(v);
+            }}
+          />
+          <label htmlFor="email-test-mode" className="text-sm font-medium">
+            Email test mode {testOn ? "(ON)" : "(OFF)"}
+          </label>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          While on, every email goes only to the test recipient; the subject shows who it would have gone to.
+          Click "Save settings" to apply.
+        </p>
+        <div className="mt-3">
+          <Field label="Test recipient" value={testRecipient} onChange={setTestRecipient} />
         </div>
       </section>
 

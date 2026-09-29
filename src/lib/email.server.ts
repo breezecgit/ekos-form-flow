@@ -51,26 +51,53 @@ function clean(list: string[] | undefined): string[] {
  * Sends through Resend (connector gateway). Never throws: delivery problems are
  * recorded in the email log (with recipients, CC and body) so it is always testable.
  */
+export const DEFAULT_TEST_RECIPIENT = "emma.frew@breezeconnection.co.uk";
+
+/** Test mode is ON unless the setting explicitly says "false" (fail-safe). */
+export async function getEmailTestMode(): Promise<{ enabled: boolean; recipient: string }> {
+  const { data } = await supabaseAdmin
+    .from("app_settings")
+    .select("value")
+    .eq("key", "email_test_mode")
+    .maybeSingle();
+  const v = (data?.value ?? {}) as Record<string, unknown>;
+  const recipient = String(v["recipient"] ?? "").trim();
+  return {
+    enabled: String(v["enabled"] ?? "true") !== "false",
+    recipient: recipient.includes("@") ? recipient : DEFAULT_TEST_RECIPIENT,
+  };
+}
+
 export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; error?: string | undefined }> {
   const from = input.from ?? FROM_CUSTOMER;
-  const to = clean(input.to);
-  const toKeys = new Set(to.map((t) => t.toLowerCase()));
-  const cc = clean(input.cc).filter((c) => !toKeys.has(c.toLowerCase()));
+  const intendedTo = clean(input.to);
+  const toKeys = new Set(intendedTo.map((t) => t.toLowerCase()));
+  const intendedCc = clean(input.cc).filter((c) => !toKeys.has(c.toLowerCase()));
+
+  const testMode = await getEmailTestMode();
+  const to = testMode.enabled ? [testMode.recipient] : intendedTo;
+  const cc = testMode.enabled ? [] : intendedCc;
+  const subject = testMode.enabled
+    ? `[TEST → To: ${intendedTo.join(", ") || "(none)"}; CC: ${intendedCc.join(", ") || "(none)"}] ${input.subject}`
+    : input.subject;
 
   const log = (status: string, error: string | null) =>
     supabaseAdmin.from("email_log").insert({
       submission_id: input.submissionId ?? null,
       to_addresses: to,
       cc_addresses: cc,
+      intended_to: intendedTo,
+      intended_cc: intendedCc,
+      test_mode: testMode.enabled,
       from_address: from,
-      subject: input.subject,
+      subject,
       template: input.template,
       html: input.html,
       status,
       error,
     });
 
-  if (!to.length) {
+  if (!intendedTo.length) {
     await log("no_recipient", "No recipient email address – check Admin > Settings.");
     return { ok: false, error: "No recipients" };
   }
@@ -96,7 +123,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
           from,
           to,
           ...(cc.length ? { cc } : {}),
-          subject: input.subject,
+          subject,
           html: input.html,
           attachments: (input.attachments ?? []).map((a) => ({
             filename: a.filename,

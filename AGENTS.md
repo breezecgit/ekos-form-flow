@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Email test mode: enforced inside sendEmail (fails safe to ON; only an explicit "false" setting disables it) so no caller can bypass it.

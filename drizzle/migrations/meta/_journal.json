@@ -36,6 +36,13 @@
       "when": 1790698601968,
       "tag": "0004_automations_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790702048961,
+      "tag": "0005_email_test_mode",
+      "breakpoints": true
     }
   ]
 }

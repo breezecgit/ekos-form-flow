@@ -84,10 +84,13 @@ export type Database = {
           from_address: string
           html: string
           id: string
+          intended_cc: string[]
+          intended_to: string[]
           status: string
           subject: string
           submission_id: string | null
           template: string
+          test_mode: boolean
           to_addresses: string[]
         }
         Insert: {
@@ -97,10 +100,13 @@ export type Database = {
           from_address?: string
           html?: string
           id?: string
+          intended_cc?: string[]
+          intended_to?: string[]
           status?: string
           subject?: string
           submission_id?: string | null
           template?: string
+          test_mode?: boolean
           to_addresses?: string[]
         }
         Update: {
@@ -110,10 +116,13 @@ export type Database = {
           from_address?: string
           html?: string
           id?: string
+          intended_cc?: string[]
+          intended_to?: string[]
           status?: string
           subject?: string
           submission_id?: string | null
           template?: string
+          test_mode?: boolean
           to_addresses?: string[]
         }
         Relationships: [

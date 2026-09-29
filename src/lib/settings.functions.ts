@@ -63,6 +63,9 @@ export const saveSettings = createServerFn({ method: "POST" })
         sheets: z.object({ enabled: z.boolean(), spreadsheet_id: z.string() }).optional(),
         welcomePackUrl: z.string().optional(),
         directorSignatureDataUrl: z.string().optional(),
+        emailTestMode: z
+          .object({ enabled: z.boolean(), recipient: z.string().email() })
+          .optional(),
       })
       .parse(d),
   )
@@ -137,6 +140,17 @@ export const saveSettings = createServerFn({ method: "POST" })
           name: "Sadie Deveraux",
           title: "Director – authorised signatory of EKOS Group",
           image_path: path,
+        } as never,
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    if (data.emailTestMode) {
+      await db.from("app_settings").upsert({
+        key: "email_test_mode",
+        value: {
+          enabled: data.emailTestMode.enabled ? "true" : "false",
+          recipient: data.emailTestMode.recipient.trim(),
         } as never,
         updated_at: new Date().toISOString(),
       });

@@ -11,12 +11,12 @@ import { getSigningContext, submitCustomerSignature } from "@/lib/signing.functi
 export const Route = createFileRoute("/sign/$token")({
   head: () => ({
     meta: [
-      { title: "Sign your EKOS Group form" },
+      { title: "Sign your form | EKOS Customer Sales Form" },
       {
         name: "description",
         content: "Securely review and sign your EKOS Group paperwork online.",
       },
-      { property: "og:title", content: "Sign your EKOS Group form" },
+      { property: "og:title", content: "Sign your form | EKOS Customer Sales Form" },
       {
         property: "og:description",
         content: "Securely review and sign your EKOS Group paperwork online.",
