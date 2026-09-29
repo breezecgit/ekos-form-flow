@@ -210,7 +210,7 @@ export function FormRunner({
       {current.heading && <h2 className="ekos-step-heading mt-10">{current.heading}</h2>}
 
       <div className="mt-8 space-y-6">
-        {renderFields(stepFields, values, ctx, errors, parkLinks, setValue, busy, lockedKeys)}
+        {renderFields(stepFields, values, ctx, errors, liveParkLinks, setValue, busy, lockedKeys)}
       </div>
 
       <div className="mt-10 space-y-4">
