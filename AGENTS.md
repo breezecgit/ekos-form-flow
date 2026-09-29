@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 - Email test mode: enforced inside sendEmail (fails safe to ON; only an explicit "false" setting disables it) so no caller can bypass it. Test recipients are a list (default Emma + Eilidh at breezeconnection.co.uk).
 - Email links: every link is built from the Settings "App base URL" (app_base_url), never the request origin, because the editor preview needs a Lovable login.
+- Park autofill: form fields declare parkField (a parks column); FormRunner fills them on park change (overwrite) and on load (empty only). parks.inbox_email is the single park inbox/Email source.
