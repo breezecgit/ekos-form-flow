@@ -58,7 +58,7 @@ export const getBootstrap = createServerFn({ method: "GET" })
       salesPeople: people ?? [],
       emailTestMode: {
         enabled: String(tmv["enabled"] ?? "true") !== "false",
-        recipient: String(tmv["recipient"] ?? "") || "emma.frew@breezeconnection.co.uk",
+        recipient: String(tmv["recipient"] ?? "") || "emma.frew@breezeconnection.co.uk, eilidh@breezeconnection.co.uk",
       },
     };
   });

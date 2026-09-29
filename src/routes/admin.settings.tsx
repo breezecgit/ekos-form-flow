@@ -61,7 +61,7 @@ function SettingsPage() {
   const [sheetsOn, setSheetsOn] = useState(false);
   const [sheetId, setSheetId] = useState("");
   const [testOn, setTestOn] = useState(true);
-  const [testRecipient, setTestRecipient] = useState("emma.frew@breezeconnection.co.uk");
+  const [testRecipient, setTestRecipient] = useState("emma.frew@breezeconnection.co.uk, eilidh@breezeconnection.co.uk");
 
   useEffect(() => {
     if (!data) return;
@@ -89,7 +89,7 @@ function SettingsPage() {
     setSheetId(String(gs["spreadsheet_id"] ?? ""));
     const tm = data.settings["email_test_mode"] ?? {};
     setTestOn(String(tm["enabled"] ?? "true") !== "false");
-    setTestRecipient(String(tm["recipient"] ?? "") || "emma.frew@breezeconnection.co.uk");
+    setTestRecipient(String(tm["recipient"] ?? "") || "emma.frew@breezeconnection.co.uk, eilidh@breezeconnection.co.uk");
     setBaseUrl(String(data.settings["app_base_url"]?.["url"] ?? ""));
     setWelcomePack(
       String(data.settings["links"]?.["welcome_pack_url"] ?? "") ||
@@ -253,11 +253,11 @@ function SettingsPage() {
           </label>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          While on, every email goes only to the test recipient; the subject shows who it would have gone to.
+          While on, every email goes only to the test recipients; the subject shows who it would have gone to.
           Click "Save settings" to apply.
         </p>
         <div className="mt-3">
-          <Field label="Test recipient" value={testRecipient} onChange={setTestRecipient} />
+          <Field label="Test recipients (comma-separated)" value={testRecipient} onChange={setTestRecipient} />
         </div>
       </section>
 
