@@ -46,11 +46,11 @@ function SignPage() {
       </div>
       <main className="px-4 py-8">
         {ctx.isLoading && <p className="text-center text-muted-foreground">Loading…</p>}
-        {ctx.isError && (
+        {(ctx.isError || (ctx.data && "error" in ctx.data)) && !done && (
           <div className="mx-auto max-w-lg rounded-xl border bg-card p-6 text-center">
             <h1 className="ekos-title text-xl">We couldn't open this link</h1>
             <p className="mt-3 text-sm text-muted-foreground">
-              {(ctx.error as Error).message} Please contact EKOS Group on sales@ekosgroup.co.uk.
+              {ctx.data && "error" in ctx.data ? ctx.data.error : (ctx.error as Error)?.message} Please contact EKOS Group on sales@ekosgroup.co.uk.
             </p>
           </div>
         )}
@@ -63,7 +63,7 @@ function SignPage() {
             </p>
           </div>
         )}
-        {ctx.data && !done && (
+        {ctx.data && !("error" in ctx.data) && !done && (
           <FormRunner
             def={getForm(ctx.data.formType)}
             {...(ctx.data.kind === "customer" && getForm(ctx.data.formType).signingTitle
@@ -131,7 +131,11 @@ function SignPage() {
               )
             }
             onSubmit={async (values) => {
-              await submitFn({ data: { token, values } });
+              const res = await submitFn({ data: { token, values } });
+              if (res && "error" in res && res.error) {
+                await ctx.refetch();
+                return;
+              }
               setDone(true);
             }}
           />

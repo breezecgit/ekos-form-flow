@@ -11,6 +11,8 @@ async function admin() {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 
+class TokenError extends Error {}
+
 async function loadByToken(token: string) {
   const db = await admin();
   const { data: row } = await db
@@ -18,24 +20,31 @@ async function loadByToken(token: string) {
     .select("*")
     .eq("token", token)
     .maybeSingle();
-  if (!row) throw new Error("This signing link is not valid.");
-  if (row.used_at) throw new Error("This form has already been signed.");
+  if (!row) throw new TokenError("This signing link is not valid.");
+  if (row.used_at) throw new TokenError("This form has already been signed.");
   if (new Date(row.expires_at).getTime() < Date.now()) {
-    throw new Error("This signing link has expired. Please contact EKOS Group.");
+    throw new TokenError("This signing link has expired. Please contact EKOS Group.");
   }
   const { data: submission } = await db
     .from("form_submissions")
     .select("*")
     .eq("id", row.submission_id)
     .maybeSingle();
-  if (!submission) throw new Error("This signing link is not valid.");
+  if (!submission) throw new TokenError("This signing link is not valid.");
   return { row, submission };
 }
 
 export const getSigningContext = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ token: z.string().min(10) }).parse(d))
   .handler(async ({ data }) => {
-    const { row, submission } = await loadByToken(data.token);
+    let loaded;
+    try {
+      loaded = await loadByToken(data.token);
+    } catch (e) {
+      if (e instanceof TokenError) return { error: e.message };
+      throw e;
+    }
+    const { row, submission } = loaded;
     const { signedPdfUrl } = await import("@/lib/ekos.server");
     const values = (submission.data ?? {}) as Record<string, unknown>;
     return {
@@ -76,7 +85,14 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    const { row, submission } = await loadByToken(data.token);
+    let loaded;
+    try {
+      loaded = await loadByToken(data.token);
+    } catch (e) {
+      if (e instanceof TokenError) return { ok: false, error: e.message };
+      throw e;
+    }
+    const { row, submission } = loaded;
     const db = await admin();
     const s = await import("@/lib/ekos.server");
     const now = new Date().toISOString();
