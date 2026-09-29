@@ -66,6 +66,17 @@ export function FormRunner({
       for (const f of cf) if (String(v[f.key] ?? "").trim() === "") v[f.key] = f.compute!(v);
     return v;
   });
+  // Park document links follow the park currently chosen on the form (not a load-time snapshot).
+  const selectedPark = String(values["park_name"] ?? values["park_name_confirm"] ?? "");
+  const parkRow = parks.find((p) => p["name"] === selectedPark);
+  const liveParkLinks: Record<string, string> = parkRow
+    ? {
+        ...parkLinks,
+        brochure_url: String(parkRow["brochure_url"] ?? ""),
+        site_licence_url: String(parkRow["site_licence_url"] ?? ""),
+        park_rules_url: String(parkRow["park_rules_url"] ?? ""),
+      }
+    : parkLinks;
   // Park is locked only when it was already set when the form opened (carried from the sale),
   // so a rep can still correct their own first choice on this form.
   const [lockedKeys] = useState<Set<string>>(() => {
@@ -210,7 +221,7 @@ export function FormRunner({
       {current.heading && <h2 className="ekos-step-heading mt-10">{current.heading}</h2>}
 
       <div className="mt-8 space-y-6">
-        {renderFields(stepFields, values, ctx, errors, parkLinks, setValue, busy, lockedKeys)}
+        {renderFields(stepFields, values, ctx, errors, liveParkLinks, setValue, busy, lockedKeys)}
       </div>
 
       <div className="mt-10 space-y-4">

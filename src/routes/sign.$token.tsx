@@ -89,7 +89,7 @@ function SignPage() {
                 status: kind === "customer" ? "In Review (Offsite)" : "In Review",
                 ...(d.secondCustomer ? { second_customer: d.secondCustomer } : {}),
               }}
-              parkLinks={{}}
+              parkLinks={d.parkLinks}
               orderNumber={d.orderNumber}
               onlyGroup={
                 kind === "construction"

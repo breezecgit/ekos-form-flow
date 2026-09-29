@@ -46,9 +46,15 @@ export const getSigningContext = createServerFn({ method: "GET" })
       throw e;
     }
     const { row, submission } = loaded;
-    const { signedPdfUrl } = await import("@/lib/ekos.server");
+    const { signedPdfUrl, getPark, parkLinksFrom } = await import("@/lib/ekos.server");
     const values = (submission.data ?? {}) as Record<string, unknown>;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: linkRow } = await supabaseAdmin.from("app_settings").select("value").eq("key", "links").maybeSingle();
+    const parkLinks = parkLinksFrom(await getPark(String(values["park_name"] ?? "")), {
+      links: (linkRow?.value ?? {}) as Record<string, unknown>,
+    });
     return {
+      parkLinks,
       kind: kindOf(row.kind),
       formType: submission.form_type,
       orderNumber: submission.order_number,
