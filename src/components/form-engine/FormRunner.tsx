@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FieldInput } from "./FieldInput";
 import { MANDATORY_HELPER } from "@/lib/forms/registry";
-import type { FormDef, FormValues, RenderContext } from "@/lib/forms/types";
+import type { FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
 import { isVisible } from "@/lib/forms/types";
 import { validateAll, validateStep, firstStepWithError, type Errors } from "@/lib/forms/validate";
 import { todayISO } from "@/lib/format";
@@ -195,7 +195,8 @@ export function FormRunner({
 }
 
 function renderFields(
-  fields: ReturnType<typeof Array.prototype.filter> extends never ? never : FormDef["steps"][number]["fields"],
+  fields: FieldDef[],
+
   values: FormValues,
   ctx: RenderContext,
   errors: Errors,
