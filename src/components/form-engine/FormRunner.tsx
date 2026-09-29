@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { FieldInput } from "./FieldInput";
-import { MANDATORY_HELPER } from "@/lib/forms/registry";
+import { MANDATORY_HELPER, SIGNING_HELPER } from "@/lib/forms/registry";
 import type { FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
 import { SUBSUB_HEADINGS, isVisible } from "@/lib/forms/types";
 import { validateAll, validateFields, type Errors } from "@/lib/forms/validate";
@@ -164,7 +164,9 @@ export function FormRunner({
       {orderNumber && (
         <p className="mt-2 text-center text-sm font-semibold text-gold">Order Number {orderNumber}</p>
       )}
-      <p className="mt-3 text-center text-sm text-ekos-field-text">{MANDATORY_HELPER}</p>
+      <p className="mt-3 text-center text-sm text-ekos-field-text">
+        {onSaveDraft ? MANDATORY_HELPER : SIGNING_HELPER}
+      </p>
       {headerExtra}
 
       {total > 1 && (

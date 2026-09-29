@@ -35,7 +35,9 @@ export function AppHeader({
   const logoImg = <img src={logo} alt="EKOS Group" className="h-16 w-16 object-contain" />;
 
   return (
+    <>
     <header className="relative z-20 bg-ekos-nav text-brand-foreground">
+
       <div className="mx-auto flex h-20 max-w-[1140px] items-center gap-6 px-4">
         <div className="relative h-20 w-28 shrink-0">
           <div className="absolute left-0 top-2 flex h-28 w-28 items-center justify-center rounded-b-3xl rounded-t-xl bg-ekos-nav">
@@ -80,5 +82,9 @@ export function AppHeader({
         )}
       </div>
     </header>
+    {/* clears the logo tab that hangs below the bar */}
+    <div aria-hidden className="h-10" />
+    </>
+
   );
 }
