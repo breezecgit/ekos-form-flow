@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Fragment, useState } from "react";
 import { listEmailLog } from "@/lib/ekos.functions";
 
 export const Route = createFileRoute("/admin/emails")({
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/admin/emails")({
 function EmailLog() {
   const fn = useServerFn(listEmailLog);
   const { data } = useQuery({ queryKey: ["email-log"], queryFn: () => fn() });
+  const [open, setOpen] = useState<string | null>(null);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -32,19 +34,27 @@ function EmailLog() {
           <thead className="bg-muted/50 text-left">
             <tr>
               <th className="p-3">Sent</th>
-              <th className="p-3">To</th>
+              <th className="p-3">From / To / CC</th>
               <th className="p-3">Subject</th>
               <th className="p-3">Type</th>
               <th className="p-3">Status</th>
+              <th className="p-3"></th>
             </tr>
           </thead>
           <tbody>
             {(data ?? []).map((row) => (
-              <tr key={row.id} className="border-t align-top">
+              <Fragment key={row.id}>
+              <tr className="border-t align-top">
                 <td className="p-3 whitespace-nowrap">
                   {new Date(row.created_at).toLocaleString("en-GB")}
                 </td>
-                <td className="p-3">{row.to_addresses.join(", ")}</td>
+                <td className="p-3 text-xs">
+                  <span className="block text-muted-foreground">{row.from_address}</span>
+                  <span className="block"><strong>To:</strong> {row.to_addresses.join(", ")}</span>
+                  {row.cc_addresses?.length > 0 && (
+                    <span className="block"><strong>CC:</strong> {row.cc_addresses.join(", ")}</span>
+                  )}
+                </td>
                 <td className="p-3">{row.subject}</td>
                 <td className="p-3">{row.template}</td>
                 <td className="p-3">
@@ -53,7 +63,25 @@ function EmailLog() {
                     <span className="block text-xs text-muted-foreground">{row.error}</span>
                   )}
                 </td>
+                <td className="p-3">
+                  {row.html && (
+                    <button
+                      className="text-sm font-medium text-brand underline"
+                      onClick={() => setOpen(open === row.id ? null : row.id)}
+                    >
+                      {open === row.id ? "Hide" : "Preview"}
+                    </button>
+                  )}
+                </td>
               </tr>
+              {open === row.id && (
+                <tr key={`${row.id}-p`} className="border-t">
+                  <td colSpan={6} className="bg-muted/30 p-3">
+                    <iframe title="Email preview" srcDoc={row.html} className="h-[700px] w-full rounded border bg-background" />
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             ))}
           </tbody>
         </table>
