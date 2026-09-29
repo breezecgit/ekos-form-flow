@@ -11,6 +11,7 @@ import { getForm, hasForm } from "@/lib/forms/registry";
 import { allFields, isVisible } from "@/lib/forms/types";
 import type { FormValues } from "@/lib/forms/types";
 import { formatDate, formatMoney } from "@/lib/format";
+import { WordDownloadButton } from "@/components/WordDownload";
 
 export const Route = createFileRoute("/admin/submissions/$id")({
   head: () => ({
@@ -61,7 +62,7 @@ function SubmissionDetail() {
   });
 
   const resend = useMutation({
-    mutationFn: (kind: "review" | "offsite" | "completion" | "construction") =>
+    mutationFn: (kind: "review" | "offsite" | "completion" | "construction" | "director") =>
       resendFn({ data: { submissionId: id, kind } }),
     onSuccess: () => toast.success("Email sent."),
     onError: (e: Error) => toast.error(e.message),
@@ -131,6 +132,28 @@ function SubmissionDetail() {
               Resend construction email
             </Button>
           )}
+          {s.form_type === "written_statement" && (
+            <>
+              <WordDownloadButton submissionId={s.id} />
+              {q.data.directorLink && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(q.data.directorLink);
+                    toast.success("Director & Witness signing link copied.");
+                  }}
+                >
+                  Copy Director &amp; Witness signing link
+                </Button>
+              )}
+              {s.customer_signed_at && s.status !== "Completed" && (
+                <Button size="sm" variant="outline" onClick={() => resend.mutate("director")}>
+                  Resend Director &amp; Witness email
+                </Button>
+              )}
+            </>
+          )}
           <Button size="sm" variant="outline" onClick={() => resend.mutate("completion")}>
             Resend completion email
           </Button>
@@ -146,6 +169,12 @@ function SubmissionDetail() {
               onChange={(e) => setNote(e.target.value)}
             />
             <div className="mt-3 flex flex-wrap gap-2">
+              {s.form_type === "written_statement" ? (
+                <p className="text-sm text-muted-foreground">
+                  This statement is completed when you and your witness sign on the Director &amp; Witness
+                  signing page (link emailed to you once the customer has signed).
+                </p>
+              ) : (
               <Button
                 variant="gold"
                 disabled={change.isPending}
@@ -153,6 +182,7 @@ function SubmissionDetail() {
               >
                 {change.isPending ? "Working…" : "Approve & mark Completed"}
               </Button>
+              )}
               <Button
                 variant="destructive"
                 disabled={change.isPending || !note.trim()}

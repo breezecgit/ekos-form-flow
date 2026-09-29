@@ -23,7 +23,7 @@
 - Form 4: Unit Sale Agreement & Welcome Pack – tested on/off site + Completed
 
 ## Later messages
-- Form 5: Your Written Statement (different completion flow)
+- [x] Form 5: Your Written Statement (customer → Sadie + witness, Word export) — done
 - EKOS Customer Order Form Amendments
 
 ## Blocked / needs the user
