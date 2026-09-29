@@ -9,3 +9,4 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 - Email test mode: enforced inside sendEmail (fails safe to ON; only an explicit "false" setting disables it) so no caller can bypass it.
+- Email links: every link is built from the Settings "App base URL" (app_base_url), never the request origin, because the editor preview needs a Lovable login.

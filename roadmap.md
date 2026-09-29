@@ -29,7 +29,11 @@
 ## Done (automations)
 - Live EKOS automations rebuilt in-app: lookup tables, 5 branded emails, Drive per-customer folders + stage PDFs, Google tracker sheet sync (off by default), email log preview
 
+## Done (Sadie feedback)
+- Written Statement single-PDF layout checked; email links via App base URL; tracker deep-link after login; "Send test of every email" button
+
 ## Blocked / needs the user
+- Publish the app (email links point at the published address)
 - Google Drive: connected account needs EDIT access to the EKOS Forms folder
 - Resend API key + verified sending domain for sales@ekosgroup.co.uk
 - Per-park Brochure / Site Licence / Park Rules URLs (blank = "link to follow")
