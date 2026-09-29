@@ -60,6 +60,15 @@ export function FormRunner({
   const onlyCustomerSignature = Boolean(onlyGroup);
 
   const [values, setValues] = useState<FormValues>(() => withDefaults(def, fillFromPark(def, initialValues, parks, false)));
+  // Park is locked only when it was already set when the form opened (carried from the sale),
+  // so a rep can still correct their own first choice on this form.
+  const [lockedKeys] = useState<Set<string>>(() => {
+    const out = new Set<string>();
+    for (const f of def.steps.flatMap((s) => s.fields)) {
+      if (f.lockIfSet && String(initialValues[f.key] ?? "").trim() !== "") out.add(f.key);
+    }
+    return out;
+  });
   const [touchedKeys, setTouchedKeys] = useState<Set<string>>(new Set());
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Errors>({});
@@ -180,7 +189,7 @@ export function FormRunner({
         )}
 
         <div className="mt-8 space-y-6">
-          {renderFields(stepFields, values, ctx, errors, parkLinks, setValue, busy)}
+          {renderFields(stepFields, values, ctx, errors, parkLinks, setValue, busy, lockedKeys)}
         </div>
 
         <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
@@ -222,6 +231,7 @@ function renderFields(
   parkLinks: Record<string, string>,
   setValue: (k: string, v: unknown) => void,
   busy: boolean,
+  lockedKeys: Set<string>,
 ) {
   const out: React.ReactNode[] = [];
   for (let i = 0; i < fields.length; i++) {
@@ -245,6 +255,7 @@ function renderFields(
             parkLinks={parkLinks}
             onChange={setValue}
             disabled={busy}
+            lockedKeys={lockedKeys}
           />
           <FieldInput
             field={next}
@@ -254,6 +265,7 @@ function renderFields(
             parkLinks={parkLinks}
             onChange={setValue}
             disabled={busy}
+            lockedKeys={lockedKeys}
           />
         </div>,
       );
@@ -270,6 +282,7 @@ function renderFields(
         parkLinks={parkLinks}
         onChange={setValue}
         disabled={busy}
+            lockedKeys={lockedKeys}
       />,
     );
   }
