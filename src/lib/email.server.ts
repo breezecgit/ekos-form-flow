@@ -123,7 +123,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
           from,
           to,
           ...(cc.length ? { cc } : {}),
-          subject: input.subject,
+          subject,
           html: input.html,
           attachments: (input.attachments ?? []).map((a) => ({
             filename: a.filename,

@@ -41,12 +41,14 @@ export const getBootstrap = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const db = await admin();
-    const [{ data: profile }, director, { data: parks }, { data: people }] = await Promise.all([
+    const [{ data: profile }, director, { data: parks }, { data: people }, { data: tm }] = await Promise.all([
       db.from("profiles").select("*").eq("id", context.userId).maybeSingle(),
       isDirector(context.userId),
       db.from("parks").select("*").order("sort_order"),
       db.from("sales_people").select("*").order("sort_order"),
+      db.from("app_settings").select("value").eq("key", "email_test_mode").maybeSingle(),
     ]);
+    const tmv = (tm?.value ?? {}) as Record<string, unknown>;
     return {
       userId: context.userId,
       email: profile?.email ?? "",
@@ -54,6 +56,10 @@ export const getBootstrap = createServerFn({ method: "GET" })
       isDirector: director,
       parks: parks ?? [],
       salesPeople: people ?? [],
+      emailTestMode: {
+        enabled: String(tmv["enabled"] ?? "true") !== "false",
+        recipient: String(tmv["recipient"] ?? "") || "emma.frew@breezeconnection.co.uk",
+      },
     };
   });
 
