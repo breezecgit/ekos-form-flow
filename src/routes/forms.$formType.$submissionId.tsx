@@ -129,6 +129,7 @@ function FormPage() {
             }}
             initialValues={values}
             parkLinks={parkLinks}
+            parks={sub.data.parks as unknown as Array<Record<string, unknown>>}
             orderNumber={submission.order_number}
             headerExtra={
               submission.status === "Disapproved" && submission.disapproval_note ? (

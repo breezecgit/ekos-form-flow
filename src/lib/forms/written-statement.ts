@@ -41,8 +41,8 @@ export const writtenStatementForm: FormDef = {
       id: "step-2",
       fields: [
         text("part2_intro"),
-        { key: "park_company_name", label: "Park Limited Company Name", type: "text" },
-        { key: "park_registered_number", label: "Registered Number", type: "text" },
+        { key: "park_company_name", parkField: "company_name", label: "Park Limited Company Name", type: "text" },
+        { key: "park_registered_number", parkField: "company_number", label: "Registered Number", type: "text" },
         text("part2_address"),
         { key: "party_customer_name", label: "Customer Name", type: "text" },
         text("part2_start"),
@@ -50,6 +50,7 @@ export const writtenStatementForm: FormDef = {
         text("part2_pitch"),
         {
           key: "new_home_address",
+          parkField: "address",
           label:
             "4. The particulars of the land on which you will be entitled to station your mobile home are (Property Address):",
           type: "text",
@@ -70,8 +71,9 @@ export const writtenStatementForm: FormDef = {
         {
           key: "pitch_fee_review_date",
           label: "8. The pitch fee will be reviewed on the following date each year:",
-          type: "date",
-          defaultValue: "2026-01-01",
+          type: "text",
+          parkField: "pitch_fee_review_date",
+          defaultValue: "1st January",
         },
         text("part2_additional"),
         {
