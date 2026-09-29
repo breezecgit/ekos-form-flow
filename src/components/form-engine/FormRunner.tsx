@@ -4,7 +4,7 @@ import { FieldInput } from "./FieldInput";
 import { MANDATORY_HELPER } from "@/lib/forms/registry";
 import type { FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
 import { isVisible } from "@/lib/forms/types";
-import { validateAll, validateStep, firstStepWithError, type Errors } from "@/lib/forms/validate";
+import { validateAll, validateFields, type Errors } from "@/lib/forms/validate";
 import { todayISO } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -14,8 +14,8 @@ interface Props {
   initialValues: FormValues;
   parkLinks: Record<string, string>;
   orderNumber?: string;
-  /** Restrict rendering to the customer-signature group (off-site page). */
-  onlyCustomerSignature?: boolean;
+  /** Restrict rendering to one signature group (customer / construction pages). */
+  onlyGroup?: "customerSignature" | "constructionSignature";
   submitLabel?: string;
   onSaveDraft?: (values: FormValues) => Promise<void>;
   onSubmit: (values: FormValues) => Promise<void>;
@@ -28,24 +28,28 @@ export function FormRunner({
   initialValues,
   parkLinks,
   orderNumber,
-  onlyCustomerSignature,
+  onlyGroup,
   submitLabel = "Submit Form",
   onSaveDraft,
   onSubmit,
   headerExtra,
 }: Props) {
   const steps = useMemo(() => {
-    if (!onlyCustomerSignature) return def.steps;
+    if (!onlyGroup) {
+      // Construction sign-off is its own page, never part of the staff form.
+      return def.steps.filter(
+        (s) => !s.fields.every((f) => f.group === "constructionSignature"),
+      );
+    }
     return [
       {
-        id: "customer-signature",
+        id: onlyGroup,
         heading: undefined,
-        fields: def.steps
-          .flatMap((s) => s.fields)
-          .filter((f) => f.group === "customerSignature"),
+        fields: def.steps.flatMap((s) => s.fields).filter((f) => f.group === onlyGroup),
       },
     ];
-  }, [def, onlyCustomerSignature]);
+  }, [def, onlyGroup]);
+  const onlyCustomerSignature = Boolean(onlyGroup);
 
   const [values, setValues] = useState<FormValues>(() => withDefaults(def, initialValues));
   const [touchedKeys, setTouchedKeys] = useState<Set<string>>(new Set());
@@ -82,7 +86,7 @@ export function FormRunner({
   const goNext = () => {
     const stepErrors = onlyCustomerSignature
       ? {}
-      : validateStep(def, step, values, ctx);
+      : validateFields(current.fields, values, ctx);
     if (Object.keys(stepErrors).length) {
       setErrors(stepErrors);
       toast.error("Please complete every box on this step.");
@@ -115,7 +119,10 @@ export function FormRunner({
       : validateAll(def, values, ctx);
     if (Object.keys(allErrors).length) {
       setErrors(allErrors);
-      if (!onlyCustomerSignature) setStep(firstStepWithError(def, allErrors));
+      if (!onlyCustomerSignature) {
+        const idx = steps.findIndex((s) => s.fields.some((f) => allErrors[f.key]));
+        setStep(idx < 0 ? 0 : idx);
+      }
       toast.error("Some boxes still need completing before this form can be submitted.");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -264,7 +271,7 @@ function validateCustomerGroup(
 ): Errors {
   const errors: Errors = {};
   for (const f of fields) {
-    if (!isVisible(f, values, ctx)) continue;
+    if (!isVisible(f, values, ctx) || f.type === "static" || f.type === "links") continue;
     const v = values[f.key];
     const empty =
       f.type === "checkbox"

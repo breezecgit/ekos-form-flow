@@ -5,7 +5,13 @@ import { getForm } from "@/lib/forms/registry";
 import { driveFileName, formatDate, pdfFileName, todayISO } from "@/lib/format";
 import { uploadPdfToDrive } from "@/lib/drive.server";
 import { button, emailShell, sendEmail } from "@/lib/email.server";
-import type { FormValues } from "@/lib/forms/types";
+import type { FormValues, UploadedFile } from "@/lib/forms/types";
+import { isVisible } from "@/lib/forms/types";
+
+/** Forms that need the Construction team to sign before Sadie reviews. */
+export function needsConstruction(formType: string): boolean {
+  return formType === "new_home_order";
+}
 
 export const BUCKET = "ekos-documents";
 
@@ -75,21 +81,28 @@ export async function buildAndStorePdf(
   const park = await getPark(parkName);
   const settings = await getSettingsMap();
 
-  // Uploaded documents are embedded / appended so the PDF is the full record.
-  const { data: files } = await supabaseAdmin
-    .from("submission_files")
-    .select("*")
-    .eq("submission_id", submissionId);
+  // Uploaded documents are embedded / appended in form order so the PDF is the full record.
   const attachments: PdfAttachment[] = [];
-  for (const f of files ?? []) {
-    const dl = await supabaseAdmin.storage.from(BUCKET).download(f.storage_path);
-    if (dl.data) {
-      attachments.push({
-        fileName: f.file_name,
-        mimeType: f.mime_type,
-        bytes: new Uint8Array(await dl.data.arrayBuffer()),
-        label: f.field_key,
-      });
+  const pdfCtx = { mode: "rep" as const, isDirector: true };
+  let section = "";
+  for (const f of def.steps.flatMap((s) => s.fields)) {
+    if (f.sectionLabel) section = f.sectionLabel;
+    if (f.type === "static") {
+      const heads = (f.content ?? []).filter((b) => b.kind === "subheading" || b.kind === "heading");
+      if (heads.length) section = (heads[heads.length - 1] as { text: string }).text;
+    }
+    if (f.type !== "file" || !isVisible(f, values, pdfCtx)) continue;
+    const list = Array.isArray(values[f.key]) ? (values[f.key] as UploadedFile[]) : [];
+    for (const file of list) {
+      const dl = await supabaseAdmin.storage.from(BUCKET).download(file.path);
+      if (dl.data) {
+        attachments.push({
+          fileName: file.name,
+          mimeType: file.mime,
+          bytes: new Uint8Array(await dl.data.arrayBuffer()),
+          label: `${section && section !== f.label ? `${section} – ` : ""}${f.pdfLabel ?? f.label ?? f.key} – ${file.name}`,
+        });
+      }
     }
   }
 
@@ -167,16 +180,20 @@ export function newToken(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export async function getOrCreateSigningToken(submissionId: string): Promise<string> {
+export async function getOrCreateSigningToken(
+  submissionId: string,
+  kind: "customer_offsite" | "construction" = "customer_offsite",
+): Promise<string> {
   const { data } = await supabaseAdmin
     .from("signing_tokens")
     .select("token")
     .eq("submission_id", submissionId)
+    .eq("kind", kind)
     .is("used_at", null)
     .maybeSingle();
   if (data?.token) return data.token;
   const token = newToken();
-  await supabaseAdmin.from("signing_tokens").insert({ submission_id: submissionId, token });
+  await supabaseAdmin.from("signing_tokens").insert({ submission_id: submissionId, token, kind });
   return token;
 }
 
@@ -259,6 +276,49 @@ export async function sendOffsiteCustomerEmail(submissionId: string) {
   });
 }
 
+/** New Home Order Form: full signed form + secure link to the Construction team. */
+export async function sendConstructionEmail(submissionId: string) {
+  const { submission } = await loadSubmission(submissionId);
+  const def = getForm(submission.form_type);
+  const values = (submission.data ?? {}) as FormValues;
+  const settings = await getSettingsMap();
+  const to = String(settings["notifications"]?.["construction_email"] ?? "");
+  const token = await getOrCreateSigningToken(submissionId, "construction");
+  const origin = appOrigin();
+  const pdfLink = submission.pdf_path ? await signedPdfUrl(submission.pdf_path) : "";
+
+  const html = emailShell({
+    logoUrl: logoUrl(),
+    heading: "Construction Signature Required",
+    bodyHtml: `
+      <p style="font-size:15px;line-height:1.6;">The <strong>${def.title}</strong> below has been signed by the customer and needs the Construction team's signature before it goes to the Director for approval.</p>
+      <table style="font-size:14px;line-height:1.8;">
+        <tr><td><strong>Order Number</strong></td><td style="padding-left:12px;">${submission.order_number}</td></tr>
+        <tr><td><strong>Customer</strong></td><td style="padding-left:12px;">${values["customer_name"] ?? ""}</td></tr>
+        <tr><td><strong>Park</strong></td><td style="padding-left:12px;">${values["park_name"] ?? ""}</td></tr>
+      </table>
+      ${button("Sign as Construction team", `${origin}/sign/${token}`)}
+      ${pdfLink ? `<p style="font-size:14px;"><a href="${pdfLink}">View the full form (PDF)</a></p>` : ""}`,
+  });
+
+  const attachments = submission.pdf_path
+    ? await (async () => {
+        const dl = await supabaseAdmin.storage.from(BUCKET).download(submission.pdf_path!);
+        if (!dl.data) return [];
+        return [{ filename: submission.pdf_path!.split("/").pop()!, bytes: new Uint8Array(await dl.data.arrayBuffer()) }];
+      })()
+    : [];
+
+  await sendEmail({
+    to: [to],
+    subject: `Construction Signature Required – ${def.title} – ${submission.order_number}`,
+    html,
+    attachments,
+    template: "construction_signature_request",
+    submissionId,
+  });
+}
+
 export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8Array, fileName: string) {
   const { submission } = await loadSubmission(submissionId);
   const def = getForm(submission.form_type);
@@ -266,9 +326,24 @@ export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8
   const settings = await getSettingsMap();
   const notif = settings["notifications"] ?? {};
 
+  // Park inbox: this form's Email box, else the one from the Reservation Form, else Settings.
+  let parkEmail = String(values["park_email"] ?? "");
+  if (!parkEmail) {
+    const { data: res } = await supabaseAdmin
+      .from("form_submissions")
+      .select("data")
+      .eq("sale_id", submission.sale_id)
+      .eq("form_type", "reservation")
+      .maybeSingle();
+    parkEmail = String(((res?.data ?? {}) as FormValues)["park_email"] ?? "");
+  }
+  if (!parkEmail) {
+    const park = await getPark(String(values["park_name"] ?? ""));
+    parkEmail = park?.inbox_email ?? "";
+  }
   const recipients = [
     String(values["customer_email"] ?? ""),
-    String(values["park_email"] ?? ""),
+    parkEmail,
     String(notif["sales_email"] ?? "sales@ekosgroup.co.uk"),
     String(notif["director_email"] ?? "sadie@ekosgroup.co.uk"),
   ];

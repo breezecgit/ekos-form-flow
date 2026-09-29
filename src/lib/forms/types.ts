@@ -9,7 +9,9 @@ export type FormValues = Record<string, unknown>;
 
 export interface RenderContext {
   /** 'rep' = staff filling the form, 'offsite' = customer signing page. */
-  mode: "rep" | "offsite";
+  mode: "rep" | "offsite" | "construction";
+  /** Needed for file uploads on the staff form. */
+  submissionId?: string;
   isDirector: boolean;
 }
 
@@ -76,9 +78,18 @@ export interface FieldDef {
   /** Auto-calculated value (rep may overwrite). */
   compute?: (values: FormValues) => string;
   /** Marks the customer-signature group used by the off-site signing page. */
-  group?: "customerSignature";
+  group?: "customerSignature" | "constructionSignature";
+  /** Read-only once it has a value (park carried over from the sale). */
+  lockIfSet?: boolean;
   /** Label shown in the PDF when different from the on-screen label. */
   pdfLabel?: string;
+}
+
+export interface UploadedFile {
+  id: string;
+  name: string;
+  path: string;
+  mime: string;
 }
 
 export interface StepDef {

@@ -5,7 +5,7 @@ export type Errors = Record<string, string>;
 
 function isEmpty(f: FieldDef, value: unknown): boolean {
   if (f.type === "checkbox") return value !== true;
-  if (f.type === "multiselect") return !Array.isArray(value) || value.length === 0;
+  if (f.type === "multiselect" || f.type === "file") return !Array.isArray(value) || value.length === 0;
   return value === undefined || value === null || String(value).trim() === "";
 }
 

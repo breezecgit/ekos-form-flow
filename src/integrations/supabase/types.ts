@@ -122,6 +122,7 @@ export type Database = {
       }
       form_submissions: {
         Row: {
+          construction_signed_at: string | null
           created_at: string
           created_by: string
           customer_signed_at: string | null
@@ -139,6 +140,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          construction_signed_at?: string | null
           created_at?: string
           created_by: string
           customer_signed_at?: string | null
@@ -156,6 +158,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          construction_signed_at?: string | null
           created_at?: string
           created_by?: string
           customer_signed_at?: string | null

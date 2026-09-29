@@ -66,19 +66,39 @@ function SignPage() {
         {ctx.data && !done && (
           <FormRunner
             def={getForm(ctx.data.formType)}
-            ctx={{ mode: "offsite", isDirector: false }}
+            ctx={{
+              mode: ctx.data.kind === "construction" ? "construction" : "offsite",
+              isDirector: false,
+            }}
             initialValues={{
               order_number: ctx.data.orderNumber,
               customer_name: ctx.data.customerName,
               customer_email: ctx.data.customerEmail,
               park_name: ctx.data.parkName,
-              status: "In Review (Offsite)",
+              status: ctx.data.kind === "construction" ? "In Review" : "In Review (Offsite)",
+              ...(ctx.data.secondCustomer ? { second_customer: ctx.data.secondCustomer } : {}),
             }}
             parkLinks={{}}
             orderNumber={ctx.data.orderNumber}
-            onlyCustomerSignature
-            submitLabel="Submit my signature"
+            onlyGroup={ctx.data.kind === "construction" ? "constructionSignature" : "customerSignature"}
+            submitLabel={ctx.data.kind === "construction" ? "Submit Form" : "Submit my signature"}
             headerExtra={
+              ctx.data.kind === "construction" ? (
+                <div className="mb-6 mt-4 space-y-3 rounded-lg border bg-muted/40 p-4 text-sm">
+                  <p className="text-center font-heading text-lg font-semibold text-brand">
+                    New Home Order Form Signatures (Construction Signatures)
+                  </p>
+                  <p><strong>Customer Email:</strong> {ctx.data.customerEmail}</p>
+                  <p><strong>Status:</strong> In Review</p>
+                  {ctx.data.pdfUrl && (
+                    <p>
+                      <a className="text-brand underline" href={ctx.data.pdfUrl} target="_blank" rel="noreferrer">
+                        View the full form (PDF)
+                      </a>
+                    </p>
+                  )}
+                </div>
+              ) : (
               <div className="mb-6 rounded-lg border bg-muted/40 p-4 text-sm">
                 <p>
                   <strong>Order Number:</strong> {ctx.data.orderNumber}
@@ -105,6 +125,7 @@ function SignPage() {
                   </p>
                 )}
               </div>
+              )
             }
             onSubmit={async (values) => {
               await submitFn({ data: { token, values } });

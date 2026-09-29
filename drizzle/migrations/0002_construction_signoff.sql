@@ -1,0 +1,1 @@
+ALTER TABLE public.form_submissions ADD COLUMN IF NOT EXISTS construction_signed_at timestamptz;

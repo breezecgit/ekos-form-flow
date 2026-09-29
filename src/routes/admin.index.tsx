@@ -104,6 +104,7 @@ function Tracker() {
             "In Review",
             "In Review (Offsite)",
             "Awaiting customer signature",
+            "Awaiting construction sign-off",
             "Disapproved",
             "Completed",
           ].map((s) => (

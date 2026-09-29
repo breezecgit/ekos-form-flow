@@ -15,6 +15,13 @@
       "when": 1790689704378,
       "tag": "0001_ekos_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790693265277,
+      "tag": "0002_construction_signoff",
+      "breakpoints": true
     }
   ]
 }

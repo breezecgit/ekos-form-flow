@@ -212,6 +212,12 @@ function fieldValueText(f: FieldDef, values: FormValues): string {
   if (f.type === "date") return formatDate(v);
   if (f.type === "multiselect") return Array.isArray(v) ? v.join(", ") : String(v);
   if (f.type === "checkbox") return v === true ? "Yes - agreed" : "No";
+  if (f.type === "file") {
+    const list = Array.isArray(v) ? (v as { name: string }[]) : [];
+    return list.length
+      ? `${list.map((x) => x.name).join(", ")} (attached at the end of this document)`
+      : "-";
+  }
   return String(v);
 }
 
@@ -241,6 +247,7 @@ async function drawSignature(
   name: string,
   date: string,
 ) {
+  w.ensure(120); // keep the label, signature and name/date together
   w.text(label, { size: 10, font: w.bold, color: BRAND, gap: 2 });
   const base64 = dataUrl.includes(",") ? (dataUrl.split(",")[1] ?? "") : dataUrl;
   try {
@@ -333,6 +340,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       }
       if (f.type === "checkbox") {
         const ticked = values[f.key] === true;
+        if (f.help) w.text(f.help, { size: 10, font: w.bold, color: BRAND, gap: 2 });
         w.text(`${ticked ? "[X]" : "[ ]"}  ${f.label ?? ""}`, { size: 10, gap: 6 });
         continue;
       }
