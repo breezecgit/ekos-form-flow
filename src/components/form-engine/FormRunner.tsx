@@ -58,7 +58,14 @@ export function FormRunner({
   }, [def, onlyGroup]);
   const onlyCustomerSignature = Boolean(onlyGroup);
 
-  const [values, setValues] = useState<FormValues>(() => withDefaults(def, fillFromPark(def, initialValues, parks, false)));
+  const [values, setValues] = useState<FormValues>(() => {
+    const v = withDefaults(def, fillFromPark(def, initialValues, parks, false));
+    // Fill any empty auto-calculated boxes on load (keeps saved/overwritten values).
+    const cf = def.steps.flatMap((s) => s.fields).filter((f) => f.compute);
+    for (let pass = 0; pass < 2; pass++)
+      for (const f of cf) if (String(v[f.key] ?? "").trim() === "") v[f.key] = f.compute!(v);
+    return v;
+  });
   // Park is locked only when it was already set when the form opened (carried from the sale),
   // so a rep can still correct their own first choice on this form.
   const [lockedKeys] = useState<Set<string>>(() => {
