@@ -17,9 +17,11 @@
 - Rep dashboard + Admin tracker / submission detail / settings
 - Director bootstrap for sadie@ekosgroup.co.uk
 
+## Done (Forms 2 + 3)
+- Identification Checks (ID uploads embedded in PDF) – tested on/off site + Completed
+- New Home Order Form incl. Construction sign-off page – tested on/off site + Completed
+
 ## Later messages
-- Form 2: Identification Checks
-- Form 3: New Home Order Form
 - Form 4: Unit Sale Agreement & Welcome Pack
 - Form 5: Your Written Statement (different completion flow)
 - EKOS Customer Order Form Amendments
@@ -28,7 +30,7 @@
 - Google Drive: connected account needs EDIT access to the EKOS Forms folder
 - Resend API key + verified sending domain for sales@ekosgroup.co.uk
 - Per-park Brochure / Site Licence / Park Rules URLs (blank = "link to follow")
-- Construction team notification email
+- Construction team notification email (needed for New Home Order Form sign-off emails)
 - Sadie's signature image upload (Admin > Settings)
 
 ## Constraint
