@@ -456,7 +456,7 @@ function AccordionRow({ title, blocks }: { title: string; blocks: ContentBlock[]
 function labelTone(key: string): string {
   if (key === "rep_name" || key === "rep_signature" || key === "rep_sign_date") return "text-brand";
   if (key.startsWith("customer_one_") && /(name|signature|date)$/.test(key)) return "text-ekos-customer-gold";
-  if (key.startsWith("customer_two_") && /(name|signature|date)$/.test(key)) return "text-foreground-black";
+  if (key.startsWith("customer_two_") && /(name|signature|date)$/.test(key)) return "text-ekos-black";
   return "";
 }
 

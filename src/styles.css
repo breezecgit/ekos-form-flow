@@ -58,6 +58,7 @@
   --color-ekos-track: var(--ekos-track);
   --color-ekos-divider: var(--ekos-divider);
   --color-ekos-addon: var(--ekos-addon);
+  --color-ekos-black: var(--ekos-black);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -90,6 +91,7 @@
   --ekos-track: oklch(0.8696 0 0); /* #D1D1D1 */
   --ekos-divider: oklch(0.9067 0 0); /* #DDDDDD */
   --ekos-addon: oklch(0.9702 0.0029 264.54); /* Fluent Forms addon grey */
+  --ekos-black: oklch(0 0 0);
 
   /* White page, like ekosgroup.co.uk */
   --background: oklch(1 0 0);
