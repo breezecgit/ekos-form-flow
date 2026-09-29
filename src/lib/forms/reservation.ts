@@ -49,16 +49,23 @@ const incentiveSelected = (values: FormValues, name: string) => {
   return Array.isArray(v) && v.includes(name);
 };
 
-/** Total Cost = List Price minus every entered discount amount. */
+const DISCOUNTS: Array<[string, string]> = [
+  ["discount_home", "Discount on home"],
+  ["discount_decking", "Decking"],
+  ["discount_other", "Other"],
+];
+
+/** Total Cost = List Price minus the discount amounts that are showing. Blank if List Price is TBC/empty. */
 export function computeTotalCost(values: FormValues): string {
   const list = parseMoney(values["list_price"]);
   if (list === null) return "";
   let total = list;
-  for (const key of ["discount_home", "discount_decking", "discount_other"]) {
+  for (const [key, incentive] of DISCOUNTS) {
+    if (!incentiveSelected(values, incentive)) continue;
     const d = parseMoney(values[key]);
     if (d !== null) total -= d;
   }
-  return String(total);
+  return total.toLocaleString("en-GB", { maximumFractionDigits: 2 });
 }
 
 /** Customer signature fields are hidden on the original form when off site. */
@@ -324,11 +331,6 @@ export const reservationForm: FormDef = {
             { label: "Our Park Rules", parkKey: "park_rules_url" },
             { label: "Terms & Conditions", url: TERMS_URL },
           ],
-        },
-        {
-          key: "important_note",
-          type: "static",
-          content: [{ kind: "paragraph", text: "Nothing is agreed on this page." }],
         },
       ],
     },
