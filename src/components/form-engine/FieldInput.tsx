@@ -14,8 +14,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SignaturePad } from "@/components/SignaturePad";
 import { TERMS_URL } from "@/lib/forms/reservation";
 import type { FieldDef, FormValues, RenderContext } from "@/lib/forms/types";
-import { isRequired } from "@/lib/forms/types";
-import { ChevronDown, Paperclip, X } from "lucide-react";
+import { SUBSUB_HEADINGS, isRequired } from "@/lib/forms/types";
+import type { ContentBlock, OptionDef } from "@/lib/forms/types";
+import { CHOICE_IMAGE_SRC } from "./choice-images";
+import { ChevronDown, Minus, Paperclip, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -58,7 +60,7 @@ export function FieldInput({
 
   if (field.type === "links") {
     return (
-      <ul className="space-y-3">
+      <ul className="space-y-4">
         {(field.links ?? []).map((l) => {
           const url = l.parkKey ? parkLinks[l.parkKey] : l.url;
           return (
@@ -68,12 +70,12 @@ export function FieldInput({
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-semibold text-brand underline underline-offset-4 hover:text-gold"
+                  className="text-[15px] font-semibold text-foreground underline underline-offset-2 hover:text-gold"
                 >
                   {l.label}
                 </a>
               ) : (
-                <span className="font-semibold text-brand">
+                <span className="text-[15px] font-semibold text-foreground">
                   {l.label}{" "}
                   <span className="font-normal text-muted-foreground">(link to follow)</span>
                 </span>
@@ -86,7 +88,7 @@ export function FieldInput({
   }
 
   const label = (
-    <label className="ekos-label" htmlFor={field.key}>
+    <label className={`ekos-label ${labelTone(field.key)}`} htmlFor={field.key}>
       {field.label}
       {isRequired(field) && <span className="ml-1 text-destructive">*</span>}
     </label>
@@ -99,8 +101,10 @@ export function FieldInput({
       control = (
         <Textarea
           id={field.key}
+          className="ekos-input"
           value={String(value ?? "")}
           disabled={disabled}
+          placeholder={field.placeholder}
           onChange={(e) => set(e.target.value)}
           rows={4}
         />
@@ -108,13 +112,13 @@ export function FieldInput({
       break;
     case "money":
       control = (
-        <div className="relative">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-brand">
+        <div className="flex items-stretch">
+          <span className="flex items-center rounded-l-[7px] border border-r-0 border-ekos-field-border bg-ekos-addon px-4 text-[16px] text-ekos-field-text">
             £
           </span>
           <Input
             id={field.key}
-            className="pl-7"
+            className="ekos-input rounded-l-none"
             inputMode="text"
             value={String(value ?? "")}
             disabled={disabled}
@@ -131,7 +135,7 @@ export function FieldInput({
           disabled={disabled ?? false}
           onValueChange={(v) => set(v)}
         >
-          <SelectTrigger id={field.key}>
+          <SelectTrigger id={field.key} className="ekos-input h-auto w-full">
             <SelectValue placeholder={field.placeholder ?? "Please select"} />
           </SelectTrigger>
           <SelectContent>
@@ -158,7 +162,7 @@ export function FieldInput({
               type="button"
               variant="outline"
               disabled={disabled}
-              className="w-full justify-between font-normal"
+              className="ekos-input w-full justify-between font-normal hover:bg-card"
             >
               <span className={selected.length ? "" : "text-muted-foreground"}>
                 {selected.length ? selected.join(", ") : (field.placeholder ?? "Please select")}
@@ -193,26 +197,54 @@ export function FieldInput({
       );
       break;
     }
-    case "radio":
-      control = (
-        <div className="flex gap-6">
-          {(field.options ?? []).map((o) => (
-            <label key={o.value} className="flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name={field.key}
-                value={o.value}
+    case "radio": {
+      const options = field.options ?? [];
+      const withImages = options.some((o) => o.image);
+      const radio = (o: OptionDef) => (
+        <label key={o.value} className="flex cursor-pointer items-center gap-2 text-[14px] font-medium text-ekos-ink">
+          <input
+            type="radio"
+            name={field.key}
+            value={o.value}
+            disabled={disabled}
+            checked={value === o.value}
+            onChange={() => set(o.value)}
+            className="h-3.5 w-3.5 accent-[var(--brand)]"
+          />
+          {o.label ?? o.value}
+        </label>
+      );
+      control = withImages ? (
+        <div className="flex flex-wrap gap-4">
+          {options.map((o) => (
+            <div key={o.value} className="w-[200px] max-w-[45%]">
+              <button
+                type="button"
                 disabled={disabled}
-                checked={value === o.value}
-                onChange={() => set(o.value)}
-                className="h-4 w-4 accent-[var(--brand)]"
-              />
-              {o.label ?? o.value}
-            </label>
+                onClick={() => set(o.value)}
+                aria-label={o.label ?? o.value}
+                className={`block aspect-square w-full overflow-hidden rounded-[4px] border ${
+                  value === o.value ? "border-gold ring-2 ring-gold" : "border-ekos-field-border"
+                } bg-card`}
+              >
+                {o.image && o.image !== "blank" && (
+                  <img
+                    src={CHOICE_IMAGE_SRC[o.image]}
+                    alt={o.label ?? o.value}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </button>
+              <div className="mt-2">{radio(o)}</div>
+            </div>
           ))}
         </div>
+      ) : (
+        <div className="flex flex-col gap-2">{options.map(radio)}</div>
       );
       break;
+    }
     case "checkbox":
       return (
         <div>
@@ -223,12 +255,15 @@ export function FieldInput({
             </p>
           )}
           <label className="flex cursor-pointer items-start gap-3">
-            <Checkbox
+            <input
+              type="checkbox"
+              id={field.key}
               checked={value === true}
               disabled={disabled}
-              onCheckedChange={(c) => set(c === true)}
+              onChange={(e) => set(e.target.checked)}
+              className="mt-1 h-3.5 w-3.5 shrink-0 accent-[var(--brand)]"
             />
-            <span className="text-sm leading-relaxed text-foreground">
+            <span className="text-[14px] font-medium leading-relaxed text-ekos-ink">
               {field.key === "accept_terms" ? (
                 <>
                   I have read and agree to the{" "}
@@ -274,6 +309,7 @@ export function FieldInput({
       control = (
         <Input
           id={field.key}
+          className="ekos-input"
           type="date"
           value={String(value ?? "")}
           disabled={disabled}
@@ -285,6 +321,7 @@ export function FieldInput({
       control = (
         <Input
           id={field.key}
+          className="ekos-input"
           type={field.type === "email" ? "email" : field.type === "tel" ? "tel" : "text"}
           value={String(value ?? "")}
           disabled={disabled}
@@ -297,7 +334,7 @@ export function FieldInput({
   return (
     <div>
       {label}
-      {field.help && <p className="mb-2 text-sm text-muted-foreground">{field.help}</p>}
+      {field.help && <p className="mb-2 text-[13px] text-ekos-field-text">{field.help}</p>}
       {control}
       {lockedPark && (
         <p className="mt-1 text-xs text-muted-foreground">Carried over from this sale – cannot be changed.</p>
@@ -341,46 +378,86 @@ function StaticContent({
       </div>
     );
   }
+  return <Blocks blocks={field.content ?? []} />;
+}
+
+function Blocks({ blocks }: { blocks: ContentBlock[] }) {
   return (
     <div className="space-y-4">
-      {(field.content ?? []).map((b, i) => {
+      {blocks.map((b, i) => {
         if (b.kind === "heading")
           return (
-            <h2 key={i} className="ekos-title text-2xl">
+            <h2 key={i} className="ekos-step-heading">
               {b.text}
             </h2>
           );
         if (b.kind === "subheading")
-          return (
-            <h3 key={i} className="font-heading text-lg font-semibold text-brand">
+          return SUBSUB_HEADINGS.has(b.text) ? (
+            <h4 key={i} className="ekos-subsubheading">
+              {b.text}
+            </h4>
+          ) : (
+            <h3 key={i} className="ekos-subheading">
               {b.text}
             </h3>
           );
         if (b.kind === "bullets")
           return (
-            <ul key={i} className="list-disc space-y-1 pl-6 text-sm leading-relaxed">
+            <ul
+              key={i}
+              className="list-disc space-y-1.5 pl-6 text-[15px] font-medium leading-[1.7] text-ekos-slate marker:text-[0.7em]"
+            >
               {b.items.map((it) => (
                 <li key={it}>{it}</li>
               ))}
             </ul>
           );
+        if (b.kind === "accordion") return <AccordionRow key={i} title={b.title} blocks={b.blocks} />;
         if (b.kind === "note")
           return (
-            <p
-              key={i}
-              className="rounded-md border border-border bg-secondary p-3 text-sm leading-relaxed"
-            >
+            <p key={i} className="text-[15px] font-medium leading-[1.7] text-ekos-slate">
               {b.text}
             </p>
           );
         return (
-          <p key={i} className="text-sm leading-relaxed">
+          <p key={i} className="text-[15px] font-medium leading-[1.7] text-ekos-slate">
             {b.text}
           </p>
         );
       })}
     </div>
   );
+}
+
+/** Collapsible "+" row, closed by default (Fluent Forms accordion). */
+function AccordionRow({ title, blocks }: { title: string; blocks: ContentBlock[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-t border-ekos-divider">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between py-3 text-left font-heading text-[15px] font-semibold text-ekos-slate"
+      >
+        {title}
+        {open ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+      </button>
+      {open && (
+        <div className="pb-4">
+          <Blocks blocks={blocks} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Label colours measured on the live signature steps. */
+function labelTone(key: string): string {
+  if (key === "rep_name" || key === "rep_signature" || key === "rep_sign_date") return "text-brand";
+  if (key.startsWith("customer_one_") && /(name|signature|date)$/.test(key)) return "text-ekos-customer-gold";
+  if (key.startsWith("customer_two_") && /(name|signature|date)$/.test(key)) return "text-ekos-black";
+  return "";
 }
 
 function FileControl({
