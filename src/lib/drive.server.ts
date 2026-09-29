@@ -1,17 +1,59 @@
 const GATEWAY = "https://connector-gateway.lovable.dev/google_drive";
 
+function keys() {
+  const lovableKey = process.env["LOVABLE_API_KEY"];
+  const driveKey = process.env["GOOGLE_DRIVE_API_KEY"];
+  if (!lovableKey || !driveKey) return null;
+  return { lovableKey, driveKey };
+}
+
+export function driveFolderLink(id: string) {
+  return id ? `https://drive.google.com/drive/folders/${id}` : "";
+}
+export function driveFileLink(id: string) {
+  return id ? `https://drive.google.com/file/d/${id}/view` : "";
+}
+
+/** Creates a sub-folder inside `parentId`. Returns the folder id or null. */
+export async function createDriveFolder(name: string, parentId: string): Promise<string | null> {
+  const k = keys();
+  if (!k || !parentId) return null;
+  try {
+    const res = await fetch(`${GATEWAY}/drive/v3/files?supportsAllDrives=true&fields=id`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${k.lovableKey}`,
+        "X-Connection-Api-Key": k.driveKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [parentId],
+      }),
+    });
+    if (!res.ok) {
+      console.error(`Google Drive folder create failed [${res.status}]: ${await res.text()}`);
+      return null;
+    }
+    return ((await res.json()) as { id?: string }).id ?? null;
+  } catch (e) {
+    console.error("Google Drive folder error:", e);
+    return null;
+  }
+}
+
 /**
- * Uploads the merged PDF to the EKOS Google Drive folder.
- * Returns the Drive file id, or null when Drive is not connected / upload failed.
+ * Uploads a PDF into a Drive folder. Returns the file id, or null when Drive is
+ * not connected / upload failed (the PDF always stays in app storage too).
  */
 export async function uploadPdfToDrive(
   fileName: string,
   folderId: string,
   bytes: Uint8Array,
 ): Promise<string | null> {
-  const lovableKey = process.env["LOVABLE_API_KEY"];
-  const driveKey = process.env["GOOGLE_DRIVE_API_KEY"];
-  if (!lovableKey || !driveKey) {
+  const k = keys();
+  if (!k) {
     console.warn("Google Drive is not connected – skipping upload.");
     return null;
   }
@@ -39,8 +81,8 @@ export async function uploadPdfToDrive(
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${lovableKey}`,
-          "X-Connection-Api-Key": driveKey,
+          Authorization: `Bearer ${k.lovableKey}`,
+          "X-Connection-Api-Key": k.driveKey,
           "Content-Type": `multipart/related; boundary=${boundary}`,
         },
         body,
