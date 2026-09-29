@@ -81,6 +81,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
     ? `[TEST → To: ${intendedTo.join(", ") || "(none)"}; CC: ${intendedCc.join(", ") || "(none)"}] ${input.subject}`
     : input.subject;
 
+  const links = Array.from(new Set(Array.from(input.html.matchAll(/href="([^"]+)"/g), (m) => m[1]!.replace(/&amp;/g, "&"))));
   const log = (status: string, error: string | null) =>
     supabaseAdmin.from("email_log").insert({
       submission_id: input.submissionId ?? null,
@@ -93,6 +94,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
       subject,
       template: input.template,
       html: input.html,
+      links,
       status,
       error,
     });

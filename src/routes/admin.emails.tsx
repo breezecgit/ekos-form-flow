@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { useServerFn } from "@tanstack/react-start";
 import { Fragment, useState } from "react";
-import { listEmailLog } from "@/lib/ekos.functions";
+import { listEmailLog, sendTestOfEveryEmail } from "@/lib/ekos.functions";
 
 export const Route = createFileRoute("/admin/emails")({
   head: () => ({
@@ -25,10 +27,30 @@ function EmailLog() {
   const fn = useServerFn(listEmailLog);
   const { data } = useQuery({ queryKey: ["email-log"], queryFn: () => fn() });
   const [open, setOpen] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const testFn = useServerFn(sendTestOfEveryEmail);
+  const test = useMutation({
+    mutationFn: () => testFn(),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["email-log"] });
+      const failed = r.results.filter((x) => !x.ok);
+      if (failed.length) toast.error(`${failed.length} email(s) failed: ${failed.map((f) => f.label).join(", ")}`);
+      else toast.success(`Sent a test of all ${r.results.length} emails for sample sale ${r.orderNumber}.`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="ekos-title text-2xl">Email log</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="ekos-title text-2xl">Email log</h1>
+        <Button onClick={() => test.mutate()} disabled={test.isPending}>
+          {test.isPending ? "Sending…" : "Send test of every email"}
+        </Button>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        The test uses a sample sale (“Sample Customer (email test)”). While email test mode is on, every email goes only to the test recipient.
+      </p>
       <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left">
@@ -66,7 +88,18 @@ function EmailLog() {
                     </>
                   )}
                 </td>
-                <td className="p-3">{row.subject}</td>
+                <td className="p-3">
+                  {row.subject}
+                  {row.links?.length > 0 && (
+                    <span className="mt-1 block space-y-0.5 text-xs">
+                      {row.links.map((l) => (
+                        <a key={l} href={l} target="_blank" rel="noreferrer" className="block break-all text-brand underline">
+                          {l.length > 90 ? `${l.slice(0, 90)}…` : l}
+                        </a>
+                      ))}
+                    </span>
+                  )}
+                </td>
                 <td className="p-3">{row.template}</td>
                 <td className="p-3">
                   {row.status}

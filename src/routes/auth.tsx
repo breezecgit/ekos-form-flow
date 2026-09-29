@@ -23,12 +23,21 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } =>
+    typeof s["redirect"] === "string" && s["redirect"].startsWith("/") && !s["redirect"].startsWith("//")
+      ? { redirect: s["redirect"] }
+      : {},
   component: AuthPage,
 });
+
+function goAfterLogin(redirect: string | undefined) {
+  if (redirect) window.location.assign(redirect);
+}
 
 function AuthPage() {
   const router = useRouter();
   const { session, loading } = useAuth();
+  const { redirect } = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,8 +46,12 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) router.navigate({ to: "/dashboard" });
-  }, [loading, session, router]);
+    if (!loading && session) {
+      if (redirect) goAfterLogin(redirect);
+      else if (redirect) goAfterLogin(redirect);
+      else router.navigate({ to: "/dashboard" });
+    }
+  }, [loading, session, router, redirect]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +60,7 @@ function AuthPage() {
     if (mode === "signin") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setMessage(error.message);
+      else if (redirect) goAfterLogin(redirect);
       else router.navigate({ to: "/dashboard" });
     } else {
       const { error } = await supabase.auth.signUp({

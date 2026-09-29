@@ -36,7 +36,10 @@ function FormPage() {
   const { session, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading && !session) router.navigate({ to: "/auth" });
+    if (!loading && !session) router.navigate({
+        to: "/auth",
+        search: { redirect: window.location.pathname + window.location.search },
+      });
   }, [loading, session, router]);
 
   const bootstrapFn = useServerFn(getBootstrap);

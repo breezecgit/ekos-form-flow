@@ -1,4 +1,3 @@
-import { getRequest } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { generateFormPdf, type PdfAttachment } from "@/lib/pdf/generate.server";
 import { getForm } from "@/lib/forms/registry";
@@ -32,21 +31,21 @@ export function needsDirectorWitness(formType: string): boolean {
 
 export const BUCKET = "ekos-documents";
 
-export function appOrigin(): string {
-  try {
-    const req = getRequest();
-    const origin = req?.headers.get("origin");
-    if (origin) return origin;
-    const host = req?.headers.get("host");
-    if (host) return `${host.includes("localhost") ? "http" : "https"}://${host}`;
-  } catch {
-    /* ignore */
-  }
-  return "https://project--bcc818c5-4e07-4ebe-94b2-ee00eb74094c.lovable.app";
+export const DEFAULT_APP_BASE_URL = "https://project--bcc818c5-4e07-4ebe-94b2-ee00eb74094c.lovable.app";
+
+/**
+ * Every link in emails / copied links is built from Admin > Settings "App base URL"
+ * (never the request origin – the editor preview needs a Lovable login).
+ */
+export async function appOrigin(): Promise<string> {
+  const { data } = await supabaseAdmin.from("app_settings").select("value").eq("key", "app_base_url").maybeSingle();
+  const url = String(((data?.value ?? {}) as Record<string, unknown>)["url"] ?? "").trim().replace(/\/+$/, "");
+  return /^https?:\/\//.test(url) ? url : DEFAULT_APP_BASE_URL;
 }
 
-export function logoUrl(): string {
-  return `${appOrigin()}/ekos-logo.png`;
+/** "Your" + form name without doubling ("Your Your Written Statement"). */
+export function yourForm(name: string): string {
+  return `Your ${name.replace(/^your\s+/i, "")}`;
 }
 
 export async function getSettingsMap(): Promise<Record<string, Record<string, unknown>>> {
@@ -173,7 +172,7 @@ export async function buildAndStorePdf(
   return { bytes, path, fileName };
 }
 
-export async function signedPdfUrl(path: string, seconds = 60 * 60 * 24 * 30) {
+export async function signedPdfUrl(path: string, seconds = 60 * 60 * 24 * 60) {
   const { data } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(path, seconds);
   return data?.signedUrl ?? "";
 }
@@ -214,6 +213,9 @@ export async function getOrCreateSigningToken(
     .eq("submission_id", submissionId)
     .eq("kind", kind)
     .is("used_at", null)
+    .gt("expires_at", new Date(Date.now() + 30 * 86400000).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (data?.token) return data.token;
   const token = newToken();
@@ -241,7 +243,7 @@ async function emailContext(submissionId: string) {
     ["Phone", phone],
     ["Park", parkName],
   ]);
-  return { submission, sale, values, parkName, contacts, name, email, formName, pdfLink, table, origin: appOrigin() };
+  return { submission, sale, values, parkName, contacts, name, email, formName, pdfLink, table, origin: await appOrigin() };
 }
 
 async function pdfAttachment(path: string | null) {
@@ -267,7 +269,8 @@ export async function sendReviewRequiredEmail(submissionId: string) {
       ${isWS ? p("<strong>Director and Witness signature required before completion.</strong>") + button("Sign the form", signLink) : ""}
       ${c.pdfLink ? button("Open the form PDF", c.pdfLink) : ""}
       ${outlineButton("View the tracker", `${c.origin}/admin/submissions/${submissionId}`)}
-      ${outlineButton("Log in to the website", `${c.origin}/auth`)}`,
+      ${outlineButton("Log in to the website", `${c.origin}/auth`)}
+      ${c.pdfLink ? p("The form PDF is also attached to this email.") : ""}`,
   });
 
   await sendEmail({
@@ -277,6 +280,7 @@ export async function sendReviewRequiredEmail(submissionId: string) {
       ? "New Customer Form Submission - Review & Signature Required"
       : "New Customer Form Submission - Review Required",
     html,
+    attachments: await pdfAttachment(c.submission.pdf_path),
     template: isWS ? "review_signature_required" : "review_required",
     submissionId,
   });
@@ -293,7 +297,7 @@ export async function sendOffsiteCustomerEmail(submissionId: string) {
   const token = await getOrCreateSigningToken(submissionId);
   const f = esc(c.formName);
   const html = emailShell({
-    heading: `Your ${f} is ready`,
+    heading: `${yourForm(f)} is ready`,
     bodyHtml: `
       ${goldBox(`Please review and sign your ${f}.`)}
       ${p("Thank you for choosing EKOS Homes. There are just two short steps to complete.")}
@@ -309,7 +313,7 @@ export async function sendOffsiteCustomerEmail(submissionId: string) {
     from: FROM_CUSTOMER,
     to: [c.email],
     cc: [c.contacts.sadie, c.contacts.sales, c.contacts.repEmail, c.contacts.parkInbox],
-    subject: `Your ${c.formName} is ready`,
+    subject: `${yourForm(c.formName)} is ready`,
     html,
     attachments: await pdfAttachment(c.submission.pdf_path),
     template: "offsite_ready_to_sign",
@@ -364,7 +368,7 @@ export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8
   const subject =
     c.submission.form_type === "identification"
       ? "Your Identification Checks are complete"
-      : `Your ${c.formName} is complete`;
+      : `${yourForm(c.formName)} is complete`;
   const html = emailShell({
     heading: esc(subject),
     bodyHtml: `
@@ -417,7 +421,7 @@ export async function sendResumeLinkEmail(submissionId: string, repEmail: string
   const html = emailShell({
     heading: "Your saved draft",
     bodyHtml: `
-      ${p(`Your ${esc(c.formName)} draft for ${esc(c.name || c.submission.order_number)} has been saved.`)}
+      ${p(`${esc(yourForm(c.formName))} draft for ${esc(c.name || c.submission.order_number)} has been saved.`)}
       ${button("Resume this form", `${c.origin}/forms/${c.submission.form_type}/${c.submission.id}`)}`,
   });
   await sendEmail({
@@ -495,4 +499,108 @@ export async function runCompletion(submissionId: string, opts: { storedSignatur
 
 export function describeDate(d: string | null | undefined) {
   return d ? formatDate(d) : "";
+}
+
+// ------------------------------------------------------ email self-test ---
+
+const SAMPLE_EMAIL = "sample.customer@example.com";
+
+async function sampleSubmission(saleId: string, orderNumber: string, formType: string, userId: string, extra: Record<string, unknown>, customerSigned: boolean) {
+  const { data: existing } = await supabaseAdmin
+    .from("form_submissions")
+    .select("id")
+    .eq("sale_id", saleId)
+    .eq("form_type", formType)
+    .neq("status", "Completed")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existing) return existing.id;
+  const { data: model } = await supabaseAdmin
+    .from("form_submissions")
+    .select("data")
+    .eq("form_type", formType)
+    .neq("sale_id", saleId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const base = { ...((model?.data ?? {}) as Record<string, unknown>) };
+  for (const k of Object.keys(base)) if (/^(director|witness|construction)_/.test(k)) delete base[k];
+  const now = new Date().toISOString();
+  const { data: row, error } = await supabaseAdmin
+    .from("form_submissions")
+    .insert({
+      sale_id: saleId,
+      form_type: formType,
+      order_number: orderNumber,
+      status: "In Review (Offsite)",
+      is_draft: false,
+      submitted_at: now,
+      customer_signed_at: customerSigned ? now : null,
+      created_by: userId,
+      data: { ...base, ...extra, status: "In Review (Offsite)" } as never,
+    })
+    .select("id")
+    .single();
+  if (error || !row) throw new Error(`Could not create sample ${formType}: ${error?.message}`);
+  return row.id;
+}
+
+/** Director-only: renders every email template for a sample sale and sends it (test mode applies). */
+export async function sendAllTestEmails(userId: string, userEmail: string) {
+  let { data: sale } = await supabaseAdmin.from("sales").select("*").eq("customer_email", SAMPLE_EMAIL).maybeSingle();
+  if (!sale) {
+    const ins = await supabaseAdmin
+      .from("sales")
+      .insert({
+        order_number: "",
+        park_name: "Castle View",
+        customer_name: "Sample Customer (email test)",
+        customer_email: SAMPLE_EMAIL,
+        customer_phone: "07700 900000",
+        sales_person: "Ben Cook",
+        created_by: userId,
+      })
+      .select("*")
+      .single();
+    if (ins.error || !ins.data) throw new Error(`Could not create the sample sale: ${ins.error?.message}`);
+    sale = ins.data;
+  }
+  const extra = {
+    customer_name: sale.customer_name,
+    party_customer_name: sale.customer_name,
+    customer_email: SAMPLE_EMAIL,
+    customer_phone: sale.customer_phone,
+    park_name: sale.park_name,
+    park_name_confirm: sale.park_name,
+    sales_person: sale.sales_person,
+  };
+  const res = await sampleSubmission(sale.id, sale.order_number, "reservation", userId, extra, false);
+  const nho = await sampleSubmission(sale.id, sale.order_number, "new_home_order", userId, extra, true);
+  const ws = await sampleSubmission(sale.id, sale.order_number, "written_statement", userId, extra, true);
+  const resPdf = await buildAndStorePdf(res);
+  await buildAndStorePdf(nho);
+  await buildAndStorePdf(ws);
+
+  const steps: [string, () => Promise<unknown>][] = [
+    ["Sadie review (Review Required)", () => sendReviewRequiredEmail(res)],
+    ["Sadie review + Director & Witness signing (Written Statement)", () => sendDirectorWitnessEmail(ws)],
+    ["Customer ready to sign (off site)", () => sendOffsiteCustomerEmail(res)],
+    ["Customer ready to sign – Written Statement", () => sendOffsiteCustomerEmail(ws)],
+    ["Construction final sign-off", () => sendConstructionEmail(nho)],
+    ["Signature complete", () => sendSignatureCompleteEmail(res)],
+    ["Completed", () => sendCompletionEmails(res, resPdf.bytes, resPdf.fileName)],
+    ["Disapproved", () => sendDisapprovalEmail(res, "Sample note – email test only")],
+    ["Draft saved / resume link", () => sendResumeLinkEmail(res, userEmail)],
+  ];
+  const results: { label: string; ok: boolean; error?: string }[] = [];
+  for (const [label, fn] of steps) {
+    try {
+      await fn();
+      results.push({ label, ok: true });
+    } catch (e) {
+      results.push({ label, ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+  return { orderNumber: sale.order_number, results };
 }

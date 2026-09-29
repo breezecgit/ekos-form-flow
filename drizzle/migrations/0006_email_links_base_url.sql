@@ -1,0 +1,2 @@
+ALTER TABLE public.email_log ADD COLUMN IF NOT EXISTS links text[] NOT NULL DEFAULT '{}'::text[];
+INSERT INTO public.app_settings (key, value) VALUES ('app_base_url', '{"url":"https://project--bcc818c5-4e07-4ebe-94b2-ee00eb74094c.lovable.app"}'::jsonb) ON CONFLICT (key) DO NOTHING;
