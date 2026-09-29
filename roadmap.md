@@ -26,11 +26,13 @@
 - [x] Form 5: Your Written Statement (customer → Sadie + witness, Word export) — done
 - EKOS Customer Order Form Amendments
 
+## Done (automations)
+- Live EKOS automations rebuilt in-app: lookup tables, 5 branded emails, Drive per-customer folders + stage PDFs, Google tracker sheet sync (off by default), email log preview
+
 ## Blocked / needs the user
 - Google Drive: connected account needs EDIT access to the EKOS Forms folder
 - Resend API key + verified sending domain for sales@ekosgroup.co.uk
 - Per-park Brochure / Site Licence / Park Rules URLs (blank = "link to follow")
-- Construction team notification email (needed for New Home Order Form sign-off emails)
 - Sadie's signature image upload (Admin > Settings)
 
 ## Constraint

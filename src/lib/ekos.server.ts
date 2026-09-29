@@ -2,9 +2,21 @@ import { getRequest } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { generateFormPdf, type PdfAttachment } from "@/lib/pdf/generate.server";
 import { getForm } from "@/lib/forms/registry";
-import { driveFileName, formatDate, pdfFileName, todayISO } from "@/lib/format";
-import { uploadPdfToDrive } from "@/lib/drive.server";
-import { button, emailShell, sendEmail } from "@/lib/email.server";
+import { formatDate, pdfFileName, todayISO } from "@/lib/format";
+import {
+  button,
+  detailsTable,
+  emailShell,
+  esc,
+  FROM_CUSTOMER,
+  FROM_INTERNAL,
+  goldBox,
+  h3,
+  outlineButton,
+  p,
+  sendEmail,
+} from "@/lib/email.server";
+import { contactsFor, emailFormName, saveStageToDrive, syncTrackerSheet } from "@/lib/automations.server";
 import type { FormValues, UploadedFile } from "@/lib/forms/types";
 import { isVisible } from "@/lib/forms/types";
 
@@ -211,205 +223,162 @@ export async function getOrCreateSigningToken(
 
 // ---------------------------------------------------------------- emails ---
 
+async function emailContext(submissionId: string) {
+  const { submission, sale } = await loadSubmission(submissionId);
+  const values = (submission.data ?? {}) as FormValues;
+  const parkName = String(values["park_name"] ?? sale?.park_name ?? "");
+  const salesPerson = String(values["sales_person"] ?? sale?.sales_person ?? "");
+  const contacts = await contactsFor(salesPerson, parkName);
+  const name = String(values["customer_name"] ?? sale?.customer_name ?? "");
+  const email = String(values["customer_email"] ?? sale?.customer_email ?? "");
+  const phone = String(values["customer_phone"] ?? sale?.customer_phone ?? "");
+  const formName = emailFormName(submission.form_type);
+  const pdfLink = submission.pdf_path ? await signedPdfUrl(submission.pdf_path) : "";
+  const table = detailsTable([
+    ["Form", formName],
+    ["Name", name],
+    ["Email", email],
+    ["Phone", phone],
+    ["Park", parkName],
+  ]);
+  return { submission, sale, values, parkName, contacts, name, email, formName, pdfLink, table, origin: appOrigin() };
+}
+
+async function pdfAttachment(path: string | null) {
+  if (!path) return [];
+  const dl = await supabaseAdmin.storage.from(BUCKET).download(path);
+  if (!dl.data) return [];
+  return [{ filename: path.split("/").pop()!, bytes: new Uint8Array(await dl.data.arrayBuffer()) }];
+}
+
+/** (b) Sadie review – to Sadie only. Written Statement adds the Director & Witness signing button. */
 export async function sendReviewRequiredEmail(submissionId: string) {
-  const { submission } = await loadSubmission(submissionId);
-  const settings = await getSettingsMap();
-  const director = String(settings["notifications"]?.["director_email"] ?? "sadie@ekosgroup.co.uk");
-  const def = getForm(submission.form_type);
-  const values = (submission.data ?? {}) as FormValues;
-  const origin = appOrigin();
-  const pdfLink = submission.pdf_path ? await signedPdfUrl(submission.pdf_path) : "";
+  const c = await emailContext(submissionId);
+  const isWS = needsDirectorWitness(c.submission.form_type);
+  const reservationOnSite = c.submission.form_type === "reservation" && c.submission.status === "In Review";
+  const withSignature = isWS || reservationOnSite;
+  const signLink = isWS ? `${c.origin}/sign/${await getOrCreateSigningToken(submissionId, "director")}` : "";
 
   const html = emailShell({
-    logoUrl: logoUrl(),
-    heading: "Review (&amp; Signature) Required",
+    heading: "New form submission",
     bodyHtml: `
-      <p style="font-size:15px;line-height:1.6;">A <strong>${def.title}</strong> has been submitted and needs your review and signature.</p>
-      <table style="font-size:14px;line-height:1.8;">
-        <tr><td><strong>Order Number</strong></td><td style="padding-left:12px;">${submission.order_number}</td></tr>
-        <tr><td><strong>Customer</strong></td><td style="padding-left:12px;">${values["customer_name"] ?? ""}</td></tr>
-        <tr><td><strong>Park</strong></td><td style="padding-left:12px;">${values["park_name"] ?? ""}</td></tr>
-        <tr><td><strong>Status</strong></td><td style="padding-left:12px;">${submission.status}</td></tr>
-      </table>
-      ${pdfLink ? button("View the PDF", pdfLink) : ""}
-      <p style="font-size:14px;"><a href="${origin}/admin/submissions/${submission.id}">Open the tracker entry</a></p>
-      <p style="font-size:14px;"><a href="${origin}/auth">Staff login</a></p>`,
+      ${p(`A new ${esc(c.formName)} has been submitted.`)}
+      ${c.table}
+      ${isWS ? p("<strong>Director and Witness signature required before completion.</strong>") + button("Sign the form", signLink) : ""}
+      ${c.pdfLink ? button("Open the form PDF", c.pdfLink) : ""}
+      ${outlineButton("View the tracker", `${c.origin}/admin/submissions/${submissionId}`)}
+      ${outlineButton("Log in to the website", `${c.origin}/auth`)}`,
   });
 
   await sendEmail({
-    to: [director],
-    subject: `Review (& Signature) Required – ${def.title} – ${submission.order_number}`,
+    from: FROM_INTERNAL,
+    to: [c.contacts.sadie],
+    subject: withSignature
+      ? "New Customer Form Submission - Review & Signature Required"
+      : "New Customer Form Submission - Review Required",
     html,
-    template: "review_required",
+    template: isWS ? "review_signature_required" : "review_required",
     submissionId,
   });
 }
 
-export async function sendOffsiteCustomerEmail(submissionId: string) {
-  const { submission } = await loadSubmission(submissionId);
-  const def = getForm(submission.form_type);
-  const values = (submission.data ?? {}) as FormValues;
-  const token = await getOrCreateSigningToken(submissionId);
-  const origin = appOrigin();
-  const pdfLink = submission.pdf_path ? await signedPdfUrl(submission.pdf_path) : "";
-  const customerEmail = String(values["customer_email"] ?? "");
-
-  const html = emailShell({
-    logoUrl: logoUrl(),
-    heading: `Please sign your ${def.title}`,
-    bodyHtml: `
-      <p style="font-size:15px;line-height:1.6;">Dear ${values["customer_name"] ?? "Customer"},</p>
-      <p style="font-size:15px;line-height:1.6;">Thank you for reserving your new home with EKOS Group. Your order number is <strong>${submission.order_number}</strong>.</p>
-      <p style="font-size:15px;line-height:1.6;">A copy of your ${def.title} is attached. When you are ready, please use the secure link below to add your signature.</p>
-      ${button("Sign your form", `${origin}/sign/${token}`)}
-      ${pdfLink ? `<p style="font-size:14px;"><a href="${pdfLink}">View your full form (PDF)</a></p>` : ""}`,
-  });
-
-  const attachments = submission.pdf_path
-    ? await (async () => {
-        const dl = await supabaseAdmin.storage.from(BUCKET).download(submission.pdf_path!);
-        if (!dl.data) return [];
-        return [
-          {
-            filename: submission.pdf_path!.split("/").pop()!,
-            bytes: new Uint8Array(await dl.data.arrayBuffer()),
-          },
-        ];
-      })()
-    : [];
-
-  await sendEmail({
-    to: [customerEmail],
-    subject: `Your ${def.title} – ${submission.order_number} – please sign`,
-    html,
-    attachments,
-    template: "offsite_signature_request",
-    submissionId,
-  });
-}
-
-/** Written Statement: secure Director & Witness signing link – to Sadie only. */
+/** Written Statement: the review email carries Sadie's Director & Witness signing link. */
 export async function sendDirectorWitnessEmail(submissionId: string) {
-  const { submission } = await loadSubmission(submissionId);
-  const def = getForm(submission.form_type);
-  const values = (submission.data ?? {}) as FormValues;
-  const settings = await getSettingsMap();
-  const director = String(settings["notifications"]?.["director_email"] ?? "") || "sadie@ekosgroup.co.uk";
-  const token = await getOrCreateSigningToken(submissionId, "director");
-  const origin = appOrigin();
-  const pdfLink = submission.pdf_path ? await signedPdfUrl(submission.pdf_path) : "";
+  await sendReviewRequiredEmail(submissionId);
+}
 
+/** (a) Customer "ready to sign" (off site). */
+export async function sendOffsiteCustomerEmail(submissionId: string) {
+  const c = await emailContext(submissionId);
+  const token = await getOrCreateSigningToken(submissionId);
+  const f = esc(c.formName);
   const html = emailShell({
-    logoUrl: logoUrl(),
-    heading: "Director &amp; Witness Signatures Required",
+    heading: `Your ${f} is ready`,
     bodyHtml: `
-      <p style="font-size:15px;line-height:1.6;">The customer has signed <strong>${def.title}</strong>. Please sign it with your witness present, using the secure link below.</p>
-      <table style="font-size:14px;line-height:1.8;">
-        <tr><td><strong>Order Number</strong></td><td style="padding-left:12px;">${submission.order_number}</td></tr>
-        <tr><td><strong>Customer</strong></td><td style="padding-left:12px;">${values["customer_name"] ?? ""}</td></tr>
-        <tr><td><strong>Park</strong></td><td style="padding-left:12px;">${values["park_name"] ?? ""}</td></tr>
-      </table>
-      ${button("Sign as Director with Witness", `${origin}/sign/${token}`)}
-      ${pdfLink ? `<p style="font-size:14px;"><a href="${pdfLink}">View the full statement (PDF)</a></p>` : ""}`,
+      ${goldBox(`Please review and sign your ${f}.`)}
+      ${p("Thank you for choosing EKOS Homes. There are just two short steps to complete.")}
+      ${h3("Step 1 — Review your form")}
+      ${p("Please take a moment to check that all the details on your form are correct.")}
+      ${c.pdfLink ? button("Review form", c.pdfLink) : ""}
+      ${h3("Step 2 — Sign your form")}
+      ${p("Once you're happy that everything is correct, please click below to sign and submit.")}
+      ${outlineButton("Sign form", `${c.origin}/sign/${token}`)}
+      ${p("If you have any questions, don't hesitate to contact us – we're here to help.")}`,
   });
-
   await sendEmail({
-    to: [director],
-    subject: `Director & Witness Signatures Required – ${def.title} – ${submission.order_number}`,
+    from: FROM_CUSTOMER,
+    to: [c.email],
+    cc: [c.contacts.sadie, c.contacts.sales, c.contacts.repEmail, c.contacts.parkInbox],
+    subject: `Your ${c.formName} is ready`,
     html,
-    template: "director_witness_request",
+    attachments: await pdfAttachment(c.submission.pdf_path),
+    template: "offsite_ready_to_sign",
     submissionId,
   });
 }
 
-/** New Home Order Form: full signed form + secure link to the Construction team. */
+/** (c) Customer submitted the off-site signing page – rep + park inbox. */
+export async function sendSignatureCompleteEmail(submissionId: string) {
+  const c = await emailContext(submissionId);
+  const html = emailShell({
+    heading: "Signature completed",
+    bodyHtml: `${p(`The ${esc(c.formName)} has been signed.`)}${c.table}`,
+  });
+  await sendEmail({
+    from: FROM_INTERNAL,
+    to: [c.contacts.repEmail, c.contacts.parkInbox],
+    subject: "Signature Complete",
+    html,
+    template: "signature_complete",
+    submissionId,
+  });
+}
+
+/** (d) New Home Order Form: Construction final sign-off. */
 export async function sendConstructionEmail(submissionId: string) {
-  const { submission } = await loadSubmission(submissionId);
-  const def = getForm(submission.form_type);
-  const values = (submission.data ?? {}) as FormValues;
-  const settings = await getSettingsMap();
-  const to = String(settings["notifications"]?.["construction_email"] ?? "");
+  const c = await emailContext(submissionId);
   const token = await getOrCreateSigningToken(submissionId, "construction");
-  const origin = appOrigin();
-  const pdfLink = submission.pdf_path ? await signedPdfUrl(submission.pdf_path) : "";
-
   const html = emailShell({
-    logoUrl: logoUrl(),
-    heading: "Construction Signature Required",
+    heading: "Final sign-off required",
     bodyHtml: `
-      <p style="font-size:15px;line-height:1.6;">The <strong>${def.title}</strong> below has been signed by the customer and needs the Construction team's signature before it goes to the Director for approval.</p>
-      <table style="font-size:14px;line-height:1.8;">
-        <tr><td><strong>Order Number</strong></td><td style="padding-left:12px;">${submission.order_number}</td></tr>
-        <tr><td><strong>Customer</strong></td><td style="padding-left:12px;">${values["customer_name"] ?? ""}</td></tr>
-        <tr><td><strong>Park</strong></td><td style="padding-left:12px;">${values["park_name"] ?? ""}</td></tr>
-      </table>
-      ${button("Sign as Construction team", `${origin}/sign/${token}`)}
-      ${pdfLink ? `<p style="font-size:14px;"><a href="${pdfLink}">View the full form (PDF)</a></p>` : ""}`,
+      ${goldBox("A signed New Home Order Form is ready for the Construction team's final sign-off.")}
+      ${p("The customer has completed and signed their form. Please review the signed form below, then complete the Construction sign-off.")}
+      ${c.pdfLink ? button("View signed form (PDF)", c.pdfLink) : ""}
+      ${outlineButton("Complete final sign-off", `${c.origin}/sign/${token}`)}`,
   });
-
-  const attachments = submission.pdf_path
-    ? await (async () => {
-        const dl = await supabaseAdmin.storage.from(BUCKET).download(submission.pdf_path!);
-        if (!dl.data) return [];
-        return [{ filename: submission.pdf_path!.split("/").pop()!, bytes: new Uint8Array(await dl.data.arrayBuffer()) }];
-      })()
-    : [];
-
   await sendEmail({
-    to: [to],
-    subject: `Construction Signature Required – ${def.title} – ${submission.order_number}`,
+    from: FROM_INTERNAL,
+    to: [c.contacts.construction],
+    cc: [c.contacts.sadie, c.contacts.sales, c.contacts.repEmail, c.contacts.parkInbox],
+    subject: "New Home Order Form - Final sign-off required",
     html,
-    attachments,
-    template: "construction_signature_request",
+    attachments: await pdfAttachment(c.submission.pdf_path),
+    template: "construction_signoff",
     submissionId,
   });
 }
 
+/** (e) Completed – to customer, CC rep, park inbox, Sadie, sales@. */
 export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8Array, fileName: string) {
-  const { submission } = await loadSubmission(submissionId);
-  const def = getForm(submission.form_type);
-  const values = (submission.data ?? {}) as FormValues;
-  const settings = await getSettingsMap();
-  const notif = settings["notifications"] ?? {};
-
-  // Park inbox: this form's Email box, else the one from the Reservation Form, else Settings.
-  let parkEmail = String(values["park_email"] ?? "");
-  if (!parkEmail) {
-    const { data: res } = await supabaseAdmin
-      .from("form_submissions")
-      .select("data")
-      .eq("sale_id", submission.sale_id)
-      .eq("form_type", "reservation")
-      .maybeSingle();
-    parkEmail = String(((res?.data ?? {}) as FormValues)["park_email"] ?? "");
-  }
-  if (!parkEmail) {
-    const park = await getPark(String(values["park_name"] ?? ""));
-    parkEmail = park?.inbox_email ?? "";
-  }
-  const recipients = [
-    String(values["customer_email"] ?? ""),
-    parkEmail,
-    String(notif["sales_email"] ?? "sales@ekosgroup.co.uk"),
-    String(notif["director_email"] ?? "sadie@ekosgroup.co.uk"),
-  ];
-
+  const c = await emailContext(submissionId);
+  const subject =
+    c.submission.form_type === "identification"
+      ? "Your Identification Checks are complete"
+      : `Your ${c.formName} is complete`;
   const html = emailShell({
-    logoUrl: logoUrl(),
-    heading: `Your ${def.title} is complete`,
+    heading: esc(subject),
     bodyHtml: `
-      <p style="font-size:15px;line-height:1.6;">Your <strong>${def.title}</strong> is complete – please find your signed copy attached.</p>
-      <table style="font-size:14px;line-height:1.8;">
-        <tr><td><strong>Order Number</strong></td><td style="padding-left:12px;">${submission.order_number}</td></tr>
-        <tr><td><strong>Customer</strong></td><td style="padding-left:12px;">${values["customer_name"] ?? ""}</td></tr>
-        <tr><td><strong>Park</strong></td><td style="padding-left:12px;">${values["park_name"] ?? ""}</td></tr>
-      </table>
-      <p style="font-size:15px;line-height:1.6;">Thank you for choosing EKOS Group.</p>`,
+      ${goldBox(`We're happy to confirm that we've received your completed ${esc(c.formName)}.`)}
+      ${p(c.pdfLink ? `<a href="${c.pdfLink}" style="color:#d2a065;">Please click here for your copy of the form you completed with your sales executive for your records.</a>` : "Please find attached your copy of the form you completed with your sales executive for your records.")}
+      ${p("To help you prepare for the next steps, please refer to the What Happens Next Guide at the bottom of the form.")}
+      ${p("If you have any questions, don't hesitate to contact us – we're here to help.")}
+      <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#d2a065;">Welcome to the EKOS Homes family!</p>`,
   });
-
   await sendEmail({
-    to: recipients,
-    subject: `Your ${def.title} is complete – ${submission.order_number}`,
+    from: FROM_CUSTOMER,
+    to: [c.email],
+    cc: [c.contacts.repEmail, c.contacts.parkInbox, c.contacts.sadie, c.contacts.sales],
+    subject,
     html,
     attachments: [{ filename: fileName, bytes: pdfBytes }],
     template: "completion",
@@ -418,29 +387,25 @@ export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8
 }
 
 export async function sendDisapprovalEmail(submissionId: string, note: string) {
-  const { submission } = await loadSubmission(submissionId);
-  const def = getForm(submission.form_type);
-  const origin = appOrigin();
+  const c = await emailContext(submissionId);
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("email")
-    .eq("id", submission.created_by)
+    .eq("id", c.submission.created_by)
     .maybeSingle();
-  if (!profile?.email) return;
-
   const html = emailShell({
-    logoUrl: logoUrl(),
     heading: "Changes needed before approval",
     bodyHtml: `
-      <p style="font-size:15px;line-height:1.6;">The <strong>${def.title}</strong> for order <strong>${submission.order_number}</strong> has been disapproved and reopened for edits.</p>
-      <p style="font-size:15px;line-height:1.6;"><strong>Note from the Director:</strong><br/>${note || "(no note)"}</p>
-      <p style="font-size:15px;line-height:1.6;">It stays here until edits are complete. When you resubmit it goes back to Sadie for review.</p>
-      ${button("Open the form", `${origin}/forms/${submission.form_type}/${submission.id}`)}`,
+      ${p(`The ${esc(c.formName)} for ${esc(c.name)} (${esc(c.submission.order_number)}) has been disapproved and reopened for edits.`)}
+      ${goldBox(`Note from the Director: ${esc(note || "(no note)")}`)}
+      ${c.table}
+      ${button("Open the form", `${c.origin}/forms/${c.submission.form_type}/${c.submission.id}`)}`,
   });
-
   await sendEmail({
-    to: [profile.email],
-    subject: `Action needed – ${def.title} – ${submission.order_number}`,
+    from: FROM_INTERNAL,
+    to: [c.contacts.repEmail || profile?.email || ""],
+    cc: [profile?.email ?? ""],
+    subject: `Action needed - ${c.formName} - ${c.name}`,
     html,
     template: "disapproved",
     submissionId,
@@ -448,46 +413,84 @@ export async function sendDisapprovalEmail(submissionId: string, note: string) {
 }
 
 export async function sendResumeLinkEmail(submissionId: string, repEmail: string) {
-  const { submission } = await loadSubmission(submissionId);
-  const def = getForm(submission.form_type);
-  const origin = appOrigin();
+  const c = await emailContext(submissionId);
   const html = emailShell({
-    logoUrl: logoUrl(),
     heading: "Your saved draft",
     bodyHtml: `
-      <p style="font-size:15px;line-height:1.6;">Your <strong>${def.title}</strong> draft for order <strong>${submission.order_number}</strong> has been saved.</p>
-      ${button("Resume this form", `${origin}/forms/${submission.form_type}/${submission.id}`)}`,
+      ${p(`Your ${esc(c.formName)} draft for ${esc(c.name || c.submission.order_number)} has been saved.`)}
+      ${button("Resume this form", `${c.origin}/forms/${c.submission.form_type}/${c.submission.id}`)}`,
   });
   await sendEmail({
+    from: FROM_INTERNAL,
     to: [repEmail],
-    subject: `Draft saved – ${def.title} – ${submission.order_number}`,
+    subject: `Draft saved - ${c.formName} - ${c.submission.order_number}`,
     html,
     template: "draft_resume",
     submissionId,
   });
 }
 
-/** Completion: merge Sadie's signature, email everyone, copy to Google Drive. */
-export async function runCompletion(submissionId: string, opts: { storedSignature?: boolean } = {}) {
-  const { bytes, fileName } = await buildAndStorePdf(submissionId, {
-    includeDirectorSignature: opts.storedSignature !== false,
-  });
-  await sendCompletionEmails(submissionId, bytes, fileName);
+// ------------------------------------------------------ Drive + tracker ---
 
-  const { submission, sale } = await loadSubmission(submissionId);
-  const values = (submission.data ?? {}) as FormValues;
-  const settings = await getSettingsMap();
-  const folderId = String(settings["google_drive"]?.["folder_id"] ?? "");
-  const driveName = driveFileName(
-    String(values["park_name"] ?? sale?.park_name ?? ""),
-    String(values["customer_name"] ?? sale?.customer_name ?? ""),
-    submission.order_number,
-  );
-  const driveId = await uploadPdfToDrive(driveName, folderId, bytes);
-  if (driveId) {
-    await supabaseAdmin.from("form_submissions").update({ drive_file_id: driveId }).eq("id", submissionId);
+/** Save the current PDF as an "- In Review" stage in the customer's Drive sub-folder and sync the sheet. */
+export async function publishInReview(submissionId: string, bytes: Uint8Array) {
+  const { submission } = await loadSubmission(submissionId);
+  await saveStageToDrive({
+    saleId: submission.sale_id,
+    submissionId,
+    formType: submission.form_type,
+    suffix: "In Review",
+    bytes,
+  });
+  await syncTrackerSheet(submission.sale_id);
+}
+
+export async function syncSheetForSubmission(submissionId: string) {
+  const { submission } = await loadSubmission(submissionId);
+  await syncTrackerSheet(submission.sale_id);
+}
+
+/** Completion: merged PDF (form + customer + construction + Sadie), emails, Drive, tracker sheet. */
+export async function runCompletion(submissionId: string, opts: { storedSignature?: boolean } = {}) {
+  const { submission } = await loadSubmission(submissionId);
+  const isWS = opts.storedSignature === false;
+  let driveId: string | null = null;
+  let merged: { bytes: Uint8Array; fileName: string };
+
+  if (isWS) {
+    // Director + witness signed on the page: the statement itself is the fully signed record.
+    merged = await buildAndStorePdf(submissionId);
+    await saveStageToDrive({
+      saleId: submission.sale_id,
+      submissionId,
+      formType: submission.form_type,
+      suffix: "Sadie Signature & Witness - Completed",
+      bytes: merged.bytes,
+      latest: false,
+    });
+  } else {
+    const plain = await buildAndStorePdf(submissionId);
+    await saveStageToDrive({
+      saleId: submission.sale_id,
+      submissionId,
+      formType: submission.form_type,
+      suffix: "Completed",
+      bytes: plain.bytes,
+      latest: false,
+    });
+    merged = await buildAndStorePdf(submissionId, { includeDirectorSignature: true });
   }
-  return { driveId, fileName };
+  driveId = await saveStageToDrive({
+    saleId: submission.sale_id,
+    submissionId,
+    formType: submission.form_type,
+    suffix: "Completed - Merged",
+    bytes: merged.bytes,
+  });
+
+  await sendCompletionEmails(submissionId, merged.bytes, merged.fileName);
+  await syncTrackerSheet(submission.sale_id);
+  return { driveId, fileName: merged.fileName };
 }
 
 export function describeDate(d: string | null | undefined) {

@@ -29,6 +29,13 @@
       "when": 1790696228882,
       "tag": "0003_statement_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790698601968,
+      "tag": "0004_automations_lookup",
+      "breakpoints": true
     }
   ]
 }

@@ -382,7 +382,8 @@ export const submitForm = createServerFn({ method: "POST" })
     await syncSale(submission.sale_id, data.values, submission.form_type);
 
     const s = await server();
-    await s.buildAndStorePdf(data.submissionId);
+    const built = await s.buildAndStorePdf(data.submissionId);
+    await s.publishInReview(data.submissionId, built.bytes);
     await s.addAudit({
       submissionId: data.submissionId,
       actorId: context.userId,
@@ -457,6 +458,7 @@ export const setStatus = createServerFn({ method: "POST" })
     }
     if (data.status === "Disapproved") {
       await s.sendDisapprovalEmail(data.submissionId, data.note ?? "");
+      await s.syncSheetForSubmission(data.submissionId);
     }
     return { ok: true, driveId: null };
   });

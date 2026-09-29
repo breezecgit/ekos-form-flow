@@ -78,9 +78,11 @@ export type Database = {
       }
       email_log: {
         Row: {
+          cc_addresses: string[]
           created_at: string
           error: string | null
           from_address: string
+          html: string
           id: string
           status: string
           subject: string
@@ -89,9 +91,11 @@ export type Database = {
           to_addresses: string[]
         }
         Insert: {
+          cc_addresses?: string[]
           created_at?: string
           error?: string | null
           from_address?: string
+          html?: string
           id?: string
           status?: string
           subject?: string
@@ -100,9 +104,11 @@ export type Database = {
           to_addresses?: string[]
         }
         Update: {
+          cc_addresses?: string[]
           created_at?: string
           error?: string | null
           from_address?: string
+          html?: string
           id?: string
           status?: string
           subject?: string
@@ -250,6 +256,7 @@ export type Database = {
           customer_name: string
           customer_phone: string
           deposit_date: string | null
+          drive_folders: Json
           id: string
           order_number: string
           park_name: string
@@ -263,6 +270,7 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           deposit_date?: string | null
+          drive_folders?: Json
           id?: string
           order_number: string
           park_name?: string
@@ -276,6 +284,7 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           deposit_date?: string | null
+          drive_folders?: Json
           id?: string
           order_number?: string
           park_name?: string
@@ -287,18 +296,21 @@ export type Database = {
       sales_people: {
         Row: {
           active: boolean
+          email: string
           id: string
           name: string
           sort_order: number
         }
         Insert: {
           active?: boolean
+          email?: string
           id?: string
           name: string
           sort_order?: number
         }
         Update: {
           active?: boolean
+          email?: string
           id?: string
           name?: string
           sort_order?: number

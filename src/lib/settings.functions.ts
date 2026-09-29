@@ -52,13 +52,15 @@ export const saveSettings = createServerFn({ method: "POST" })
             park_rules_url: z.string(),
           }),
         ),
-        salesPeople: z.array(z.string()),
+        salesPeople: z.array(z.object({ name: z.string(), email: z.string() })),
         notifications: z.object({
           sales_email: z.string(),
           director_email: z.string(),
           construction_email: z.string(),
         }),
         driveFolderId: z.string(),
+        driveFormFolders: z.record(z.string(), z.string()).optional(),
+        sheets: z.object({ enabled: z.boolean(), spreadsheet_id: z.string() }).optional(),
         welcomePackUrl: z.string().optional(),
         directorSignatureDataUrl: z.string().optional(),
       })
@@ -82,16 +84,19 @@ export const saveSettings = createServerFn({ method: "POST" })
     }
 
     const { data: existing } = await db.from("sales_people").select("id, name");
-    const keep = new Set(data.salesPeople.map((n) => n.trim()).filter(Boolean));
+    const list = data.salesPeople
+      .map((p) => ({ name: p.name.trim(), email: p.email.trim() }))
+      .filter((p) => p.name);
+    const keep = new Set(list.map((p) => p.name));
     for (const row of existing ?? []) {
       if (!keep.has(row.name)) await db.from("sales_people").delete().eq("id", row.id);
     }
     let order = 0;
-    for (const name of keep) {
+    for (const p of list) {
       order += 1;
       await db
         .from("sales_people")
-        .upsert({ name, sort_order: order }, { onConflict: "name" });
+        .upsert({ name: p.name, email: p.email, sort_order: order }, { onConflict: "name" });
     }
 
     await db
@@ -106,9 +111,17 @@ export const saveSettings = createServerFn({ method: "POST" })
     }
     await db.from("app_settings").upsert({
       key: "google_drive",
-      value: { folder_id: data.driveFolderId } as never,
+      value: { folder_id: data.driveFolderId, ...(data.driveFormFolders ?? {}) } as never,
       updated_at: new Date().toISOString(),
     });
+
+    if (data.sheets) {
+      await db.from("app_settings").upsert({
+        key: "google_sheets",
+        value: { enabled: data.sheets.enabled ? "true" : "false", spreadsheet_id: data.sheets.spreadsheet_id } as never,
+        updated_at: new Date().toISOString(),
+      });
+    }
 
     if (data.directorSignatureDataUrl) {
       const base64 = data.directorSignatureDataUrl.split(",")[1] ?? "";
