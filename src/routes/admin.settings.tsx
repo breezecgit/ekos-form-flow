@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SignaturePad } from "@/components/SignaturePad";
+import { Switch } from "@/components/ui/switch";
+import { FORM_ORDER, FORM_TITLES } from "@/lib/forms/registry";
 import { getSettings, saveSettings } from "@/lib/settings.functions";
 
 export const Route = createFileRoute("/admin/settings")({
@@ -54,6 +56,9 @@ function SettingsPage() {
   const [driveFolder, setDriveFolder] = useState("");
   const [welcomePack, setWelcomePack] = useState("");
   const [signature, setSignature] = useState("");
+  const [formFolders, setFormFolders] = useState<Record<string, string>>({});
+  const [sheetsOn, setSheetsOn] = useState(false);
+  const [sheetId, setSheetId] = useState("");
 
   useEffect(() => {
     if (!data) return;
@@ -68,12 +73,17 @@ function SettingsPage() {
         park_rules_url: p.park_rules_url ?? "",
       })),
     );
-    setPeople(data.salesPeople.map((p) => p.name).join("\n"));
+    setPeople(data.salesPeople.map((p) => `${p.name} | ${(p as { email?: string }).email ?? ""}`).join("\n"));
     const n = data.settings["notifications"] ?? {};
     setSalesEmail(String(n["sales_email"] ?? ""));
     setDirectorEmail(String(n["director_email"] ?? ""));
     setConstructionEmail(String(n["construction_email"] ?? ""));
-    setDriveFolder(String(data.settings["google_drive"]?.["folder_id"] ?? ""));
+    const gd = data.settings["google_drive"] ?? {};
+    setDriveFolder(String(gd["folder_id"] ?? ""));
+    setFormFolders(Object.fromEntries(FORM_ORDER.map((f) => [f, String(gd[f] ?? "")])));
+    const gs = data.settings["google_sheets"] ?? {};
+    setSheetsOn(String(gs["enabled"]) === "true");
+    setSheetId(String(gs["spreadsheet_id"] ?? ""));
     setWelcomePack(
       String(data.settings["links"]?.["welcome_pack_url"] ?? "") ||
         "https://ekosgroup.co.uk/ekos-welcome-pack",
@@ -92,13 +102,21 @@ function SettingsPage() {
             site_licence_url,
             park_rules_url,
           })),
-          salesPeople: people.split("\n").map((p) => p.trim()).filter(Boolean),
+          salesPeople: people
+            .split("\n")
+            .map((line) => {
+              const [name = "", email = ""] = line.split("|");
+              return { name: name.trim(), email: email.trim() };
+            })
+            .filter((p) => p.name),
           notifications: {
             sales_email: salesEmail,
             director_email: directorEmail,
             construction_email: constructionEmail,
           },
           driveFolderId: driveFolder,
+          driveFormFolders: formFolders,
+          sheets: { enabled: sheetsOn, spreadsheet_id: sheetId },
           welcomePackUrl: welcomePack,
           directorSignatureDataUrl: signature || undefined,
         },
@@ -128,7 +146,7 @@ function SettingsPage() {
               <p className="font-semibold text-brand">{p.name}</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Field label="Park address" value={p.address} onChange={(v) => setPark(p.id, "address", v)} />
-                <Field label="Park inbox email" value={p.inbox_email} onChange={(v) => setPark(p.id, "inbox_email", v)} />
+                <Field label="Park inbox email (used for all park emails)" value={p.inbox_email} onChange={(v) => setPark(p.id, "inbox_email", v)} />
                 <Field label="Brochure URL" value={p.brochure_url} onChange={(v) => setPark(p.id, "brochure_url", v)} />
                 <Field label="Site Licence URL" value={p.site_licence_url} onChange={(v) => setPark(p.id, "site_licence_url", v)} />
                 <Field label="Park Rules URL" value={p.park_rules_url} onChange={(v) => setPark(p.id, "park_rules_url", v)} />
@@ -140,7 +158,7 @@ function SettingsPage() {
 
       <section className="mt-6 rounded-xl border bg-card p-6">
         <h2 className="ekos-title text-lg">Sales people</h2>
-        <p className="text-sm text-muted-foreground">One name per line.</p>
+        <p className="text-sm text-muted-foreground">One per line: Name | email. The rep gets emails at this address (and via the park inbox).</p>
         <textarea
           className="mt-3 min-h-48 w-full rounded-md border bg-background p-3 text-sm"
           value={people}
@@ -179,7 +197,36 @@ function SettingsPage() {
 
       <section className="mt-6 rounded-xl border bg-card p-6">
         <h2 className="ekos-title text-lg">Google Drive</h2>
-        <Field label="Folder ID" value={driveFolder} onChange={setDriveFolder} />
+        <p className="text-sm text-muted-foreground">
+          Each new customer gets a “Customer Name - Park - DD-MM-YYYY” folder inside every form folder below.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Field label="Main folder ID" value={driveFolder} onChange={setDriveFolder} />
+          {FORM_ORDER.map((f) => (
+            <Field
+              key={f}
+              label={`${FORM_TITLES[f]} folder ID`}
+              value={formFolders[f] ?? ""}
+              onChange={(v) => setFormFolders((prev) => ({ ...prev, [f]: v }))}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-xl border bg-card p-6">
+        <h2 className="ekos-title text-lg">Google tracker sheet</h2>
+        <div className="mt-3 flex items-center gap-3">
+          <Switch checked={sheetsOn} onCheckedChange={setSheetsOn} id="sheets-sync" />
+          <label htmlFor="sheets-sync" className="text-sm font-medium">
+            Sync to Google tracker sheet
+          </label>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Keep this off until go-live so testing never writes into the live sheet.
+        </p>
+        <div className="mt-3">
+          <Field label="Spreadsheet ID" value={sheetId} onChange={setSheetId} />
+        </div>
       </section>
 
       <div className="mt-6">
