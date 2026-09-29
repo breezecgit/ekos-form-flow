@@ -168,7 +168,7 @@ function SettingsPage() {
       <h1 className="ekos-title text-2xl">Settings</h1>
 
       <section className="mt-6 rounded-xl border bg-card p-6">
-        <h2 className="ekos-title text-lg">Parks</h2>
+        <h2 className="ekos-title text-lg">Park Details</h2>
         <p className="text-sm text-muted-foreground">
           Leave a link blank and the form shows “(link to follow)”.
         </p>
