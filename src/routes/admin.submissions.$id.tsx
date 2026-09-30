@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusChip, chipStatus } from "@/components/StatusChip";
-import { getSubmission, resendEmails, setStatus } from "@/lib/ekos.functions";
+import { getSubmission, listSales, resendEmails, setStatus } from "@/lib/ekos.functions";
+import { DeleteSaleButton } from "@/components/DeleteSaleButton";
+import { useRouter } from "@tanstack/react-router";
 import { getForm, hasForm } from "@/lib/forms/registry";
 import { allFields, isVisible } from "@/lib/forms/types";
 import type { FormValues } from "@/lib/forms/types";
@@ -40,6 +42,9 @@ function SubmissionDetail() {
   const statusFn = useServerFn(setStatus);
   const resendFn = useServerFn(resendEmails);
   const [note, setNote] = useState("");
+  const router = useRouter();
+  const listFn = useServerFn(listSales);
+  const salesQ = useQuery({ queryKey: ["sales"], queryFn: () => listFn() });
 
   const q = useQuery({
     queryKey: ["submission", id],
@@ -86,7 +91,23 @@ function SubmissionDetail() {
               {String(values["park_name"] ?? "")}
             </p>
           </div>
-          <StatusChip status={chipStatus(s)} />
+          <div className="flex items-center gap-2">
+            <StatusChip status={chipStatus(s)} />
+            {(() => {
+              const sale = salesQ.data?.sales.find((x) => x.id === s.sale_id);
+              if (!sale) return null;
+              const types = (salesQ.data?.submissions ?? [])
+                .filter((x) => x.sale_id === sale.id)
+                .map((x) => x.form_type);
+              return (
+                <DeleteSaleButton
+                  sale={sale}
+                  formTypes={types}
+                  onDeleted={() => router.navigate({ to: "/admin" })}
+                />
+              );
+            })()}
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">

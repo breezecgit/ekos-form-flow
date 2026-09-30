@@ -45,7 +45,6 @@ function Dashboard() {
   const bootstrapFn = useServerFn(getBootstrap);
   const listFn = useServerFn(listSales);
   const createFn = useServerFn(createSale);
-  const nextFn = useServerFn(startNextForm);
 
   const me = useQuery({
     queryKey: ["bootstrap"],
@@ -65,16 +64,6 @@ function Dashboard() {
       router.navigate({
         to: "/forms/$formType/$submissionId",
         params: { formType: "reservation", submissionId: res.submissionId },
-      });
-    },
-  });
-
-  const openNext = useMutation({
-    mutationFn: (vars: { saleId: string; formType: string }) => nextFn({ data: vars }),
-    onSuccess: (res, vars) => {
-      router.navigate({
-        to: "/forms/$formType/$submissionId",
-        params: { formType: vars.formType, submissionId: res.submissionId },
       });
     },
   });
