@@ -462,6 +462,27 @@ export type Database = {
           },
         ]
       }
+      user_permissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          permission: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          permission: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          permission?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

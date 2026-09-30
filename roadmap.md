@@ -41,3 +41,6 @@
 
 ## Constraint
 - No Zapier: all automations live in this app.
+
+## Go-live checklist addition
+- [ ] Give Sadie the can_delete_sales permission and remove it from the test accounts (Admin → Settings → User permissions).

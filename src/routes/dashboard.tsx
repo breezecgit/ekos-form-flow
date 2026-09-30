@@ -4,9 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
-import { StatusChip, chipStatus } from "@/components/StatusChip";
+import { SaleFormCell } from "@/components/SaleFormCell";
 import { useAuth } from "@/hooks/useAuth";
-import { createSale, getBootstrap, listSales, startNextForm } from "@/lib/ekos.functions";
+import { createSale, getBootstrap, listSales } from "@/lib/ekos.functions";
 import { FORM_ORDER, FORM_TITLES } from "@/lib/forms/registry";
 import { formatDate } from "@/lib/format";
 
@@ -45,7 +45,6 @@ function Dashboard() {
   const bootstrapFn = useServerFn(getBootstrap);
   const listFn = useServerFn(listSales);
   const createFn = useServerFn(createSale);
-  const nextFn = useServerFn(startNextForm);
 
   const me = useQuery({
     queryKey: ["bootstrap"],
@@ -65,16 +64,6 @@ function Dashboard() {
       router.navigate({
         to: "/forms/$formType/$submissionId",
         params: { formType: "reservation", submissionId: res.submissionId },
-      });
-    },
-  });
-
-  const openNext = useMutation({
-    mutationFn: (vars: { saleId: string; formType: string }) => nextFn({ data: vars }),
-    onSuccess: (res, vars) => {
-      router.navigate({
-        to: "/forms/$formType/$submissionId",
-        params: { formType: vars.formType, submissionId: res.submissionId },
       });
     },
   });
@@ -151,28 +140,16 @@ function Dashboard() {
                   </span>
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                  {FORM_ORDER.map((formType) => {
-                    const sub = submissions.find(
-                      (s) => s.sale_id === sale.id && s.form_type === formType,
-                    );
-                    const status = chipStatus(sub);
-                    return (
-                      <div key={formType} className="rounded-lg border p-3">
-                        <p className="text-xs font-semibold">{FORM_TITLES[formType]}</p>
-                        <div className="mt-2">
-                          <StatusChip status={status} />
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="mt-2 px-0 text-xs"
-                          onClick={() => openNext.mutate({ saleId: sale.id, formType })}
-                        >
-                          {sub ? "Open" : "Start"}
-                        </Button>
-                      </div>
-                    );
-                  })}
+                  {FORM_ORDER.map((formType) => (
+                    <SaleFormCell
+                      key={formType}
+                      saleId={sale.id}
+                      formType={formType}
+                      sub={submissions.find(
+                        (s) => s.sale_id === sale.id && s.form_type === formType,
+                      )}
+                    />
+                  ))}
                 </div>
               </div>
             ))}

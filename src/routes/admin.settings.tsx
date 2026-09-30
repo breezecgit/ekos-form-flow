@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { SignaturePad } from "@/components/SignaturePad";
 import { Switch } from "@/components/ui/switch";
 import { FORM_ORDER, FORM_TITLES } from "@/lib/forms/registry";
-import { getSettings, saveSettings } from "@/lib/settings.functions";
+import { getSettings, listUserPermissions, saveSettings, setDeletePermission } from "@/lib/settings.functions";
 
 export const Route = createFileRoute("/admin/settings")({
   head: () => ({
@@ -166,6 +166,8 @@ function SettingsPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
       <h1 className="ekos-title text-2xl">Settings</h1>
+
+      <DeletePermissions />
 
       <section className="mt-6 rounded-xl border bg-card p-6">
         <h2 className="ekos-title text-lg">Park Details</h2>
@@ -336,5 +338,44 @@ function Field({
       {note && <span className="mb-1 block text-xs text-muted-foreground">Redirected to test recipients while test mode is ON</span>}
       <Input value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
+  );
+}
+
+function DeletePermissions() {
+  const qc = useQueryClient();
+  const listFn = useServerFn(listUserPermissions);
+  const setFn = useServerFn(setDeletePermission);
+  const { data } = useQuery({ queryKey: ["user-permissions"], queryFn: () => listFn() });
+  const toggle = useMutation({
+    mutationFn: (v: { email: string; enabled: boolean }) => setFn({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-permissions"] });
+      qc.invalidateQueries({ queryKey: ["my-permissions"] });
+      toast.success("Permission updated.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <section className="mt-6 rounded-xl border bg-card p-6">
+      <h2 className="ekos-title text-lg">User permissions – Delete sales</h2>
+      <p className="text-sm text-muted-foreground">
+        Only people switched on here see the "Delete sale" button. At go-live this should be Sadie only.
+      </p>
+      <ul className="mt-3 divide-y">
+        {(data ?? []).map((u) => (
+          <li key={u.email} className="flex items-center justify-between py-2 text-sm">
+            <span>
+              {u.fullName ? `${u.fullName} · ` : ""}
+              {u.email}
+            </span>
+            <Switch
+              aria-label={`Can delete sales: ${u.email}`}
+              checked={u.canDeleteSales}
+              onCheckedChange={(enabled) => toggle.mutate({ email: u.email, enabled })}
+            />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

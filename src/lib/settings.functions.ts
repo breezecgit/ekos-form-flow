@@ -187,3 +187,36 @@ export const saveSettings = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+/** Staff list with their can_delete_sales permission (director only). */
+export const listUserPermissions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertDirector(context.userId);
+    const db = await admin();
+    const [{ data: profiles }, { data: perms }] = await Promise.all([
+      db.from("profiles").select("email, full_name").order("email"),
+      db.from("user_permissions").select("email").eq("permission", "can_delete_sales"),
+    ]);
+    const set = new Set((perms ?? []).map((p) => p.email.toLowerCase()));
+    return (profiles ?? []).map((p) => ({
+      email: p.email,
+      fullName: p.full_name,
+      canDeleteSales: set.has(p.email.toLowerCase()),
+    }));
+  });
+
+export const setDeletePermission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ email: z.string().email(), enabled: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertDirector(context.userId);
+    const db = await admin();
+    const email = data.email.toLowerCase();
+    if (data.enabled) {
+      await db.from("user_permissions").upsert({ email, permission: "can_delete_sales" }, { onConflict: "email,permission" });
+    } else {
+      await db.from("user_permissions").delete().eq("email", email).eq("permission", "can_delete_sales");
+    }
+    return { ok: true };
+  });

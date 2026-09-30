@@ -524,3 +524,77 @@ export const sendTestOfEveryEmail = createServerFn({ method: "POST" })
     const s = await server();
     return s.sendAllTestEmails(context.userId, String(context.claims["email"] ?? ""));
   });
+
+async function canDeleteSales(userId: string): Promise<boolean> {
+  const db = await admin();
+  const { data: profile } = await db.from("profiles").select("email").eq("id", userId).maybeSingle();
+  const email = (profile?.email ?? "").toLowerCase();
+  if (!email) return false;
+  const { data } = await db
+    .from("user_permissions")
+    .select("id")
+    .ilike("email", email)
+    .eq("permission", "can_delete_sales")
+    .maybeSingle();
+  return Boolean(data);
+}
+
+/** Does the signed-in user hold can_delete_sales? */
+export const getMyPermissions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => ({ canDeleteSales: await canDeleteSales(context.userId) }));
+
+/** Permanently deletes a sale + its forms, tokens, files and stored files. Never touches Drive/Sheets, sends no email. */
+export const deleteSale = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ saleId: z.string().uuid(), confirmOrderNumber: z.string() }).parse(d))
+  .handler(async ({ data, context }) => {
+    if (!(await canDeleteSales(context.userId))) {
+      throw new Error("You do not have permission to delete sales.");
+    }
+    const db = await admin();
+    const { data: sale } = await db.from("sales").select("*").eq("id", data.saleId).maybeSingle();
+    if (!sale) throw new Error("Sale not found");
+    if (data.confirmOrderNumber.trim() !== sale.order_number) {
+      throw new Error("The order number typed does not match.");
+    }
+    const { data: subs } = await db
+      .from("form_submissions")
+      .select("id, form_type, pdf_path")
+      .eq("sale_id", sale.id);
+    const subIds = (subs ?? []).map((s) => s.id);
+    const paths: string[] = (subs ?? []).map((s) => s.pdf_path).filter((p): p is string => Boolean(p));
+    if (subIds.length) {
+      const { data: files } = await db.from("submission_files").select("storage_path").in("submission_id", subIds);
+      paths.push(...(files ?? []).map((f) => f.storage_path));
+      // Anything else stored under the submission folders (e.g. signatures)
+      for (const id of subIds) {
+        for (const prefix of [`submissions/${id}`, `submissions/${id}/files`]) {
+          const { data: listed } = await db.storage.from("ekos-documents").list(prefix, { limit: 1000 });
+          (listed ?? []).forEach((o) => o.id && paths.push(`${prefix}/${o.name}`));
+        }
+      }
+    }
+    const unique = Array.from(new Set(paths));
+    if (unique.length) await db.storage.from("ekos-documents").remove(unique);
+    if (subIds.length) {
+      await db.from("signing_tokens").delete().in("submission_id", subIds);
+      await db.from("submission_files").delete().in("submission_id", subIds);
+      const { error: subErr } = await db.from("form_submissions").delete().in("id", subIds);
+      if (subErr) throw new Error(subErr.message);
+    }
+    const { error: saleErr } = await db.from("sales").delete().eq("id", sale.id);
+    if (saleErr) throw new Error(saleErr.message);
+
+    const { data: profile } = await db.from("profiles").select("email, full_name").eq("id", context.userId).maybeSingle();
+    const { FORM_TITLES } = await import("@/lib/forms/registry");
+    const forms = (subs ?? []).map((s) => FORM_TITLES[s.form_type] ?? s.form_type);
+    await db.from("audit_log").insert({
+      submission_id: null,
+      actor_id: context.userId,
+      actor_label: profile?.full_name || profile?.email || "",
+      action: "sale_deleted",
+      note: `Deleted sale ${sale.order_number} · Customer: ${sale.customer_name || "—"} · Park: ${sale.park_name || "—"} · Forms deleted: ${forms.join(", ") || "none"} · Files removed: ${unique.length}`,
+    });
+    return { ok: true, orderNumber: sale.order_number };
+  });
