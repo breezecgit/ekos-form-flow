@@ -569,7 +569,7 @@ export const deleteSale = createServerFn({ method: "POST" })
       paths.push(...(files ?? []).map((f) => f.storage_path));
       // Anything else stored under the submission folders (e.g. signatures)
       for (const id of subIds) {
-        for (const prefix of [id, `submissions/${id}`, `pdfs/${id}`]) {
+        for (const prefix of [`submissions/${id}`, `submissions/${id}/files`]) {
           const { data: listed } = await db.storage.from("ekos-documents").list(prefix, { limit: 1000 });
           (listed ?? []).forEach((o) => o.id && paths.push(`${prefix}/${o.name}`));
         }
