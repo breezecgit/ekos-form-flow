@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { StatusChip, chipStatus } from "@/components/StatusChip";
+import { chipStatus } from "@/components/StatusChip";
+import { SaleFormCell } from "@/components/SaleFormCell";
+import { DeleteSaleButton } from "@/components/DeleteSaleButton";
 import { listSales } from "@/lib/ekos.functions";
 import { FORM_ORDER, FORM_TITLES } from "@/lib/forms/registry";
 import { formatDate } from "@/lib/format";
@@ -126,16 +128,20 @@ function Tracker() {
               <span className="text-sm text-muted-foreground">
                 {sale.deposit_date ? formatDate(sale.deposit_date) : ""}
               </span>
+              <span className="ml-auto">
+                <DeleteSaleButton
+                  sale={sale}
+                  formTypes={FORM_ORDER.filter((f) =>
+                    subs.some((x) => x.sale_id === sale.id && x.form_type === f),
+                  )}
+                />
+              </span>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
               {FORM_ORDER.map((formType) => {
                 const sub = subs.find((s) => s.sale_id === sale.id && s.form_type === formType);
                 return (
-                  <div key={formType} className="rounded-lg border p-3">
-                    <p className="text-xs font-semibold">{FORM_TITLES[formType]}</p>
-                    <div className="mt-2">
-                      <StatusChip status={chipStatus(sub)} />
-                    </div>
+                  <SaleFormCell key={formType} saleId={sale.id} formType={formType} sub={sub}>
                     {sub && formType === "written_statement" && (
                       <WordDownloadLink submissionId={sub.id} />
                     )}
@@ -143,12 +149,12 @@ function Tracker() {
                       <Link
                         to="/admin/submissions/$id"
                         params={{ id: sub.id }}
-                        className="mt-2 inline-block text-xs text-brand underline"
+                        className="ml-3 mt-2 inline-block text-xs text-brand underline"
                       >
                         View
                       </Link>
                     )}
-                  </div>
+                  </SaleFormCell>
                 );
               })}
             </div>
