@@ -19,7 +19,7 @@ export function SaleFormCell({
 }: {
   saleId: string;
   formType: string;
-  sub?: NonNullable<Sub> & { id: string };
+  sub?: (NonNullable<Sub> & { id: string }) | undefined;
   children?: ReactNode;
 }) {
   const router = useRouter();
