@@ -130,6 +130,39 @@ function Tracker() {
           ))}
         </select>
       </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <span className="text-sm text-muted-foreground">Date range</span>
+        <input
+          type="date"
+          className="h-10 rounded-md border bg-background px-3 text-sm"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          aria-label="From date"
+        />
+        <span className="text-sm text-muted-foreground">to</span>
+        <input
+          type="date"
+          className="h-10 rounded-md border bg-background px-3 text-sm"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          aria-label="To date"
+        />
+        {(from || to) && (
+          <button
+            type="button"
+            className="text-sm text-brand underline"
+            onClick={() => {
+              setFrom("");
+              setTo("");
+            }}
+          >
+            Clear
+          </button>
+        )}
+        <span className="text-xs text-muted-foreground">
+          Shows sales that were active between these dates
+        </span>
+      </div>
 
       <div className="mt-6 space-y-4">
         {rows.map((sale) => (
