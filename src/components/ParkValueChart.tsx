@@ -125,7 +125,7 @@ export function ParkValueChart({
         <div>
           <h2 className="text-lg font-semibold">Value of Sales in Progress by Park</h2>
           <p className="text-sm text-muted-foreground">
-            Bars show the £ value of sales in progress (Total Cost from the Customer Reservation Form){tbc ? ` · ${tbc} TBC not counted` : ""}; the faint bar beside each shows the park's goal.
+            Bars show the £ value of sales in progress (Total Cost from the Customer Reservation Form){tbc ? ` · ${tbc} TBC not counted` : ""}; the gold bar beside each shows the park's goal.
           </p>
         </div>
         {isDirector && !editing && (

@@ -95,7 +95,7 @@ export function ParkGoalsChart({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Number of Sales in Progress by Park</h2>
-          <p className="text-sm text-muted-foreground">Bars show sales in progress; the faint bar beside each shows the park's goal.</p>
+          <p className="text-sm text-muted-foreground">Bars show sales in progress; the gold bar beside each shows the park's goal.</p>
         </div>
         {isDirector && !editing && (
           <Button size="sm" variant="outline" onClick={startEdit}>Set goals</Button>
