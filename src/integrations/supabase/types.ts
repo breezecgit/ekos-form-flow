@@ -221,6 +221,7 @@ export type Database = {
           park_rules_url: string | null
           phone: string
           pitch_fee_review_date: string
+          rep_name: string
           site_licence_url: string | null
           sort_code: string
           sort_order: number
@@ -242,6 +243,7 @@ export type Database = {
           park_rules_url?: string | null
           phone?: string
           pitch_fee_review_date?: string
+          rep_name?: string
           site_licence_url?: string | null
           sort_code?: string
           sort_order?: number
@@ -263,6 +265,7 @@ export type Database = {
           park_rules_url?: string | null
           phone?: string
           pitch_fee_review_date?: string
+          rep_name?: string
           site_licence_url?: string | null
           sort_code?: string
           sort_order?: number
