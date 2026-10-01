@@ -110,25 +110,35 @@ export function AppHeader({
             </div>
           ))}
         </nav>
-        {!publicPage && (
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-1 whitespace-nowrap text-[13px] lg:ml-0">
-            <Link to="/dashboard" className="opacity-90 hover:text-gold">
-              Dashboard
-            </Link>
-            {isDirector && (
-              <>
-                <Link to="/admin" className="opacity-90 hover:text-gold">Tracker</Link>
-                <Link to="/admin/settings" className="opacity-90 hover:text-gold">Settings</Link>
-                <Link to="/admin/emails" className="opacity-90 hover:text-gold">Emails</Link>
-              </>
+      </div>
+      {!publicPage && (
+        <div className="border-t border-white/15 bg-ekos-nav">
+          <div className="mx-auto flex h-12 max-w-[1140px] flex-wrap items-center gap-x-8 gap-y-1 px-4">
+            {email && (
+              <span className="truncate text-[13px] font-medium text-gold">{email}</span>
             )}
-            {email && <span className="hidden text-xs opacity-70 xl:inline">{email}</span>}
-            <button type="button" onClick={signOut} className="ekos-btn px-3 py-1.5 text-[13px]">
+            <nav className="flex items-center gap-x-8 font-heading text-[13px] font-medium uppercase tracking-[0.1em]">
+              <Link to="/dashboard" className="py-3 opacity-90 hover:text-gold">
+                Dashboard
+              </Link>
+              {isDirector && (
+                <>
+                  <Link to="/admin" className="py-3 opacity-90 hover:text-gold">Tracker</Link>
+                  <Link to="/admin/settings" className="py-3 opacity-90 hover:text-gold">Settings</Link>
+                  <Link to="/admin/emails" className="py-3 opacity-90 hover:text-gold">Emails</Link>
+                </>
+              )}
+            </nav>
+            <button
+              type="button"
+              onClick={signOut}
+              className="ekos-btn ml-auto px-4 py-1.5 text-[13px]"
+            >
               Sign out
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </header>
     {/* clears the logo tab that hangs below the bar */}
     <div aria-hidden className="h-16" />
