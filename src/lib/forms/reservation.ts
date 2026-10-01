@@ -36,13 +36,13 @@ export const TERMS_URL =
   "https://ekosgroup.co.uk/wp-content/uploads/2026/05/EKOS-Group-Master-Terms-Conditions-1.pdf";
 
 export const STATUS_OPTIONS: OptionDef[] = [
-  { value: "In Review" },
-  { value: "In Review (Offsite)" },
-  { value: "Completed", directorOnly: true },
+  { value: "In Review", label: "Customer Signing Live" },
+  { value: "In Review (Offsite)", label: "Customer Signing Offsite" },
+  { value: "Completed", label: "Completed", directorOnly: true },
 ];
 
 export const STATUS_GUIDE =
-  "Status Guide: In Review – use when rep & customer have both signed form on site. In Review (offsite) – use when rep has signed & customer wants to sign at home or at later date. Completed – do not use – Director use only.";
+  "Status Guide: Customer Signing Live (In Review) – use when rep & customer have both signed form on site. Customer Signing Offsite (In Review (offsite)) – use when rep has signed & customer wants to sign at home or at later date. Completed – do not use – Director use only.";
 
 const incentiveSelected = (values: FormValues, name: string) => {
   const v = values["incentives"];
