@@ -17,12 +17,12 @@ export const Route = createFileRoute("/dashboard")({
       { title: "My sales | EKOS Customer Sales Form" },
       {
         name: "description",
-        content: "Start a new sale, continue an existing sale and pick up saved drafts.",
+        content: "Sales overview, orders in process and forms waiting for review.",
       },
       { property: "og:title", content: "My sales | EKOS Customer Sales Form" },
       {
         property: "og:description",
-        content: "Start a new sale, continue an existing sale and pick up saved drafts.",
+        content: "Sales overview, orders in process and forms waiting for review.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
