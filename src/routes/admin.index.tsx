@@ -219,11 +219,11 @@ function timeline(sale: { id: string; created_at: string }, all: TSub[]) {
   const days = Math.max(0, Math.floor((end - new Date(started).getTime()) / DAY));
   let summary = "No forms started yet.";
   if (complete) {
-    summary = `All forms completed on ${formatDate(lastUpdate)}.`;
+    summary = `All forms completed on ${shortDate(lastUpdate)}.`;
   } else if (latest) {
     const st = chipStatus(latest);
     const title = FORM_TITLES[latest.form_type as keyof typeof FORM_TITLES] ?? latest.form_type;
-    const when = formatDate(lastUpdate);
+    const when = shortDate(lastUpdate);
     summary =
       st === "Draft"
         ? `${title} saved as a draft on ${when}.`
