@@ -1,5 +1,5 @@
 import { parseMoney } from "@/lib/format";
-import type { FormDef, FormValues, OptionDef } from "./types";
+import type { ContentBlock, FormDef, FormValues, OptionDef } from "./types";
 
 export const PARK_OPTIONS = [
   "Carlton Manor",

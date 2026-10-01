@@ -1,4 +1,4 @@
-import type { FieldDef, FormDef, FormValues } from "./types";
+import type { ContentBlock, FieldDef, FormDef, FormValues } from "./types";
 import { customerSignatureFields, fieldFromReservation, repSignatureFields } from "./common";
 import { opts } from "./common";
 

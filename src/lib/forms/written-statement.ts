@@ -1,4 +1,4 @@
-import type { FieldDef, FormDef, FormValues, RenderContext } from "./types";
+import type { ContentBlock, FieldDef, FormDef, FormValues, RenderContext } from "./types";
 import { customerSignatureFields, fieldFromReservation, opts, repSignatureFields } from "./common";
 
 const text = (key: string): FieldDef => ({ key: `ws_${key}`, type: "static", templateKey: key });
