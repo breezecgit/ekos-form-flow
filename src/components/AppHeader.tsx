@@ -80,7 +80,7 @@ export function AppHeader({
             )}
           </div>
         </div>
-        <nav className="hidden flex-1 items-center justify-center gap-7 lg:flex">
+        <nav className="hidden flex-1 items-center justify-center gap-5 lg:flex">
           {NAV.map((n) => (
             <div key={n.label} className="group relative flex h-20 items-center">
               <a
@@ -110,35 +110,35 @@ export function AppHeader({
             </div>
           ))}
         </nav>
-      </div>
-      {!publicPage && (
-        <div className="border-t border-white/15 bg-ekos-nav">
-          <div className="mx-auto flex h-12 max-w-[1140px] flex-wrap items-center gap-x-8 gap-y-1 px-4">
+        {!publicPage && (
+          <div className="flex items-center gap-4 whitespace-nowrap">
             {email && (
-              <span className="truncate text-[13px] font-medium text-gold">{email}</span>
+              <span className="max-w-[220px] truncate text-[12px] text-gold" title={email}>
+                {email}
+              </span>
             )}
-            <nav className="flex items-center gap-x-8 font-heading text-[13px] font-medium uppercase tracking-[0.1em]">
-              <Link to="/dashboard" className="py-3 opacity-90 hover:text-gold">
-                Dashboard
-              </Link>
-              {isDirector && (
-                <>
-                  <Link to="/admin" className="py-3 opacity-90 hover:text-gold">Tracker</Link>
-                  <Link to="/admin/settings" className="py-3 opacity-90 hover:text-gold">Settings</Link>
-                  <Link to="/admin/emails" className="py-3 opacity-90 hover:text-gold">Emails</Link>
-                </>
-              )}
-            </nav>
-            <button
-              type="button"
-              onClick={signOut}
-              className="ekos-btn ml-auto px-4 py-1.5 text-[13px]"
-            >
+            <Link to="/dashboard" className="py-1 font-heading text-[11px] font-medium uppercase tracking-[0.12em] opacity-95 hover:text-gold">
+              Dashboard
+            </Link>
+            {isDirector && (
+              <>
+                <Link to="/admin" className="py-1 font-heading text-[11px] font-medium uppercase tracking-[0.12em] opacity-95 hover:text-gold">
+                  Tracker
+                </Link>
+                <Link to="/admin/settings" className="py-1 font-heading text-[11px] font-medium uppercase tracking-[0.12em] opacity-95 hover:text-gold">
+                  Settings
+                </Link>
+                <Link to="/admin/emails" className="py-1 font-heading text-[11px] font-medium uppercase tracking-[0.12em] opacity-95 hover:text-gold">
+                  Emails
+                </Link>
+              </>
+            )}
+            <button type="button" onClick={signOut} className="ekos-btn px-3 py-1.5 text-[13px]">
               Sign out
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </header>
     {/* clears the logo tab that hangs below the bar */}
     <div aria-hidden className="h-16" />
