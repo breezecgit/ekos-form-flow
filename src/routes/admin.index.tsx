@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { chipStatus } from "@/components/StatusChip";
+import { chipStatus, statusLabel } from "@/components/StatusChip";
 import { SaleFormCell } from "@/components/SaleFormCell";
 import { DeleteSaleButton } from "@/components/DeleteSaleButton";
 import { listSales } from "@/lib/ekos.functions";
@@ -188,4 +188,46 @@ function Tracker() {
       </div>
     </main>
   );
+}
+
+type TSub = {
+  sale_id: string;
+  form_type: string;
+  status: string;
+  is_draft: boolean;
+  customer_signed_at: string | null;
+  construction_signed_at?: string | null;
+  updated_at: string;
+  created_at: string;
+  submitted_at?: string | null;
+};
+
+const DAY = 86_400_000;
+
+/** Sale timeline: start, last update, days running (frozen once every form is Completed), summary. */
+function timeline(sale: { id: string; created_at: string }, all: TSub[]) {
+  const subs = all.filter((s) => s.sale_id === sale.id);
+  const started = sale.created_at;
+  const latest = subs.reduce<TSub | null>(
+    (a, s) => (!a || s.updated_at > a.updated_at ? s : a),
+    null,
+  );
+  const lastUpdate = latest?.updated_at ?? started;
+  const complete =
+    FORM_ORDER.every((f) => subs.find((s) => s.form_type === f)?.status === "Completed");
+  const end = complete ? new Date(lastUpdate).getTime() : Date.now();
+  const days = Math.max(0, Math.floor((end - new Date(started).getTime()) / DAY));
+  let summary = "No forms started yet.";
+  if (complete) {
+    summary = `All forms completed on ${formatDate(lastUpdate)}.`;
+  } else if (latest) {
+    const st = chipStatus(latest);
+    const title = FORM_TITLES[latest.form_type as keyof typeof FORM_TITLES] ?? latest.form_type;
+    const when = formatDate(lastUpdate);
+    summary =
+      st === "Draft"
+        ? `${title} saved as a draft on ${when}.`
+        : `${title} moved to "${statusLabel(st)}" on ${when}.`;
+  }
+  return { started, lastUpdate, days, complete, summary };
 }
