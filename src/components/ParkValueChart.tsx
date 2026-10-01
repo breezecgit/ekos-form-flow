@@ -23,11 +23,13 @@ export function ParkValueChart({
   submissions,
   isSaleComplete,
   isDirector,
+  assignedParks,
 }: {
   sales: Sale[];
   submissions: ResSub[];
   isSaleComplete: (saleId: string) => boolean;
   isDirector: boolean;
+  assignedParks: string[] | undefined;
 }) {
   const qc = useQueryClient();
   const [rep, setRep] = useState("");
@@ -52,7 +54,7 @@ export function ParkValueChart({
     },
   });
   const goals = goalsQ.data ?? {};
-  const parks = parksQ.data ?? [];
+  const parks = (parksQ.data ?? []).filter((park) => !assignedParks || assignedParks.includes(park.name));
   const parkRep = useMemo(() => Object.fromEntries(parks.map((p) => [p.name, p.repName])), [parks]);
   const reps = useMemo(
     () =>
@@ -134,13 +136,13 @@ export function ParkValueChart({
       </div>
 
       <div className="mt-3 flex flex-wrap items-end gap-3">
-        <label className="text-sm">
+        {isDirector && <label className="text-sm">
           <span className="block text-muted-foreground">Sales rep</span>
           <select className="mt-1 h-9 rounded-md border bg-background px-2" value={rep} onChange={(e) => setRep(e.target.value)}>
             <option value="">All reps</option>
             {reps.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
-        </label>
+        </label>}
         <label className="text-sm">
           <span className="block text-muted-foreground">From</span>
           <input type="date" className="mt-1 h-9 rounded-md border bg-background px-2" value={from} onChange={(e) => setFrom(e.target.value)} />

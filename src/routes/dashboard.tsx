@@ -75,6 +75,19 @@ function Dashboard() {
   });
 
   const submissions = sales.data?.submissions ?? [];
+  const repName = me.data?.salesPeople.find(
+    (person) => person.email?.trim().toLowerCase() === me.data?.email?.trim().toLowerCase(),
+  )?.name?.trim() || me.data?.fullName?.trim() || "";
+  const assignedParks = me.data?.isDirector
+    ? undefined
+    : (me.data?.parks ?? []).filter(
+        (park) => repName && park.rep_name?.trim().toLowerCase() === repName.toLowerCase(),
+      ).map((park) => park.name);
+  const visibleSales = me.data?.isDirector
+    ? sales.data?.sales ?? []
+    : (sales.data?.sales ?? []).filter((sale) => assignedParks?.includes(sale.park_name));
+  const visibleSaleIds = new Set(visibleSales.map((sale) => sale.id));
+  const visibleSubmissions = submissions.filter((submission) => visibleSaleIds.has(submission.sale_id));
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,9 +115,10 @@ function Dashboard() {
 
         {sales.data && (
           <Overview
-            sales={sales.data.sales}
-            submissions={submissions}
+            sales={visibleSales}
+            submissions={visibleSubmissions}
             isDirector={Boolean(me.data?.isDirector)}
+            assignedParks={assignedParks}
           />
         )}
 
@@ -138,18 +152,20 @@ function Overview({
   sales,
   submissions,
   isDirector,
+  assignedParks,
 }: {
   sales: SaleRow[];
   submissions: SubRow[];
   isDirector: boolean;
+  assignedParks: string[] | undefined;
 }) {
   const [park, setPark] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
   const parks = useMemo(
-    () => Array.from(new Set(sales.map((s) => s.park_name).filter(Boolean))).sort(),
-    [sales],
+    () => (assignedParks ?? Array.from(new Set(sales.map((s) => s.park_name).filter(Boolean)))).sort(),
+    [sales, assignedParks],
   );
   const saleById = useMemo(() => new Map(sales.map((s) => [s.id, s])), [sales]);
 
@@ -286,9 +302,9 @@ function Overview({
         </div>
       </div>
 
-      <ParkGoalsChart sales={sales} isSaleComplete={isSaleComplete} isDirector={isDirector} />
+      <ParkGoalsChart sales={sales} isSaleComplete={isSaleComplete} isDirector={isDirector} assignedParks={assignedParks} />
 
-      <ParkValueChart sales={sales} submissions={submissions} isSaleComplete={isSaleComplete} isDirector={isDirector} />
+      <ParkValueChart sales={sales} submissions={submissions} isSaleComplete={isSaleComplete} isDirector={isDirector} assignedParks={assignedParks} />
 
 
 
