@@ -288,7 +288,7 @@ function Overview({
 
       <ParkGoalsChart sales={sales} isSaleComplete={isSaleComplete} isDirector={isDirector} />
 
-      <ParkValueChart sales={sales} submissions={submissions} isSaleComplete={isSaleComplete} />
+      <ParkValueChart sales={sales} submissions={submissions} isSaleComplete={isSaleComplete} isDirector={isDirector} />
 
 
 
