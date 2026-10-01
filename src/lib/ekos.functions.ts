@@ -82,10 +82,14 @@ export const listSales = createServerFn({ method: "GET" })
     return { sales: sales ?? [], submissions: subs ?? [], isDirector: director };
   });
 
-/** Starts a new sale and its Customer Reservation Form draft. */
+/** Starts a new sale with a draft of the chosen first form (Reservation by default). */
 export const createSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d) =>
+    z.object({ formType: z.enum(["reservation", "identification", "new_home_order", "unit_sale_agreement", "written_statement"]).default("reservation") })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const db = await admin();
     const { data: sale, error } = await db
       .from("sales")
@@ -97,7 +101,7 @@ export const createSale = createServerFn({ method: "POST" })
       .from("form_submissions")
       .insert({
         sale_id: sale.id,
-        form_type: "reservation",
+        form_type: data.formType,
         order_number: sale.order_number,
         created_by: context.userId,
         status: "Draft",
@@ -347,7 +351,15 @@ export const saveDraft = createServerFn({ method: "POST" })
 async function syncSale(saleId: string, values: Record<string, unknown>, formType: string) {
   const db = await admin();
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (formType === "reservation" && values["park_name"]) patch['park_name'] = String(values["park_name"]);
+  const park = String(values["park_name"] || values["park_name_confirm"] || "");
+  if (park) {
+    if (formType === "reservation") patch['park_name'] = park;
+    else {
+      // Sales started mid-way: the first form that names a park sets it on the sale.
+      const { data: cur } = await db.from("sales").select("park_name").eq("id", saleId).maybeSingle();
+      if (!cur?.park_name) patch['park_name'] = park;
+    }
+  }
   if (values["customer_name"]) patch['customer_name'] = String(values["customer_name"]);
   if (values["customer_email"]) patch['customer_email'] = String(values["customer_email"]);
   if (values["customer_phone"]) patch['customer_phone'] = String(values["customer_phone"]);
