@@ -81,7 +81,7 @@
   --radius: 0.375rem;
 
   /* Live EKOS page measurements */
-  --ekos-nav: oklch(0.3263 0.0379 169.05); /* #1B3A32 */
+  --ekos-nav: oklch(0.3002 0.0505 178.41); /* #07362E — matches the EKOS logo green */
   --ekos-heading-gold: oklch(0.6939 0.0996 67.09); /* #C99153 */
   --ekos-customer-gold: oklch(0.6751 0.0945 58.69); /* #C68D59 */
   --ekos-ink: oklch(0.2795 0.0368 260.03); /* #1E293B */
