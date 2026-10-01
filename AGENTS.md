@@ -13,3 +13,4 @@
 - Park autofill: form fields declare parkField (a parks column); FormRunner fills them on park change (overwrite) and on load (empty only). parks.inbox_email is the single park inbox/Email source.
 - Sale deletion: gated by public.user_permissions (email, 'can_delete_sales'), checked server-side in deleteSale; keyed by email so accounts can be pre-granted. Drive/Sheets copies are never touched.
 - Tracker and dashboard share SaleFormCell (status chip + Start/Open via startNextForm) so they cannot drift.
+- Rep dashboard scope combines sale ownership with park rep assignment from parks.rep_name; Sadie's director dashboard stays unrestricted, so chart totals cannot show unrelated parks.

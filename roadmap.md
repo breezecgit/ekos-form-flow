@@ -31,6 +31,7 @@
 
 ## Done (Sadie feedback)
 - Written Statement single-PDF layout checked; email links via App base URL; tracker deep-link after login; "Send test of every email" button
+- Dashboard: Sadie sees all parks and sales; reps see only their assigned parks and sales they created.
 
 ## Blocked / needs the user
 - Publish the app (email links point at the published address)
