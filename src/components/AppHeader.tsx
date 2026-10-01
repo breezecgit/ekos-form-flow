@@ -80,7 +80,7 @@ export function AppHeader({
             )}
           </div>
         </div>
-        <nav className="hidden flex-1 items-center justify-center gap-7 lg:flex">
+        <nav className="hidden flex-1 items-center justify-center gap-5 lg:flex">
           {NAV.map((n) => (
             <div key={n.label} className="group relative flex h-20 items-center">
               <a
