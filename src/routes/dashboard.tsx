@@ -7,6 +7,8 @@ import { StatusChip, chipStatus } from "@/components/StatusChip";
 import { formatMoney, parseMoney } from "@/lib/format";
 import { AppHeader } from "@/components/AppHeader";
 import { ParkGoalsChart } from "@/components/ParkGoalsChart";
+import { ParkValueChart } from "@/components/ParkValueChart";
+
 import { saleStage } from "@/lib/sale-stage";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -285,6 +287,9 @@ function Overview({
       </div>
 
       <ParkGoalsChart sales={sales} isSaleComplete={isSaleComplete} isDirector={isDirector} />
+
+      <ParkValueChart sales={sales} submissions={submissions} isSaleComplete={isSaleComplete} />
+
 
 
       {isDirector && (
