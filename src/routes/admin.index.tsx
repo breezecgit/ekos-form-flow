@@ -102,17 +102,19 @@ function Tracker() {
         >
           <option value="">All statuses</option>
           {[
-            "Not started",
-            "Draft",
-            "In Review",
-            "In Review (Offsite)",
-            "Awaiting customer signature",
-            "Awaiting construction sign-off",
-            "Awaiting Director & Witness signatures",
-            "Disapproved",
-            "Completed",
+            { value: "Not started", label: "Not started" },
+            { value: "Draft", label: "Draft" },
+            { value: "In Review", label: "Customer Signing Live" },
+            { value: "In Review (Offsite)", label: "Customer Signing Offsite" },
+            { value: "Awaiting customer signature", label: "Awaiting customer signature" },
+            { value: "Awaiting construction sign-off", label: "Awaiting construction sign-off" },
+            { value: "Awaiting Director & Witness signatures", label: "Awaiting Director & Witness signatures" },
+            { value: "Disapproved", label: "Disapproved" },
+            { value: "Completed", label: "Completed" },
           ].map((s) => (
-            <option key={s}>{s}</option>
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
           ))}
         </select>
       </div>

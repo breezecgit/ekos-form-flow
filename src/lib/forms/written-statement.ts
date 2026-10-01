@@ -115,7 +115,10 @@ export const writtenStatementForm: FormDef = {
           key: "status",
           label: "Status",
           type: "select",
-          options: opts(["In Review", "In Review (Offsite)"]),
+          options: [
+            { value: "In Review", label: "Customer Signing Live" },
+            { value: "In Review (Offsite)", label: "Customer Signing Offsite" },
+          ],
           showIf: (_v, ctx) => ctx.mode === "rep",
           pdfHide: true,
         },
