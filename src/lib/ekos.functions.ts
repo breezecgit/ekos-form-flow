@@ -185,6 +185,15 @@ async function buildPrefill(
   for (const k of ["customer_name", "customer_email", "customer_phone", "sales_person"] as const) {
     if (!out[k] && sale[k]) out[k] = sale[k];
   }
+  // Second customer name carries over (Reservation stores it as customer_two_name).
+  const secondName = merged["customer_two_name"] || merged["customer_two_id_name"];
+  if (secondName) {
+    const fields = def.steps.flatMap((s) => s.fields);
+    for (const k of ["customer_two_id_name", "customer_two_name"]) {
+      if (!out[k] && fields.some((f) => f.key === k)) out[k] = secondName;
+    }
+    if (!out["second_customer"] && fields.some((f) => f.key === "second_customer")) out["second_customer"] = "Yes";
+  }
   if (formType === "written_statement") {
     if (sale.park_name) out["park_name_confirm"] = sale.park_name;
     if (!out["party_customer_name"] && out["customer_name"]) out["party_customer_name"] = out["customer_name"];
