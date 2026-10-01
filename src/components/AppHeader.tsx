@@ -87,7 +87,7 @@ export function AppHeader({
                 href={n.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 font-heading text-[13px] font-medium uppercase tracking-[0.14em] opacity-95 hover:text-gold"
+                className="flex items-center gap-1 whitespace-nowrap font-heading text-[11px] font-medium uppercase tracking-[0.12em] opacity-95 hover:text-gold"
               >
                 {n.label}
                 {n.items && <ChevronDown className="h-3.5 w-3.5" />}
@@ -100,7 +100,7 @@ export function AppHeader({
                       href={`${SITE}/${slug}/`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block px-5 py-2 text-[13px] hover:text-gold"
+                      className="block whitespace-nowrap px-5 py-2 text-[12px] hover:text-gold"
                     >
                       {label}
                     </a>
@@ -111,15 +111,15 @@ export function AppHeader({
           ))}
         </nav>
         {!publicPage && (
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-[13px] lg:ml-0">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-1 whitespace-nowrap text-[13px] lg:ml-0">
             <Link to="/dashboard" className="opacity-90 hover:text-gold">
-              My dashboard
+              Dashboard
             </Link>
             {isDirector && (
               <>
                 <Link to="/admin" className="opacity-90 hover:text-gold">Tracker</Link>
                 <Link to="/admin/settings" className="opacity-90 hover:text-gold">Settings</Link>
-                <Link to="/admin/emails" className="opacity-90 hover:text-gold">Email log</Link>
+                <Link to="/admin/emails" className="opacity-90 hover:text-gold">Emails</Link>
               </>
             )}
             {email && <span className="hidden text-xs opacity-70 xl:inline">{email}</span>}
