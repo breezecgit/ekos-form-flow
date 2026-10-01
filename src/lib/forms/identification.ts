@@ -1,4 +1,4 @@
-import type { FieldDef, FormDef, FormValues } from "./types";
+import type { ContentBlock, FieldDef, FormDef, FormValues } from "./types";
 import { customerSignatureFields, fieldFromReservation, repSignatureFields } from "./common";
 import { opts } from "./common";
 
@@ -9,8 +9,17 @@ const ADDRESS_PROOF =
 
 const secondYes = (v: FormValues) => v["second_customer"] === "Yes";
 
-const STATUS_GUIDE_ID =
-  "Status Guide: Customer Signing Live (In Review) – use when rep & customer have both signed form on site. Customer Signing Offsite (In Review (offsite)) – use when rep has signed & customer wants to sign at home or at later date. Completed – do not use – Director use only.";
+const STATUS_GUIDE_BLOCKS: ContentBlock[] = [
+  { kind: "note", text: "Status Guide:" },
+  {
+    kind: "bullets",
+    items: [
+      "Customer Signing Live – use when rep & customer have both signed form on site.",
+      "Customer Signing Offsite – use when rep has signed & customer wants to sign at home or at later date.",
+      "Completed – do not use – Director use only.",
+    ],
+  },
+];
 
 /** Customer signature step without its own "second customer?" question (asked on step 1). */
 function signatureFields(): FieldDef[] {
@@ -18,7 +27,7 @@ function signatureFields(): FieldDef[] {
     .filter((f) => f.key !== "second_customer")
     .map((f) =>
       f.key === "status_guide"
-        ? { ...f, content: [{ kind: "note" as const, text: STATUS_GUIDE_ID }] }
+        ? { ...f, content: STATUS_GUIDE_BLOCKS }
         : f,
     );
 }

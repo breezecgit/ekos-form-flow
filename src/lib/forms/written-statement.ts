@@ -1,10 +1,19 @@
-import type { FieldDef, FormDef, FormValues, RenderContext } from "./types";
+import type { ContentBlock, FieldDef, FormDef, FormValues, RenderContext } from "./types";
 import { customerSignatureFields, fieldFromReservation, opts, repSignatureFields } from "./common";
 
 const text = (key: string): FieldDef => ({ key: `ws_${key}`, type: "static", templateKey: key });
 
-const STATUS_GUIDE =
-  "Status Guide: Customer Signing Live (In Review) – use when rep & customer have both signed form on site. Customer Signing Offsite (In Review (offsite)) – use when rep has signed & customer wants to sign at home or at later date. Completed – do not use – Director use only.";
+const STATUS_GUIDE_BLOCKS: ContentBlock[] = [
+  { kind: "note", text: "Status Guide:" },
+  {
+    kind: "bullets",
+    items: [
+      "Customer Signing Live – use when rep & customer have both signed form on site.",
+      "Customer Signing Offsite – use when rep has signed & customer wants to sign at home or at later date.",
+      "Completed – do not use – Director use only.",
+    ],
+  },
+];
 
 /** Occupier signatures show on site, on the customer signing page, and once signed. */
 const occupierVisible = (v: FormValues, ctx: RenderContext) =>
@@ -109,7 +118,7 @@ export const writtenStatementForm: FormDef = {
           key: "status_guide",
           type: "static",
           pdfHide: true,
-          content: [{ kind: "note", text: STATUS_GUIDE }],
+          content: STATUS_GUIDE_BLOCKS,
         },
         {
           key: "status",
