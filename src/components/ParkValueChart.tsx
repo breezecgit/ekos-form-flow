@@ -29,7 +29,7 @@ export function ParkValueChart({
   submissions: ResSub[];
   isSaleComplete: (saleId: string) => boolean;
   isDirector: boolean;
-  assignedParks?: string[];
+  assignedParks: string[] | undefined;
 }) {
   const qc = useQueryClient();
   const [rep, setRep] = useState("");

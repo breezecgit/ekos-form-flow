@@ -157,7 +157,7 @@ function Overview({
   sales: SaleRow[];
   submissions: SubRow[];
   isDirector: boolean;
-  assignedParks?: string[];
+  assignedParks: string[] | undefined;
 }) {
   const [park, setPark] = useState("");
   const [from, setFrom] = useState("");
