@@ -46,8 +46,9 @@ const NAV: Array<{ label: string; href: string; items?: Sub[] }> = [
 
 /**
  * Header matching ekosgroup.co.uk: full-width dark green bar, roundel logo in a
- * rounded tab hanging below the bar, centred caps nav. Staff menu on its own
- * line beneath the main nav (omitted on the public signing pages).
+ * rounded tab hanging below the bar, caps nav aligned left beside the logo.
+ * Staff menu on its own line beneath the main nav (omitted on the public
+ * signing pages).
  */
 export function AppHeader({
   isDirector,
@@ -79,7 +80,7 @@ export function AppHeader({
             )}
           </div>
         </div>
-        <nav className="hidden flex-1 items-center justify-center gap-5 lg:flex">
+        <nav className="hidden flex-1 items-center justify-start gap-6 pl-8 lg:flex">
           {NAV.map((n) => (
             <div key={n.label} className="group relative flex h-20 items-center">
               <a
