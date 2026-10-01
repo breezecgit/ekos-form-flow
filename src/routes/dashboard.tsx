@@ -252,7 +252,7 @@ function Overview({
           <div className="mt-1 text-xs text-muted-foreground">Submitted Customer Reservation Forms in this period</div>
         </div>
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-sm text-muted-foreground">Average time of sale process {park ? `· ${park}` : "· all parks"}</div>
+          <div className="text-sm text-muted-foreground">Average sale completion {park ? `· ${park}` : "· all parks"}</div>
           <div className="mt-1 text-3xl font-semibold text-brand">{avgDays === null ? "—" : `${avgDays} days`}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             Sale start to all forms Completed{durations.length ? ` · ${durations.length} completed sale${durations.length === 1 ? "" : "s"}` : " · no completed sales yet"}
