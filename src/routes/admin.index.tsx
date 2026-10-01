@@ -219,15 +219,38 @@ function timeline(sale: { id: string; created_at: string }, all: TSub[]) {
   const days = Math.max(0, Math.floor((end - new Date(started).getTime()) / DAY));
   let summary = "No forms started yet.";
   if (complete) {
-    summary = `All forms completed on ${shortDate(lastUpdate)}.`;
+    summary = "All forms completed.";
   } else if (latest) {
     const st = chipStatus(latest);
     const title = FORM_TITLES[latest.form_type as keyof typeof FORM_TITLES] ?? latest.form_type;
-    const when = shortDate(lastUpdate);
-    summary =
-      st === "Draft"
-        ? `${title} saved as a draft on ${when}.`
-        : `${title} moved to "${statusLabel(st)}" on ${when}.`;
+    switch (st) {
+      case "Draft":
+        summary = `${title} saved as a draft.`;
+        break;
+      case "In Review":
+        summary = `${title} was submitted but awaits Director review.`;
+        break;
+      case "In Review (Offsite)":
+        summary = `${title} moved to "Customer Signing Offsite".`;
+        break;
+      case "Awaiting customer signature":
+        summary = `${title} is waiting for the customer to sign.`;
+        break;
+      case "Awaiting construction sign-off":
+        summary = `${title} is waiting for construction sign-off.`;
+        break;
+      case "Awaiting Director & Witness signatures":
+        summary = `${title} is waiting for Director & Witness signatures.`;
+        break;
+      case "Disapproved":
+        summary = `${title} was disapproved.`;
+        break;
+      case "Completed":
+        summary = `${title} is completed.`;
+        break;
+      default:
+        summary = `${title} status: ${statusLabel(st)}.`;
+    }
   }
   return { started, lastUpdate, days, complete, summary };
 }
