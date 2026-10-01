@@ -123,7 +123,7 @@ export function ParkValueChart({
     <div className="rounded-xl border bg-card p-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Value of sales in progress by park</h2>
+          <h2 className="text-lg font-semibold">Value of Sales in Progress by Park</h2>
           <p className="text-sm text-muted-foreground">
             Bars show the £ value of sales in progress (Total Cost from the Customer Reservation Form){tbc ? ` · ${tbc} TBC not counted` : ""}; the faint bar beside each shows the park's goal.
           </p>

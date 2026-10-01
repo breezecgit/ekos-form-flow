@@ -94,7 +94,7 @@ export function ParkGoalsChart({
     <div className="rounded-xl border bg-card p-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Number of Sales in progress by park</h2>
+          <h2 className="text-lg font-semibold">Number of Sales in Progress by Park</h2>
           <p className="text-sm text-muted-foreground">Bars show sales in progress; the faint bar beside each shows the park's goal.</p>
         </div>
         {isDirector && !editing && (
