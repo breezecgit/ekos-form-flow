@@ -46,8 +46,8 @@ const NAV: Array<{ label: string; href: string; items?: Sub[] }> = [
 
 /**
  * Header matching ekosgroup.co.uk: full-width dark green bar, roundel logo in a
- * rounded tab hanging below the bar, centred caps nav. Staff menu on the right
- * (omitted on the public signing pages).
+ * rounded tab hanging below the bar, centred caps nav. Staff menu on its own
+ * line beneath the main nav (omitted on the public signing pages).
  */
 export function AppHeader({
   isDirector,
@@ -69,10 +69,9 @@ export function AppHeader({
   return (
     <>
     <header className="relative z-20 bg-ekos-nav text-brand-foreground">
-
-      <div className="mx-auto flex h-20 max-w-[1140px] items-center gap-6 px-4">
+      <div className="mx-auto flex h-20 max-w-[1140px] items-center px-4">
         <div className="relative h-20 w-28 shrink-0">
-          <div className="absolute left-0 top-2 flex h-28 w-28 items-center justify-center rounded-b-3xl rounded-t-xl bg-ekos-nav">
+          <div className="absolute left-0 top-2 flex h-32 w-28 items-center justify-center rounded-b-3xl rounded-t-xl bg-ekos-nav">
             {publicPage ? (
               <a href={SITE}>{logoImg}</a>
             ) : (
@@ -110,8 +109,11 @@ export function AppHeader({
             </div>
           ))}
         </nav>
-        {!publicPage && (
-          <div className="flex items-center gap-4 whitespace-nowrap">
+      </div>
+      {/* staff line: sits under the main website nav */}
+      {!publicPage && (
+        <div className="border-t border-white/10 bg-ekos-nav">
+          <div className="mx-auto flex h-11 max-w-[1140px] items-center justify-end gap-4 px-4">
             {email && (
               <span className="max-w-[220px] truncate text-[12px] text-gold" title={email}>
                 {email}
@@ -133,16 +135,15 @@ export function AppHeader({
                 </Link>
               </>
             )}
-            <button type="button" onClick={signOut} className="ekos-btn px-3 py-1.5 text-[13px]">
+            <button type="button" onClick={signOut} className="ekos-btn px-3 py-1 text-[13px]">
               Sign out
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </header>
     {/* clears the logo tab that hangs below the bar */}
-    <div aria-hidden className="h-16" />
+    <div aria-hidden className="h-4" />
     </>
-
   );
 }
