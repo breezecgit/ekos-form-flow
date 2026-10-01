@@ -133,9 +133,11 @@ function SubmissionDetail() {
           <Button size="sm" variant="outline" onClick={() => resend.mutate("review")}>
             Resend review email
           </Button>
-          <Button size="sm" variant="outline" onClick={() => resend.mutate("offsite")}>
-            Resend customer signing email
-          </Button>
+          {s.status === "In Review (Offsite)" && !s.customer_signed_at && (
+            <Button size="sm" variant="outline" onClick={() => resend.mutate("offsite")}>
+              Resend customer signing email
+            </Button>
+          )}
           {q.data.constructionLink && (
             <Button
               size="sm"
