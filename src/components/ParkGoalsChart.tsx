@@ -52,8 +52,9 @@ export function ParkGoalsChart({
       ).sort(),
     [sales, parks],
   );
+  const parkNames = parks.map((p) => p.name);
   // When a rep is selected, only show the parks they are responsible for.
-  const visibleParks = rep ? parks.filter((p) => parkRep[p.name] === rep).map((p) => p.name) : parks.map((p) => p.name);
+  const visibleParks = rep ? parks.filter((p) => parkRep[p.name] === rep).map((p) => p.name) : parkNames;
 
   const data = visibleParks.map((park) => {
     const count = sales.filter((s) => {
@@ -69,7 +70,7 @@ export function ParkGoalsChart({
   });
 
   const startEdit = () => {
-    setDraft(Object.fromEntries(parks.map((p) => [p, goals[p] ? String(goals[p]) : ""])));
+    setDraft(Object.fromEntries(parkNames.map((p) => [p, goals[p] ? String(goals[p]) : ""])));
     setEditing(true);
   };
   const save = async () => {
@@ -126,7 +127,7 @@ export function ParkGoalsChart({
         <div className="mt-4">
           <p className="mb-3 text-sm text-muted-foreground">Enter the target number of sales for each park. Leave blank for no goal.</p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {parks.map((p) => (
+            {parkNames.map((p) => (
               <label key={p} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
                 <span>{p}</span>
                 <input
