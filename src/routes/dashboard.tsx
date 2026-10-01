@@ -168,7 +168,7 @@ function Overview({
   const total = orders.reduce((sum, s) => sum + (parseMoney(s.total_cost) ?? 0), 0);
   const tbc = orders.filter((s) => parseMoney(s.total_cost) === null).length;
 
-  // Average time of sale process: days from sale start to the last form's
+  // Average sale completion: days from sale start to the last form's
   // completion, averaged over sales where every form is Completed.
   const DAY = 86400000;
   const orderSaleIds = new Set(orders.map((s) => s.sale_id));
