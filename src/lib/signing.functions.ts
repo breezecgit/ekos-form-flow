@@ -31,6 +31,7 @@ async function loadByToken(token: string) {
     .eq("id", row.submission_id)
     .maybeSingle();
   if (!submission) throw new TokenError("This signing link is not valid.");
+  if (submission.form_type === "identification") throw new TokenError("This signing link is not valid.");
   if (submission.status === "Completed") throw new TokenError("This form has already been completed.");
   return { row, submission };
 }
