@@ -161,7 +161,7 @@ export function ParkGoalsChart({
                   <Cell key={d.park} fill={d.goal && d.count >= d.goal ? "var(--primary)" : "var(--accent-foreground)"} />
                 ))}
               </Bar>
-              <Bar dataKey="goal" name="goal" fill="var(--muted-foreground)" fillOpacity={0.3} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="goal" name="goal" fill="var(--gold)" fillOpacity={0.45} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
