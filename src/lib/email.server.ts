@@ -171,27 +171,27 @@ export function esc(s: unknown): string {
 }
 
 export const p = (html: string) =>
-  `<p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#ffffff;">${html}</p>`;
+  `<p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;color:#f3efe6;">${html}</p>`;
 
 export const h3 = (text: string) =>
-  `<p style="margin:22px 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:${GOLD};">${text}</p>`;
+  `<p style="margin:26px 0 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${GOLD};">${text}</p>`;
 
 export const goldBox = (text: string) =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;"><tr><td style="border:2px solid ${GOLD};padding:16px 18px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:bold;color:#ffffff;line-height:1.5;">${text}</td></tr></table>`;
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px 0;"><tr><td style="background:#26443b;border-left:4px solid ${GOLD};border-radius:0 6px 6px 0;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:bold;color:#ffffff;line-height:1.5;">${text}</td></tr></table>`;
 
 export function button(label: string, url: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 18px 0;"><tr><td style="background:${GOLD};border-radius:4px;"><a href="${url}" style="display:inline-block;padding:12px 26px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:${GREEN};text-decoration:none;">${label}</a></td></tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:10px 0 20px 0;"><tr><td style="background:${GOLD};border-radius:30px;"><a href="${url}" style="display:inline-block;padding:13px 32px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;letter-spacing:0.5px;color:${GREEN};text-decoration:none;">${label}</a></td></tr></table>`;
 }
 
 export function outlineButton(label: string, url: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 18px 0;"><tr><td style="border:2px solid ${GOLD};border-radius:4px;"><a href="${url}" style="display:inline-block;padding:10px 24px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:${GOLD};text-decoration:none;">${label}</a></td></tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:10px 0 20px 0;"><tr><td style="border:1px solid ${GOLD};border-radius:30px;"><a href="${url}" style="display:inline-block;padding:11px 30px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;letter-spacing:0.5px;color:${GOLD};text-decoration:none;">${label}</a></td></tr></table>`;
 }
 
 export function detailsTable(rows: [string, unknown][]): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;width:100%;border-collapse:collapse;">${rows
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 22px 0;width:100%;border-collapse:collapse;background:#26443b;border-radius:6px;">${rows
     .map(
       ([k, v]) =>
-        `<tr><td style="padding:8px 10px;border:1px solid ${GOLD};font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${GOLD};width:30%;">${esc(k)}</td><td style="padding:8px 10px;border:1px solid ${GOLD};font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#ffffff;">${esc(v)}</td></tr>`,
+        `<tr><td style="padding:10px 14px;border-bottom:1px solid #33544a;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;letter-spacing:0.5px;color:${GOLD};width:34%;">${esc(k)}</td><td style="padding:10px 14px;border-bottom:1px solid #33544a;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#f3efe6;">${esc(v)}</td></tr>`,
     )
     .join("")}</table>`;
 }
@@ -199,15 +199,21 @@ export function detailsTable(rows: [string, unknown][]): string {
 /** Shared EKOS branded email (600px, #1e3932, gold accents). */
 export function emailShell(opts: { heading: string; bodyHtml: string; logoUrl?: string }): string {
   return `<!doctype html><html><body style="margin:0;padding:0;background:#f4f1ea;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 0;"><tr><td align="center">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:${GREEN};">
-<tr><td align="center" style="padding:28px 24px 8px 24px;"><img src="${TOP_LOGO}" alt="EKOS Homes" width="150" style="display:block;width:150px;max-width:150px;border:0;" /></td></tr>
-<tr><td style="padding:16px 36px 8px 36px;">
-<h1 style="margin:0 0 20px 0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:normal;font-size:28px;line-height:1.3;color:${GOLD};">${opts.heading}</h1>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:32px 0;"><tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:${GREEN};border-radius:10px;overflow:hidden;">
+<tr><td style="padding:0;height:4px;background:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr>
+<tr><td align="center" style="padding:34px 24px 6px 24px;"><img src="${TOP_LOGO}" alt="EKOS Homes" width="140" style="display:block;width:140px;max-width:140px;border:0;" /></td></tr>
+<tr><td align="center" style="padding:0 40px 10px 40px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="width:60px;height:1px;background:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>
+<tr><td style="padding:18px 40px 8px 40px;">
+<h1 style="margin:0 0 22px 0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:normal;font-size:30px;line-height:1.3;color:${GOLD};">${opts.heading}</h1>
 ${opts.bodyHtml}
-<p style="margin:26px 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#ffffff;">Best regards,</p>
-<p style="margin:0 0 28px 0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:18px;color:${GOLD};">EKOS Homes Team</p>
+<p style="margin:28px 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#f3efe6;">Best regards,</p>
+<p style="margin:0 0 30px 0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:18px;color:${GOLD};">EKOS Homes Team</p>
 </td></tr>
 <tr><td style="padding:0;"><img src="${BOTTOM_IMG}" alt="" width="600" style="display:block;width:100%;max-width:600px;border:0;" /></td></tr>
+<tr><td align="center" style="padding:22px 40px 26px 40px;border-top:1px solid #33544a;">
+<p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${GOLD};letter-spacing:1px;"><a href="mailto:sales@ekosgroup.co.uk" style="color:${GOLD};text-decoration:none;">sales@ekosgroup.co.uk</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://ekosgroup.co.uk" style="color:${GOLD};text-decoration:none;">ekosgroup.co.uk</a></p>
+<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#8fa89d;">This email was sent by EKOS Homes about your holiday home purchase. Please do not reply to this automated message.</p>
+</td></tr>
 </table></td></tr></table></body></html>`;
 }
