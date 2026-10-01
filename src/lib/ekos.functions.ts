@@ -162,7 +162,7 @@ async function buildPrefill(
   const def = getForm(formType);
   const { data: earlier } = await db
     .from("form_submissions")
-    .select("id, form_type, data, created_at")
+    .select("id, form_type, data, created_at, is_draft")
     .eq("sale_id", sale.id)
     .order("created_at", { ascending: true });
   const others = (earlier ?? []).filter((r) => r.form_type !== formType && (r as { id?: string }).id !== excludeSubmissionId);
