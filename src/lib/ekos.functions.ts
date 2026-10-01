@@ -388,6 +388,9 @@ export const submitForm = createServerFn({ method: "POST" })
     if (isWS && requested === "Completed") {
       throw new Error("The Written Statement is completed when the Director and witness sign.");
     }
+    if (submission.form_type === "identification" && requested === "In Review (Offsite)") {
+      throw new Error("Identification Checks are not signed by the customer. Submit with \"In Review\".");
+    }
     const status = requested;
     data.values = await lockPark(submission, data.values);
     if (isWS) {

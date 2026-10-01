@@ -1,5 +1,5 @@
-import type { ContentBlock, FieldDef, FormDef, FormValues } from "./types";
-import { customerSignatureFields, fieldFromReservation, repSignatureFields } from "./common";
+import type { FormDef, FormValues, OptionDef } from "./types";
+import { fieldFromReservation, repSignatureFields } from "./common";
 import { opts } from "./common";
 
 const PHOTO_ID =
@@ -9,28 +9,11 @@ const ADDRESS_PROOF =
 
 const secondYes = (v: FormValues) => v["second_customer"] === "Yes";
 
-const STATUS_GUIDE_BLOCKS: ContentBlock[] = [
-  { kind: "note", text: "Status Guide:" },
-  {
-    kind: "bullets",
-    items: [
-      "Customer Signing Live – use when rep & customer have both signed form on site.",
-      "Customer Signing Offsite – use when rep has signed & customer wants to sign at home or at later date.",
-      "Completed – do not use – Director use only.",
-    ],
-  },
+/** ID Checks has no customer signature: the rep submits for Director review. */
+const ID_STATUS_OPTIONS: OptionDef[] = [
+  { value: "In Review", label: "In Review" },
+  { value: "Completed", label: "Completed", directorOnly: true },
 ];
-
-/** Customer signature step without its own "second customer?" question (asked on step 1). */
-function signatureFields(): FieldDef[] {
-  return customerSignatureFields()
-    .filter((f) => f.key !== "second_customer")
-    .map((f) =>
-      f.key === "status_guide"
-        ? { ...f, content: STATUS_GUIDE_BLOCKS }
-        : f,
-    );
-}
 
 export const identificationForm: FormDef = {
   type: "identification",
@@ -93,7 +76,16 @@ export const identificationForm: FormDef = {
     },
     {
       id: "step-2",
-      fields: [...repSignatureFields(), ...signatureFields()],
+      fields: [
+        ...repSignatureFields(),
+        {
+          key: "status",
+          label: "Status",
+          type: "select",
+          options: ID_STATUS_OPTIONS,
+          showIf: (_v, ctx) => ctx.mode === "rep",
+        },
+      ],
     },
   ],
 };
