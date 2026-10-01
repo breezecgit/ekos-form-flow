@@ -7,11 +7,9 @@ import { StatusChip, chipStatus } from "@/components/StatusChip";
 import { formatMoney, parseMoney } from "@/lib/format";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
-import { SaleFormCell } from "@/components/SaleFormCell";
 import { useAuth } from "@/hooks/useAuth";
 import { createSale, getBootstrap, listSales } from "@/lib/ekos.functions";
 import { FORM_ORDER, FORM_TITLES } from "@/lib/forms/registry";
-import { formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -72,7 +70,6 @@ function Dashboard() {
   });
 
   const submissions = sales.data?.submissions ?? [];
-  const drafts = submissions.filter((s) => s.is_draft);
 
   return (
     <div className="min-h-screen bg-background">
