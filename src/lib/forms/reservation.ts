@@ -41,8 +41,17 @@ export const STATUS_OPTIONS: OptionDef[] = [
   { value: "Completed", label: "Completed", directorOnly: true },
 ];
 
-export const STATUS_GUIDE =
-  "Status Guide: Customer Signing Live (In Review) – use when rep & customer have both signed form on site. Customer Signing Offsite (In Review (offsite)) – use when rep has signed & customer wants to sign at home or at later date. Completed – do not use – Director use only.";
+export const STATUS_GUIDE_BLOCKS: ContentBlock[] = [
+  { kind: "note", text: "Status Guide:" },
+  {
+    kind: "bullets",
+    items: [
+      "Customer Signing Live – use when rep & customer have both signed form on site.",
+      "Customer Signing Offsite – use when rep has signed & customer wants to sign at home or at later date.",
+      "Completed – do not use – Director use only.",
+    ],
+  },
+];
 
 const incentiveSelected = (values: FormValues, name: string) => {
   const v = values["incentives"];
@@ -354,7 +363,7 @@ export const reservationForm: FormDef = {
         {
           key: "status_guide",
           type: "static",
-          content: [{ kind: "note", text: STATUS_GUIDE }],
+          content: STATUS_GUIDE_BLOCKS,
         },
         {
           key: "status",
