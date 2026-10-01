@@ -168,7 +168,7 @@ function Overview({
   const total = orders.reduce((sum, s) => sum + (parseMoney(s.total_cost) ?? 0), 0);
   const tbc = orders.filter((s) => parseMoney(s.total_cost) === null).length;
 
-  // Average time of sale process: days from sale start to the last form's
+  // Average sale completion: days from sale start to the last form's
   // completion, averaged over sales where every form is Completed.
   const DAY = 86400000;
   const orderSaleIds = new Set(orders.map((s) => s.sale_id));
@@ -252,7 +252,7 @@ function Overview({
           <div className="mt-1 text-xs text-muted-foreground">Submitted Customer Reservation Forms in this period</div>
         </div>
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-sm text-muted-foreground">Average time of sale process {park ? `· ${park}` : "· all parks"}</div>
+          <div className="text-sm text-muted-foreground">Average sale completion {park ? `· ${park}` : "· all parks"}</div>
           <div className="mt-1 text-3xl font-semibold text-brand">{avgDays === null ? "—" : `${avgDays} days`}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             Sale start to all forms Completed{durations.length ? ` · ${durations.length} completed sale${durations.length === 1 ? "" : "s"}` : " · no completed sales yet"}
