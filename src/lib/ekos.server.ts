@@ -294,6 +294,8 @@ export async function sendDirectorWitnessEmail(submissionId: string) {
 /** (a) Customer "ready to sign" (off site). */
 export async function sendOffsiteCustomerEmail(submissionId: string) {
   const c = await emailContext(submissionId);
+  // Identification Checks are never signed by the customer – no link, no customer email.
+  if (c.submission.form_type === "identification") return;
   const token = await getOrCreateSigningToken(submissionId);
   const f = esc(c.formName);
   const html = emailShell({

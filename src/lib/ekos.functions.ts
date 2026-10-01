@@ -456,6 +456,9 @@ export const setStatus = createServerFn({ method: "POST" })
       .eq("id", data.submissionId)
       .maybeSingle();
     if (!submission) throw new Error("Submission not found");
+    if (submission.form_type === "identification" && data.status === "In Review (Offsite)") {
+      throw new Error("Identification Checks are not signed by the customer.");
+    }
     const s = await server();
     if (data.status === "Completed" && s.needsDirectorWitness(submission.form_type)) {
       throw new Error(
