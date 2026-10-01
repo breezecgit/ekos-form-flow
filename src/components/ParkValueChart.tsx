@@ -125,7 +125,7 @@ export function ParkValueChart({
         <div>
           <h2 className="text-lg font-semibold">Value of Sales in Progress by Park</h2>
           <p className="text-sm text-muted-foreground">
-            Bars show the £ value of sales in progress (Total Cost from the Customer Reservation Form){tbc ? ` · ${tbc} TBC not counted` : ""}; the faint bar beside each shows the park's goal.
+            Bars show the £ value of sales in progress (Total Cost from the Customer Reservation Form){tbc ? ` · ${tbc} TBC not counted` : ""}; the gold bar beside each shows the park's goal.
           </p>
         </div>
         {isDirector && !editing && (
@@ -198,7 +198,7 @@ export function ParkValueChart({
                   <Cell key={d.park} fill={d.goal && d.value >= d.goal ? "var(--primary)" : "var(--accent-foreground)"} />
                 ))}
               </Bar>
-              <Bar dataKey="goal" name="goal" fill="var(--muted-foreground)" fillOpacity={0.3} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="goal" name="goal" fill="var(--gold)" fillOpacity={0.45} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
