@@ -58,13 +58,14 @@ function Dashboard() {
     enabled: Boolean(session),
   });
 
+  const [startWith, setStartWith] = useState<string>("reservation");
   const newSale = useMutation({
-    mutationFn: () => createFn(),
-    onSuccess: (res) => {
+    mutationFn: (formType: string) => createFn({ data: { formType: formType as "reservation" } }),
+    onSuccess: (res, formType) => {
       qc.invalidateQueries({ queryKey: ["sales"] });
       router.navigate({
         to: "/forms/$formType/$submissionId",
-        params: { formType: "reservation", submissionId: res.submissionId },
+        params: { formType, submissionId: res.submissionId },
       });
     },
   });
@@ -77,9 +78,22 @@ function Dashboard() {
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="ekos-title text-2xl">My sales</h1>
-          <Button variant="gold" onClick={() => newSale.mutate()} disabled={newSale.isPending}>
-            {newSale.isPending ? "Starting…" : "Start new sale"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-sm text-muted-foreground" htmlFor="start-with">Start with</label>
+            <select
+              id="start-with"
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={startWith}
+              onChange={(e) => setStartWith(e.target.value)}
+            >
+              {FORM_ORDER.map((f) => (
+                <option key={f} value={f}>{FORM_TITLES[f]}</option>
+              ))}
+            </select>
+            <Button variant="gold" onClick={() => newSale.mutate(startWith)} disabled={newSale.isPending}>
+              {newSale.isPending ? "Starting…" : "Start new sale"}
+            </Button>
+          </div>
         </div>
 
         {sales.data && (
