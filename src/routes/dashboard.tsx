@@ -75,9 +75,9 @@ function Dashboard() {
   });
 
   const submissions = sales.data?.submissions ?? [];
-  const repName = me.data?.fullName?.trim() || me.data?.salesPeople.find(
+  const repName = me.data?.salesPeople.find(
     (person) => person.email?.trim().toLowerCase() === me.data?.email?.trim().toLowerCase(),
-  )?.name?.trim() || "";
+  )?.name?.trim() || me.data?.fullName?.trim() || "";
   const assignedParks = me.data?.isDirector
     ? undefined
     : (me.data?.parks ?? []).filter(
