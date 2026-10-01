@@ -168,6 +168,34 @@ function Overview({
   const total = orders.reduce((sum, s) => sum + (parseMoney(s.total_cost) ?? 0), 0);
   const tbc = orders.filter((s) => parseMoney(s.total_cost) === null).length;
 
+  // Average time of sale: days from sale start to every form Completed, for
+  // completed sales matching the park/date filters.
+  const avgDays = useMemo(() => {
+    const orderSaleIds = new Set(orders.map((s) => s.sale_id));
+    const days: number[] = [];
+    for (const sale of sales) {
+      if (park && sale.park_name !== park) continue;
+      if ((from || to) && !orderSaleIds.has(sale.id)) continue;
+      const subs = submissions.filter((s) => s.sale_id === sale.id);
+      const complete = FORM_ORDER.every((f) =>
+        subs.some((s) => s.form_type === f && !s.is_draft && chipStatus(s) === "Completed"),
+      );
+      if (!complete) continue;
+      const end = subs.reduce(
+        (m, s) => ((s.updated_at ?? s.created_at ?? "") > m ? (s.updated_at ?? s.created_at ?? "") : m),
+        "",
+      );
+      const start = (sale as { created_at?: string }).created_at ?? "";
+      if (!start || !end) continue;
+      const d = Math.round(
+        (new Date(end).getTime() - new Date(start).getTime()) / 86400000,
+      );
+      if (d >= 0) days.push(d);
+    }
+    if (days.length === 0) return null;
+    return Math.round(days.reduce((a, b) => a + b, 0) / days.length);
+  }, [sales, submissions, orders, park, from, to]);
+
   const parkSaleIds = new Set(
     sales.filter((s) => !park || s.park_name === park).map((s) => s.id),
   );
