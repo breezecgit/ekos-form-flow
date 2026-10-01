@@ -8,7 +8,7 @@ import { SaleFormCell } from "@/components/SaleFormCell";
 import { DeleteSaleButton } from "@/components/DeleteSaleButton";
 import { listSales } from "@/lib/ekos.functions";
 import { FORM_ORDER, FORM_TITLES } from "@/lib/forms/registry";
-import { formatDate } from "@/lib/format";
+import { formatDate, shortDate } from "@/lib/format";
 import { WordDownloadLink } from "@/components/WordDownload";
 
 export const Route = createFileRoute("/admin/")({
@@ -135,10 +135,10 @@ function Tracker() {
                 return (
                   <>
                     <span className="text-sm text-muted-foreground">
-                      Started: <span className="text-foreground">{formatDate(t.started)}</span>
+                      Started: <span className="text-foreground">{shortDate(t.started)}</span>
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      Last update: <span className="text-foreground">{formatDate(t.lastUpdate)}</span>
+                      Last update: <span className="text-foreground">{shortDate(t.lastUpdate)}</span>
                     </span>
                     <span className="text-sm text-muted-foreground">
                       {t.complete ? "Completed in" : "Days running"}:{" "}
@@ -219,11 +219,11 @@ function timeline(sale: { id: string; created_at: string }, all: TSub[]) {
   const days = Math.max(0, Math.floor((end - new Date(started).getTime()) / DAY));
   let summary = "No forms started yet.";
   if (complete) {
-    summary = `All forms completed on ${formatDate(lastUpdate)}.`;
+    summary = `All forms completed on ${shortDate(lastUpdate)}.`;
   } else if (latest) {
     const st = chipStatus(latest);
     const title = FORM_TITLES[latest.form_type as keyof typeof FORM_TITLES] ?? latest.form_type;
-    const when = formatDate(lastUpdate);
+    const when = shortDate(lastUpdate);
     summary =
       st === "Draft"
         ? `${title} saved as a draft on ${when}.`

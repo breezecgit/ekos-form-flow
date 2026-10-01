@@ -28,6 +28,15 @@ export function formatDate(raw: unknown): string {
   return s;
 }
 
+/** Short date dd/mm/yy — strips any time part from timestamps. */
+export function shortDate(raw: unknown): string {
+  if (!raw) return "";
+  const s = String(raw ?? "").trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (m?.[1] && m[2] && m[3]) return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
+  return s;
+}
+
 export function todayISO(): string {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
