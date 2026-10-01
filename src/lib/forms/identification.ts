@@ -1,6 +1,5 @@
-import type { FormDef, FormValues, OptionDef } from "./types";
-import { fieldFromReservation, repSignatureFields } from "./common";
-import { opts } from "./common";
+import type { FormDef, FormValues } from "./types";
+import { fieldFromReservation, repSignatureFields, opts } from "./common";
 
 const PHOTO_ID =
   "One form of photographic identification: either a valid passport or a valid UK driving licence.";
@@ -9,12 +8,8 @@ const ADDRESS_PROOF =
 
 const secondYes = (v: FormValues) => v["second_customer"] === "Yes";
 
-/** ID Checks has no customer signature: the rep submits for Director review. */
-const ID_STATUS_OPTIONS: OptionDef[] = [
-  { value: "In Review", label: "In Review" },
-  { value: "Completed", label: "Completed", directorOnly: true },
-];
-
+/** ID Checks has no customer signature and no status step: the rep submits
+ *  straight into Director review (submitForm defaults to "In Review"). */
 export const identificationForm: FormDef = {
   type: "identification",
   title: "Identification Checks",
@@ -76,16 +71,7 @@ export const identificationForm: FormDef = {
     },
     {
       id: "step-2",
-      fields: [
-        ...repSignatureFields(),
-        {
-          key: "status",
-          label: "Status",
-          type: "select",
-          options: ID_STATUS_OPTIONS,
-          showIf: (_v, ctx) => ctx.mode === "rep",
-        },
-      ],
+      fields: [...repSignatureFields()],
     },
   ],
 };
