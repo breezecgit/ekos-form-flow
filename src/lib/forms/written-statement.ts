@@ -16,8 +16,11 @@ const STATUS_GUIDE_BLOCKS: ContentBlock[] = [
 ];
 
 /** Occupier signatures show on site, on the customer signing page, and once signed. */
-const occupierVisible = (v: FormValues, ctx: RenderContext) =>
-  ctx.mode === "offsite" || v["status"] === "In Review" || Boolean(v["occupier_one_signature"]);
+const occupierVisible = (v: FormValues, ctx: RenderContext) => {
+  if (ctx.mode === "offsite") return true;
+  if (ctx.mode === "rep") return v["status"] === "In Review";
+  return v["status"] === "In Review" || Boolean(v["occupier_one_signature"]);
+};
 const secondOccupier = (v: FormValues, ctx: RenderContext) =>
   occupierVisible(v, ctx) && v["second_occupier"] === "Yes";
 
