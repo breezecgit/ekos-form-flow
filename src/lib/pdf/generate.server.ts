@@ -240,6 +240,10 @@ function fieldValueText(f: FieldDef, values: FormValues, attachedBelow = false):
   if (f.type === "money") return formatMoney(v);
   if (f.type === "date") return formatDate(v);
   if (f.type === "multiselect") return Array.isArray(v) ? v.join(", ") : String(v);
+  if (f.type === "select") {
+    const chosen = f.options?.find((o) => o.value === v);
+    return chosen?.label ?? String(v);
+  }
   if (f.type === "checkbox") return v === true ? "Yes - agreed" : "No";
   if (f.type === "file") {
     const list = Array.isArray(v) ? (v as { name: string }[]) : [];

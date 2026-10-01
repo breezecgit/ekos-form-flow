@@ -10,7 +10,7 @@ const ADDRESS_PROOF =
 const secondYes = (v: FormValues) => v["second_customer"] === "Yes";
 
 const STATUS_GUIDE_ID =
-  "Status Guide: In Review – use when rep & customer have both signed form on site. In Review (offsite) – use when rep has signed & customer wants to sign at home or at later date. Completed – do not use – Director use only.";
+  "Status Guide: Customer Signing Live (In Review) – use when rep & customer have both signed form on site. Customer Signing Offsite (In Review (offsite)) – use when rep has signed & customer wants to sign at home or at later date. Completed – do not use – Director use only.";
 
 /** Customer signature step without its own "second customer?" question (asked on step 1). */
 function signatureFields(): FieldDef[] {
