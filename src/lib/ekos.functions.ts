@@ -183,7 +183,7 @@ async function buildPrefill(
     if (f.compute) continue; // auto-calculated boxes recalculate on load from the filled values
     const v = merged[f.key];
     if (v === undefined || v === null || v === "") continue;
-    if (f.type === "select" && !(f.options ?? []).some((o) => o.value === v)) continue;
+    if ((f.type === "select" || f.type === "radio") && !(f.options ?? []).some((o) => o.value === v)) continue;
     if (f.type === "multiselect") {
       const allowed = new Set((f.options ?? []).map((o) => o.value));
       const list = Array.isArray(v) ? (v as string[]).filter((x) => allowed.has(x)) : [];
