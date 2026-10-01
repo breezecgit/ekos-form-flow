@@ -40,8 +40,8 @@ export function ParkValueChart({
   const parksQ = useQuery({
     queryKey: ["parks-names"],
     queryFn: async () => {
-      const { data } = await supabase.from("parks").select("name, active, sort_order").order("sort_order");
-      return (data ?? []).filter((p) => p.active).map((p) => p.name);
+      const { data } = await supabase.from("parks").select("name, rep_name, active, sort_order").order("sort_order");
+      return (data ?? []).filter((p) => p.active).map((p) => ({ name: p.name, repName: p.rep_name ?? "" }));
     },
   });
   const goalsQ = useQuery({
@@ -53,10 +53,19 @@ export function ParkValueChart({
   });
   const goals = goalsQ.data ?? {};
   const parks = parksQ.data ?? [];
+  const parkRep = useMemo(() => Object.fromEntries(parks.map((p) => [p.name, p.repName])), [parks]);
   const reps = useMemo(
-    () => Array.from(new Set(sales.map((s) => s.sales_person ?? "").filter(Boolean))).sort(),
-    [sales],
+    () =>
+      Array.from(
+        new Set([
+          ...sales.map((s) => s.sales_person ?? "").filter(Boolean),
+          ...parks.map((p) => p.repName).filter(Boolean),
+        ]),
+      ).sort(),
+    [sales, parks],
   );
+  // When a rep is selected, only show the parks they are responsible for.
+  const visibleParks = rep ? parks.filter((p) => parkRep[p.name] === rep).map((p) => p.name) : parks.map((p) => p.name);
 
   // Total Cost per sale, from its submitted Customer Reservation Form.
   const valueBySale = useMemo(() => {
@@ -69,7 +78,7 @@ export function ParkValueChart({
   }, [submissions]);
 
   let tbc = 0;
-  const data = parks.map((park) => {
+  const data = visibleParks.map((park) => {
     let value = 0;
     for (const s of sales) {
       if (s.park_name !== park) continue;
