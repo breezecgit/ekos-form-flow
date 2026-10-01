@@ -179,3 +179,15 @@ export function allFields(def: FormDef): FieldDef[] {
 export function findField(def: FormDef, key: string): FieldDef | undefined {
   return allFields(def).find((f) => f.key === key);
 }
+
+/** Normalise heading/label text for duplicate detection (ignore case, spaces, dashes, punctuation). */
+function normLabel(s: string | undefined): string {
+  return (s ?? "").toLowerCase().replace(/[^a-z0-9£]/g, "");
+}
+
+/** True when a field's section heading says the same thing as its own label, so it should show once only. */
+export function labelRepeatsSection(f: FieldDef, which: "label" | "pdf" = "label"): boolean {
+  if (!f.sectionLabel) return false;
+  const text = which === "pdf" ? (f.pdfLabel ?? f.label) : f.label;
+  return !!text && normLabel(text) === normLabel(f.sectionLabel);
+}
