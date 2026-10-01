@@ -10,6 +10,13 @@ import { listSales } from "@/lib/ekos.functions";
 import { FORM_ORDER, FORM_TITLES } from "@/lib/forms/registry";
 import { formatDate, shortDate } from "@/lib/format";
 import { WordDownloadLink } from "@/components/WordDownload";
+import { saleStage } from "@/lib/sale-stage";
+
+function stageLabel(s: string | null) {
+  if (!s) return "Not started";
+  if (s === "Completed") return "Completed";
+  return FORM_TITLES[s as keyof typeof FORM_TITLES] ?? s;
+}
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -63,12 +70,7 @@ function Tracker() {
         if (fromStart !== null && lastUpdate < fromStart) return false;
         if (toEnd !== null && started > toEnd) return false;
       }
-      if (status) {
-        const has = FORM_ORDER.some(
-          (f) => chipStatus(subs.find((x) => x.sale_id === s.id && x.form_type === f)) === status,
-        );
-        if (!has) return false;
-      }
+      if (status && saleStage(s.id, subs) !== status) return false;
       return true;
     });
   }, [data, search, park, person, status, from, to, subs]);
@@ -112,20 +114,10 @@ function Tracker() {
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
-          <option value="">All statuses</option>
-          {[
-            { value: "Not started", label: "Not started" },
-            { value: "Draft", label: "Draft" },
-            { value: "In Review", label: "Customer Signing Live" },
-            { value: "In Review (Offsite)", label: "Customer Signing Offsite" },
-            { value: "Awaiting customer signature", label: "Awaiting customer signature" },
-            { value: "Awaiting construction sign-off", label: "Awaiting construction sign-off" },
-            { value: "Awaiting Director & Witness signatures", label: "Awaiting Director & Witness signatures" },
-            { value: "Disapproved", label: "Disapproved" },
-            { value: "Completed", label: "Completed" },
-          ].map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
+          <option value="">All stages</option>
+          {[...FORM_ORDER, "Completed"].map((s) => (
+            <option key={s} value={s}>
+              {stageLabel(s)}
             </option>
           ))}
         </select>
@@ -203,8 +195,11 @@ function Tracker() {
                 />
               </span>
             </div>
-            <p className="mt-2 text-sm italic text-muted-foreground">
-              {timeline(sale, subs).summary}
+            <p className="mt-2 text-sm text-muted-foreground">
+              <span className="font-semibold not-italic text-brand">
+                Stage: {stageLabel(saleStage(sale.id, subs))}
+              </span>{" "}
+              <span className="italic">{timeline(sale, subs).summary}</span>
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
               {FORM_ORDER.map((formType) => {
