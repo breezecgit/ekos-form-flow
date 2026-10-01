@@ -165,11 +165,29 @@ function Overview({
         }),
     [submissions, saleById, park, from, to],
   );
-  const total = orders.reduce((sum, s) => sum + (parseMoney(s.total_cost) ?? 0), 0);
-  const tbc = orders.filter((s) => parseMoney(s.total_cost) === null).length;
+  // A sale is complete when every form from the one it started at onwards is
+  // Completed. Forms before its starting point (done offline) are skipped.
+  const isSaleComplete = (saleId: string) => {
+    const subs = submissions.filter((s) => s.sale_id === saleId);
+    if (subs.length === 0) return false;
+    const startIdx = Math.min(
+      ...subs.map((s) => FORM_ORDER.indexOf(s.form_type as never)).filter((i) => i >= 0),
+    );
+    if (!Number.isFinite(startIdx)) return false;
+    return FORM_ORDER.slice(startIdx).every((f) =>
+      subs.some((s) => s.form_type === f && chipStatus(s) === "Completed"),
+    );
+  };
+  const sumOf = (list: SubRow[]) => list.reduce((sum, s) => sum + (parseMoney(s.total_cost) ?? 0), 0);
+  const completeOrders = orders.filter((s) => isSaleComplete(s.sale_id));
+  const inProcessOrders = orders.filter((s) => !isSaleComplete(s.sale_id));
+  const totalInProcess = sumOf(inProcessOrders);
+  const totalComplete = sumOf(completeOrders);
+  const tbcInProcess = inProcessOrders.filter((s) => parseMoney(s.total_cost) === null).length;
+  const tbcComplete = completeOrders.filter((s) => parseMoney(s.total_cost) === null).length;
 
   // Average sale completion: days from sale start to the last form's
-  // completion, averaged over sales where every form is Completed.
+  // completion, averaged over complete sales.
   const DAY = 86400000;
   const orderSaleIds = new Set(orders.map((s) => s.sale_id));
   const durations: number[] = [];
@@ -177,8 +195,7 @@ function Overview({
     const sale = saleById.get(saleId);
     if (!sale?.created_at) continue;
     const subs = submissions.filter((s) => s.sale_id === saleId);
-    if (subs.length === 0) continue;
-    if (!FORM_ORDER.every((f) => subs.some((s) => s.form_type === f && chipStatus(s) === "Completed"))) continue;
+    if (!isSaleComplete(saleId)) continue;
     const last = Math.max(...subs.map((s) => new Date(s.updated_at ?? s.created_at ?? sale.created_at!).getTime()));
     durations.push(Math.max(0, Math.round((last - new Date(sale.created_at).getTime()) / DAY)));
   }
@@ -238,12 +255,19 @@ function Overview({
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-sm text-muted-foreground">Total sales {park ? `· ${park}` : "· all parks"}</div>
-          <div className="mt-1 text-3xl font-semibold text-brand">{formatMoney(total) || "£0"}</div>
+          <div className="text-sm text-muted-foreground">Total sales in process {park ? `· ${park}` : "· all parks"}</div>
+          <div className="mt-1 text-3xl font-semibold text-brand">{formatMoney(totalInProcess) || "£0"}</div>
           <div className="mt-1 text-xs text-muted-foreground">
-            From Total Cost on submitted Customer Reservation Forms{tbc ? ` · ${tbc} TBC not counted` : ""}
+            {inProcessOrders.length} sale{inProcessOrders.length === 1 ? "" : "s"} not yet fully completed{tbcInProcess ? ` · ${tbcInProcess} TBC not counted` : ""}
+          </div>
+        </div>
+        <div className="rounded-xl border bg-card p-5">
+          <div className="text-sm text-muted-foreground">Total sales complete {park ? `· ${park}` : "· all parks"}</div>
+          <div className="mt-1 text-3xl font-semibold text-brand">{formatMoney(totalComplete) || "£0"}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {completeOrders.length} sale{completeOrders.length === 1 ? "" : "s"} with every form reviewed and Completed{tbcComplete ? ` · ${tbcComplete} TBC not counted` : ""}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5">
