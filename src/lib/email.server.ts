@@ -213,7 +213,7 @@ ${opts.bodyHtml}
 <tr><td style="padding:0;"><img src="${BOTTOM_IMG}" alt="" width="600" style="display:block;width:100%;max-width:600px;border:0;" /></td></tr>
 <tr><td align="center" style="padding:22px 40px 26px 40px;border-top:1px solid #33544a;">
 <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${GOLD};letter-spacing:1px;"><a href="mailto:sales@ekosgroup.co.uk" style="color:${GOLD};text-decoration:none;">sales@ekosgroup.co.uk</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://ekosgroup.co.uk" style="color:${GOLD};text-decoration:none;">ekosgroup.co.uk</a></p>
-<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#8fa89d;">This email was sent by EKOS Homes about your holiday home purchase. Please do not reply to this automated message.</p>
+<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#8fa89d;">This email was sent by EKOS Homes about your new home purchase. Please do not reply to this automated message.</p>
 </td></tr>
 </table></td></tr></table></body></html>`;
 }
