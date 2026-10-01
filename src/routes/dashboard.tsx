@@ -109,7 +109,7 @@ function Dashboard() {
   );
 }
 
-type SaleRow = { id: string; order_number: string; customer_name: string; park_name: string };
+type SaleRow = { id: string; order_number: string; customer_name: string; park_name: string; created_at?: string };
 type SubRow = {
   id: string;
   sale_id: string;
@@ -168,6 +168,24 @@ function Overview({
   const total = orders.reduce((sum, s) => sum + (parseMoney(s.total_cost) ?? 0), 0);
   const tbc = orders.filter((s) => parseMoney(s.total_cost) === null).length;
 
+  // Average time of sale process: days from sale start to the last form's
+  // completion, averaged over sales where every form is Completed.
+  const DAY = 86400000;
+  const orderSaleIds = new Set(orders.map((s) => s.sale_id));
+  const durations: number[] = [];
+  for (const saleId of orderSaleIds) {
+    const sale = saleById.get(saleId);
+    if (!sale?.created_at) continue;
+    const subs = submissions.filter((s) => s.sale_id === saleId);
+    if (subs.length === 0) continue;
+    if (!FORM_ORDER.every((f) => subs.some((s) => s.form_type === f && chipStatus(s) === "Completed"))) continue;
+    const last = Math.max(...subs.map((s) => new Date(s.updated_at ?? s.created_at ?? sale.created_at!).getTime()));
+    durations.push(Math.max(0, Math.round((last - new Date(sale.created_at).getTime()) / DAY)));
+  }
+  const avgDays = durations.length
+    ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+    : null;
+
   const parkSaleIds = new Set(
     sales.filter((s) => !park || s.park_name === park).map((s) => s.id),
   );
@@ -220,7 +238,7 @@ function Overview({
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border bg-card p-5">
           <div className="text-sm text-muted-foreground">Total sales {park ? `· ${park}` : "· all parks"}</div>
           <div className="mt-1 text-3xl font-semibold text-brand">{formatMoney(total) || "£0"}</div>
@@ -232,6 +250,13 @@ function Overview({
           <div className="text-sm text-muted-foreground">Total orders {park ? `· ${park}` : "· all parks"}</div>
           <div className="mt-1 text-3xl font-semibold text-brand">{orders.length}</div>
           <div className="mt-1 text-xs text-muted-foreground">Submitted Customer Reservation Forms in this period</div>
+        </div>
+        <div className="rounded-xl border bg-card p-5">
+          <div className="text-sm text-muted-foreground">Average time of sale process {park ? `· ${park}` : "· all parks"}</div>
+          <div className="mt-1 text-3xl font-semibold text-brand">{avgDays === null ? "—" : `${avgDays} days`}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            Sale start to all forms Completed{durations.length ? ` · ${durations.length} completed sale${durations.length === 1 ? "" : "s"}` : " · no completed sales yet"}
+          </div>
         </div>
       </div>
 
