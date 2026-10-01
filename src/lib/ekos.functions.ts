@@ -155,18 +155,24 @@ export const startNextForm = createServerFn({ method: "POST" })
 async function buildPrefill(
   sale: { id: string; park_name: string; customer_name: string; customer_email: string; customer_phone: string; sales_person: string },
   formType: string,
+  excludeSubmissionId?: string,
 ): Promise<Record<string, unknown>> {
   const db = await admin();
   const { getForm } = await import("@/lib/forms/registry");
   const def = getForm(formType);
   const { data: earlier } = await db
     .from("form_submissions")
-    .select("form_type, data, created_at")
+    .select("id, form_type, data, created_at")
     .eq("sale_id", sale.id)
     .order("created_at", { ascending: true });
+  const others = (earlier ?? []).filter((r) => r.form_type !== formType && (r as { id?: string }).id !== excludeSubmissionId);
   const merged: Record<string, unknown> = {};
-  for (const row of earlier ?? []) Object.assign(merged, (row.data ?? {}) as Record<string, unknown>);
-  const reservation = (earlier ?? []).find((r) => r.form_type === "reservation");
+  const isBlank = (v: unknown) => v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
+  // Reservation Form answers win; other earlier forms only fill gaps.
+  const reservation = others.find((r) => r.form_type === "reservation");
+  for (const row of [...others.filter((r) => r !== reservation), ...(reservation ? [reservation] : [])]) {
+    for (const [k, v] of Object.entries((row.data ?? {}) as Record<string, unknown>)) if (!isBlank(v)) merged[k] = v;
+  }
   const resData = (reservation?.data ?? {}) as Record<string, unknown>;
   if (resData["total_cost"] !== undefined && merged["cost_new_home"] === undefined) merged["cost_new_home"] = resData["total_cost"];
 
@@ -174,6 +180,7 @@ async function buildPrefill(
   for (const f of def.steps.flatMap((s) => s.fields)) {
     if (["signature", "checkbox", "static", "links"].includes(f.type)) continue;
     if (f.group || f.key === "status" || f.key.startsWith("rep_")) continue;
+    if (f.compute) continue; // auto-calculated boxes recalculate on load from the filled values
     const v = merged[f.key];
     if (v === undefined || v === null || v === "") continue;
     if (f.type === "select" && !(f.options ?? []).some((o) => o.value === v)) continue;
@@ -258,6 +265,26 @@ export const getSubmission = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const submission = await assertAccess(data.submissionId, context.userId);
     const db = await admin();
+    // Re-run carry-over on every open of a later-form draft: fill only boxes that are still empty.
+    if (submission.is_draft && submission.form_type !== "reservation") {
+      const { data: saleRow } = await db.from("sales").select("*").eq("id", submission.sale_id).maybeSingle();
+      if (saleRow) {
+        const prefill = await buildPrefill(saleRow, submission.form_type, submission.id);
+        const cur = { ...((submission.data ?? {}) as Record<string, unknown>) };
+        let changed = false;
+        for (const [k, v] of Object.entries(prefill)) {
+          const c = cur[k];
+          if (c === undefined || c === null || c === "" || (Array.isArray(c) && c.length === 0)) {
+            cur[k] = v;
+            changed = true;
+          }
+        }
+        if (changed) {
+          await db.from("form_submissions").update({ data: cur as never }).eq("id", submission.id);
+          (submission as { data: unknown }).data = cur;
+        }
+      }
+    }
     const { data: linkRow } = await db.from("app_settings").select("value").eq("key", "links").maybeSingle();
     const welcomePackUrl =
       String(((linkRow?.value ?? {}) as Record<string, unknown>)["welcome_pack_url"] ?? "") ||
