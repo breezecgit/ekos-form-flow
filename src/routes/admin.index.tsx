@@ -130,6 +130,25 @@ function Tracker() {
               <span className="text-sm text-muted-foreground">
                 {sale.deposit_date ? formatDate(sale.deposit_date) : ""}
               </span>
+              {(() => {
+                const t = timeline(sale, subs);
+                return (
+                  <>
+                    <span className="text-sm text-muted-foreground">
+                      Started: <span className="text-foreground">{formatDate(t.started)}</span>
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      Last update: <span className="text-foreground">{formatDate(t.lastUpdate)}</span>
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {t.complete ? "Completed in" : "Days running"}:{" "}
+                      <span className="font-medium text-foreground">
+                        {t.days} {t.days === 1 ? "day" : "days"}
+                      </span>
+                    </span>
+                  </>
+                );
+              })()}
               <span className="ml-auto">
                 <DeleteSaleButton
                   sale={sale}
@@ -139,6 +158,9 @@ function Tracker() {
                 />
               </span>
             </div>
+            <p className="mt-2 text-sm italic text-muted-foreground">
+              {timeline(sale, subs).summary}
+            </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
               {FORM_ORDER.map((formType) => {
                 const sub = subs.find((s) => s.sale_id === sale.id && s.form_type === formType);

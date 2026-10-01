@@ -15,6 +15,10 @@ const LABELS: Record<string, string> = {
   "In Review (Offsite)": "Customer Signing Offsite",
 };
 
+export function statusLabel(status: string): string {
+  return LABELS[status] ?? status;
+}
+
 export function StatusChip({ status }: { status: string }) {
   return (
     <span
