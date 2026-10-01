@@ -74,7 +74,7 @@ export function ParkGoalsChart({
       .from("app_settings")
       .upsert({ key: "park_goals", value, updated_at: new Date().toISOString() });
     setSaving(false);
-    if (error) return toast.error("Could not save goals: " + error.message);
+    if (error) { toast.error("Could not save goals: " + error.message); return; }
     toast.success("Goals saved");
     setEditing(false);
     qc.invalidateQueries({ queryKey: ["park-goals"] });
