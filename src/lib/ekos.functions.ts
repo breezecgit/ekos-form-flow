@@ -76,7 +76,7 @@ export const listSales = createServerFn({ method: "GET" })
     const { data: subs } = ids.length
       ? await db
           .from("form_submissions")
-          .select("id, sale_id, form_type, status, is_draft, customer_signed_at, construction_signed_at, updated_at")
+          .select("id, sale_id, form_type, status, is_draft, customer_signed_at, construction_signed_at, updated_at, created_at, submitted_at, total_cost:data->>total_cost")
           .in("sale_id", ids)
       : { data: [] as never[] };
     return { sales: sales ?? [], submissions: subs ?? [], isDirector: director };
