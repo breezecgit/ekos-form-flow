@@ -127,7 +127,7 @@ function SignPage() {
                       New Home Order Form Signatures (Construction Signatures)
                     </p>
                     <p><strong>Customer Email:</strong> {d.customerEmail}</p>
-                    <p><strong>Status:</strong> In Review</p>
+                    <p><strong>Status:</strong> Customer Signing Live</p>
                     {d.pdfUrl && (
                       <p>
                         <a className="text-brand underline" href={d.pdfUrl} target="_blank" rel="noreferrer">

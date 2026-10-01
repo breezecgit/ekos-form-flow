@@ -10,6 +10,11 @@ const STYLES: Record<string, string> = {
   Completed: "bg-brand text-brand-foreground",
 };
 
+const LABELS: Record<string, string> = {
+  "In Review": "Customer Signing Live",
+  "In Review (Offsite)": "Customer Signing Offsite",
+};
+
 export function StatusChip({ status }: { status: string }) {
   return (
     <span
@@ -17,7 +22,7 @@ export function StatusChip({ status }: { status: string }) {
         STYLES[status] ?? "bg-muted text-muted-foreground"
       }`}
     >
-      {status}
+      {LABELS[status] ?? status}
     </span>
   );
 }
