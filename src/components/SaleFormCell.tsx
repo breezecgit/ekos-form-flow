@@ -33,8 +33,14 @@ export function SaleFormCell({
       }),
     onError: (e: Error) => toast.error(e.message),
   });
+  const status = chipStatus(sub);
+  const tone = !sub || status === "Draft" ? "pending" : status === "Completed" ? "done" : "action";
+  const barClass = tone === "done" ? "bg-brand" : tone === "action" ? "bg-destructive" : "bg-gold";
+  const barLabel = tone === "done" ? "Complete" : tone === "action" ? "Action required" : "Incomplete";
   return (
-    <div className="rounded-lg border p-3">
+    <div className="overflow-hidden rounded-lg border">
+      <div className={`h-2 w-full ${barClass}`} role="img" aria-label={barLabel} title={barLabel} />
+      <div className="p-3">
       <p className="text-xs font-semibold">{FORM_TITLES[formType]}</p>
       <div className="mt-2">
         <StatusChip status={chipStatus(sub)} />
@@ -49,6 +55,7 @@ export function SaleFormCell({
         {sub ? "Open" : "Start"}
       </Button>
       {children}
+      </div>
     </div>
   );
 }
