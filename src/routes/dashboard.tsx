@@ -6,6 +6,7 @@ import { Link } from "@tanstack/react-router";
 import { StatusChip, chipStatus } from "@/components/StatusChip";
 import { formatMoney, parseMoney } from "@/lib/format";
 import { AppHeader } from "@/components/AppHeader";
+import { ParkGoalsChart } from "@/components/ParkGoalsChart";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { createSale, getBootstrap, listSales } from "@/lib/ekos.functions";
@@ -283,6 +284,9 @@ function Overview({
           </div>
         </div>
       </div>
+
+      <ParkGoalsChart sales={sales} isSaleComplete={isSaleComplete} isDirector={isDirector} />
+
 
       {isDirector && (
         <div className="rounded-xl border bg-card p-4">
