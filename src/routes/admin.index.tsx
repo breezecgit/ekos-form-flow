@@ -38,10 +38,14 @@ function Tracker() {
   const [park, setPark] = useState("");
   const [person, setPerson] = useState("");
   const [status, setStatus] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const subs = data?.submissions ?? [];
 
   const rows = useMemo(() => {
+    const fromStart = from ? new Date(`${from}T00:00:00`).getTime() : null;
+    const toEnd = to ? new Date(`${to}T23:59:59.999`).getTime() : null;
     return (data?.sales ?? []).filter((s) => {
       const q = search.trim().toLowerCase();
       if (
@@ -51,6 +55,14 @@ function Tracker() {
         return false;
       if (park && s.park_name !== park) return false;
       if (person && s.sales_person !== person) return false;
+      if (fromStart !== null || toEnd !== null) {
+        const t = timeline(s, subs);
+        const started = new Date(t.started).getTime();
+        const lastUpdate = new Date(t.lastUpdate).getTime();
+        // Show the sale if its life overlaps the selected range.
+        if (fromStart !== null && lastUpdate < fromStart) return false;
+        if (toEnd !== null && started > toEnd) return false;
+      }
       if (status) {
         const has = FORM_ORDER.some(
           (f) => chipStatus(subs.find((x) => x.sale_id === s.id && x.form_type === f)) === status,
@@ -59,7 +71,7 @@ function Tracker() {
       }
       return true;
     });
-  }, [data, search, park, person, status, subs]);
+  }, [data, search, park, person, status, from, to, subs]);
 
   const parks = Array.from(new Set((data?.sales ?? []).map((s) => s.park_name).filter(Boolean)));
   const people = Array.from(
@@ -117,6 +129,39 @@ function Tracker() {
             </option>
           ))}
         </select>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <span className="text-sm text-muted-foreground">Date range</span>
+        <input
+          type="date"
+          className="h-10 rounded-md border bg-background px-3 text-sm"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          aria-label="From date"
+        />
+        <span className="text-sm text-muted-foreground">to</span>
+        <input
+          type="date"
+          className="h-10 rounded-md border bg-background px-3 text-sm"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          aria-label="To date"
+        />
+        {(from || to) && (
+          <button
+            type="button"
+            className="text-sm text-brand underline"
+            onClick={() => {
+              setFrom("");
+              setTo("");
+            }}
+          >
+            Clear
+          </button>
+        )}
+        <span className="text-xs text-muted-foreground">
+          Shows sales that were active between these dates
+        </span>
       </div>
 
       <div className="mt-6 space-y-4">
