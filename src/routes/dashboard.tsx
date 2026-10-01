@@ -109,7 +109,7 @@ function Dashboard() {
   );
 }
 
-type SaleRow = { id: string; order_number: string; customer_name: string; park_name: string; created_at?: string };
+type SaleRow = { id: string; order_number: string; customer_name: string; park_name: string; sales_person?: string; created_at?: string };
 type SubRow = {
   id: string;
   sale_id: string;
