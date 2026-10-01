@@ -7,6 +7,7 @@ import { StatusChip, chipStatus } from "@/components/StatusChip";
 import { formatMoney, parseMoney } from "@/lib/format";
 import { AppHeader } from "@/components/AppHeader";
 import { ParkGoalsChart } from "@/components/ParkGoalsChart";
+import { saleStage } from "@/lib/sale-stage";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { createSale, getBootstrap, listSales } from "@/lib/ekos.functions";
@@ -207,19 +208,17 @@ function Overview({
   const parkSaleIds = new Set(
     sales.filter((s) => !park || s.park_name === park).map((s) => s.id),
   );
-  const stages = new Map<string, { formType: string; status: string; count: number }>();
-  for (const s of submissions) {
-    if (!parkSaleIds.has(s.sale_id)) continue;
-    const st = chipStatus(s);
-    if (st === "Completed") continue;
-    const key = `${s.form_type}|${st}`;
-    const cur = stages.get(key) ?? { formType: s.form_type, status: st, count: 0 };
-    cur.count++;
-    stages.set(key, cur);
+  // Each sale counts once, at the first of the 5 forms not yet Completed.
+  const stageCounts = new Map<string, number>();
+  for (const id of parkSaleIds) {
+    const st = saleStage(id, submissions);
+    if (!st || st === "Completed") continue;
+    stageCounts.set(st, (stageCounts.get(st) ?? 0) + 1);
   }
-  const stageList = Array.from(stages.values()).sort(
-    (a, b) => FORM_ORDER.indexOf(a.formType as never) - FORM_ORDER.indexOf(b.formType as never),
-  );
+  const stageList = FORM_ORDER.filter((f) => stageCounts.has(f)).map((f) => ({
+    formType: f as string,
+    count: stageCounts.get(f)!,
+  }));
 
   const toReview = submissions.filter(
     (s) => parkSaleIds.has(s.sale_id) && REVIEW_STATES.has(chipStatus(s)),
