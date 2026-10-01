@@ -248,7 +248,7 @@ function Overview({
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border bg-card p-5">
           <div className="text-sm text-muted-foreground">Total sales {park ? `· ${park}` : "· all parks"}</div>
           <div className="mt-1 text-3xl font-semibold text-brand">{formatMoney(total) || "£0"}</div>
@@ -260,6 +260,11 @@ function Overview({
           <div className="text-sm text-muted-foreground">Total orders {park ? `· ${park}` : "· all parks"}</div>
           <div className="mt-1 text-3xl font-semibold text-brand">{orders.length}</div>
           <div className="mt-1 text-xs text-muted-foreground">Submitted Customer Reservation Forms in this period</div>
+        </div>
+        <div className="rounded-xl border bg-card p-5">
+          <div className="text-sm text-muted-foreground">Average time of sale {park ? `· ${park}` : "· all parks"}</div>
+          <div className="mt-1 text-3xl font-semibold text-brand">{avgDays === null ? "—" : `${avgDays} day${avgDays === 1 ? "" : "s"}`}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Completed sales · from sale start to all forms completed</div>
         </div>
       </div>
 
