@@ -220,30 +220,33 @@ export function FieldInput({
         </label>
       );
       control = withImages ? (
-        <div className="flex flex-wrap gap-4">
-          {options.map((o) => (
-            <div key={o.value} className="w-[200px] max-w-[45%]">
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={() => set(o.value)}
-                aria-label={o.label ?? o.value}
-                className={`block aspect-square w-full overflow-hidden rounded-[4px] border ${
-                  value === o.value ? "border-gold ring-2 ring-gold" : "border-ekos-field-border"
-                } bg-card`}
-              >
-                {o.image && o.image !== "blank" && (
-                  <img
-                    src={CHOICE_IMAGE_SRC[o.image]}
-                    alt={o.label ?? o.value}
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                  />
+        <div className="flex flex-wrap items-stretch gap-4">
+          {options.map((o) => {
+            const hasImage = Boolean(o.image && o.image !== "blank");
+            return (
+              <div key={o.value} className="flex w-[200px] max-w-[45%] flex-col">
+                {hasImage && (
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => set(o.value)}
+                    aria-label={o.label ?? o.value}
+                    className={`block aspect-square w-full overflow-hidden rounded-[4px] border ${
+                      value === o.value ? "border-gold ring-2 ring-gold" : "border-ekos-field-border"
+                    } bg-card`}
+                  >
+                    <img
+                      src={CHOICE_IMAGE_SRC[o.image!]}
+                      alt={o.label ?? o.value}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
                 )}
-              </button>
-              <div className="mt-2">{radio(o)}</div>
-            </div>
-          ))}
+                <div className={hasImage ? "mt-2" : "mt-auto"}>{radio(o)}</div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col gap-2">{options.map(radio)}</div>
