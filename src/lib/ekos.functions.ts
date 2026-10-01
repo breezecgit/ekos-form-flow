@@ -170,7 +170,10 @@ async function buildPrefill(
   const isBlank = (v: unknown) => v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
   // Reservation Form answers win; other earlier forms only fill gaps.
   const reservation = others.find((r) => r.form_type === "reservation");
-  for (const row of [...others.filter((r) => r !== reservation), ...(reservation ? [reservation] : [])]) {
+  // Submitted forms win over drafts; the Reservation Form wins over everything.
+  const rest = others.filter((r) => r !== reservation) as Array<(typeof others)[number] & { is_draft?: boolean }>;
+  const ordered = [...rest.filter((r) => r.is_draft), ...rest.filter((r) => !r.is_draft)];
+  for (const row of [...ordered, ...(reservation ? [reservation] : [])]) {
     for (const [k, v] of Object.entries((row.data ?? {}) as Record<string, unknown>)) if (!isBlank(v)) merged[k] = v;
   }
   const resData = (reservation?.data ?? {}) as Record<string, unknown>;
