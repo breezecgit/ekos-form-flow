@@ -322,11 +322,8 @@ function Overview({
         ) : (
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {stageList.map((st) => (
-              <div key={st.formType + st.status} className="flex items-center justify-between gap-2 rounded-lg border p-3">
-                <div className="text-sm">
-                  <div className="font-medium">{FORM_TITLES[st.formType]}</div>
-                  <StatusChip status={st.status} />
-                </div>
+              <div key={st.formType} className="flex items-center justify-between gap-2 rounded-lg border p-3">
+                <div className="text-sm font-medium">{FORM_TITLES[st.formType as keyof typeof FORM_TITLES]}</div>
                 <span className="text-2xl font-semibold text-brand">{st.count}</span>
               </div>
             ))}
