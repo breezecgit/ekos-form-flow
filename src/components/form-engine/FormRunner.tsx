@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { FieldInput } from "./FieldInput";
 import { MANDATORY_HELPER, SIGNING_HELPER } from "@/lib/forms/registry";
 import type { FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
-import { SUBSUB_HEADINGS, isVisible } from "@/lib/forms/types";
+import { SUBSUB_HEADINGS, isRequired, isVisible, labelRepeatsSection } from "@/lib/forms/types";
 import { validateAll, validateFields, type Errors } from "@/lib/forms/validate";
 import { todayISO } from "@/lib/format";
 import { toast } from "sonner";
@@ -297,10 +297,12 @@ function renderFields(
         SUBSUB_HEADINGS.has(f.sectionLabel) ? (
           <h4 key={`${f.key}-section`} className="ekos-subsubheading">
             {f.sectionLabel}
+            {labelRepeatsSection(f) && isRequired(f) && <span className="ml-1 text-destructive">*</span>}
           </h4>
         ) : (
           <h3 key={`${f.key}-section`} className="ekos-subheading">
             {f.sectionLabel}
+            {labelRepeatsSection(f) && isRequired(f) && <span className="ml-1 text-destructive">*</span>}
           </h3>
         ),
       );

@@ -10,7 +10,7 @@ import { CHOICE_IMAGES_JPG_BASE64 } from "./choice-images";
 import { EKOS_LOGO_PNG_BASE64 } from "./logo-base64";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { ContentBlock, FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
-import { isVisible } from "@/lib/forms/types";
+import { isVisible, labelRepeatsSection } from "@/lib/forms/types";
 import { STATEMENT_V1, classifyStatementLine } from "@/lib/forms/written-statement-text";
 
 const BRAND = rgb(0.027, 0.212, 0.18); // #07362E
@@ -393,7 +393,9 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       return;
     }
     w.ensure(28);
-    w.text(`${f.pdfLabel ?? f.label ?? f.key}`, { size: 10, font: w.bold, color: BRAND });
+    if (!labelRepeatsSection(f, "pdf")) {
+      w.text(`${f.pdfLabel ?? f.label ?? f.key}`, { size: 10, font: w.bold, color: BRAND });
+    }
     if (f.help) w.text(f.help, { size: 8.5, color: MUTED });
     const chosen = f.type === "radio" ? f.options?.find((o) => o.value === values[f.key]) : undefined;
     const imgB64 = chosen?.image && chosen.image !== "blank" ? CHOICE_IMAGES_JPG_BASE64[chosen.image] : undefined;

@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SignaturePad } from "@/components/SignaturePad";
 import { TERMS_URL } from "@/lib/forms/reservation";
 import type { FieldDef, FormValues, RenderContext } from "@/lib/forms/types";
-import { SUBSUB_HEADINGS, isRequired } from "@/lib/forms/types";
+import { SUBSUB_HEADINGS, isRequired, labelRepeatsSection } from "@/lib/forms/types";
 import type { ContentBlock, OptionDef } from "@/lib/forms/types";
 import { CHOICE_IMAGE_SRC } from "./choice-images";
 import { ChevronDown, Minus, Paperclip, Plus, X } from "lucide-react";
@@ -87,7 +87,12 @@ export function FieldInput({
     );
   }
 
-  const label = (
+  const label = labelRepeatsSection(field) ? (
+    // Section heading above already shows these words; keep the label for screen readers only.
+    <label className="sr-only" htmlFor={field.key}>
+      {field.label}
+    </label>
+  ) : (
     <label className={`ekos-label ${labelTone(field.key)}`} htmlFor={field.key}>
       {field.label}
       {isRequired(field) && <span className="ml-1 text-destructive">*</span>}
