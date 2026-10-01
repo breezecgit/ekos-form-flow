@@ -81,7 +81,7 @@ function Dashboard() {
       <AppHeader isDirector={me.data?.isDirector} email={me.data?.email} />
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="ekos-title text-2xl">My sales</h1>
+          <h1 className="ekos-title text-2xl">My Sales</h1>
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-sm text-muted-foreground" htmlFor="start-with">Start with</label>
             <select
@@ -259,26 +259,26 @@ function Overview({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-sm text-muted-foreground">Total sales in process {park ? `· ${park}` : "· all parks"}</div>
+          <div className="text-sm text-muted-foreground">Total Sales in Process {park ? `· ${park}` : "· all parks"}</div>
           <div className="mt-1 text-3xl font-semibold text-brand">{formatMoney(totalInProcess) || "£0"}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             {inProcessOrders.length} sale{inProcessOrders.length === 1 ? "" : "s"} not yet fully completed{tbcInProcess ? ` · ${tbcInProcess} TBC not counted` : ""}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-sm text-muted-foreground">Total sales complete {park ? `· ${park}` : "· all parks"}</div>
+          <div className="text-sm text-muted-foreground">Total Sales Complete {park ? `· ${park}` : "· all parks"}</div>
           <div className="mt-1 text-3xl font-semibold text-brand">{formatMoney(totalComplete) || "£0"}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             {completeOrders.length} sale{completeOrders.length === 1 ? "" : "s"} with every form reviewed and Completed{tbcComplete ? ` · ${tbcComplete} TBC not counted` : ""}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-sm text-muted-foreground">Total orders {park ? `· ${park}` : "· all parks"}</div>
+          <div className="text-sm text-muted-foreground">Total Orders {park ? `· ${park}` : "· all parks"}</div>
           <div className="mt-1 text-3xl font-semibold text-brand">{orders.length}</div>
           <div className="mt-1 text-xs text-muted-foreground">Submitted Customer Reservation Forms in this period</div>
         </div>
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-sm text-muted-foreground">Average sale completion {park ? `· ${park}` : "· all parks"}</div>
+          <div className="text-sm text-muted-foreground">Average Sale Completion {park ? `· ${park}` : "· all parks"}</div>
           <div className="mt-1 text-3xl font-semibold text-brand">{avgDays === null ? "—" : `${avgDays} days`}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             Sale start to all forms Completed{durations.length ? ` · ${durations.length} completed sale${durations.length === 1 ? "" : "s"}` : " · no completed sales yet"}
@@ -294,7 +294,7 @@ function Overview({
 
       {isDirector && (
         <div className="rounded-xl border bg-card p-4">
-          <h2 className="ekos-title text-lg">Incomplete actions – needs your review ({toReview.length})</h2>
+          <h2 className="ekos-title text-lg">Incomplete Actions – Needs Your Review ({toReview.length})</h2>
           {toReview.length === 0 ? (
             <p className="mt-2 text-sm text-muted-foreground">Nothing waiting for review.</p>
           ) : (
@@ -320,7 +320,7 @@ function Overview({
       )}
 
       <div className="rounded-xl border bg-card p-4">
-        <h2 className="ekos-title text-lg">Orders in process</h2>
+        <h2 className="ekos-title text-lg">Orders in Process</h2>
         {stageList.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">No forms in process.</p>
         ) : (
