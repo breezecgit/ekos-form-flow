@@ -81,7 +81,7 @@ function Dashboard() {
       <AppHeader isDirector={me.data?.isDirector} email={me.data?.email} />
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="ekos-title text-2xl">My sales</h1>
+          <h1 className="ekos-title text-2xl">My Sales</h1>
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-sm text-muted-foreground" htmlFor="start-with">Start with</label>
             <select
