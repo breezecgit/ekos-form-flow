@@ -77,11 +77,14 @@ export function computeTotalCost(values: FormValues): string {
   return total.toLocaleString("en-GB", { maximumFractionDigits: 2 });
 }
 
-/** Customer signature fields are hidden on the original form when off site. */
-const onSiteOnly = (values: FormValues, ctx: { mode: string }) =>
-  ctx.mode === "offsite" ||
-  values["status"] === "In Review" ||
-  Boolean(values["customer_one_signature"]);
+/** Customer signature fields are hidden on the original form when off site.
+ * On the rep's form the chosen status alone decides, so switching back to
+ * "Customer Signing Offsite" hides the boxes even if something was signed. */
+const onSiteOnly = (values: FormValues, ctx: { mode: string }) => {
+  if (ctx.mode === "offsite") return true;
+  if (ctx.mode === "rep") return values["status"] === "In Review";
+  return values["status"] === "In Review" || Boolean(values["customer_one_signature"]);
+};
 
 export const reservationForm: FormDef = {
   type: "reservation",
