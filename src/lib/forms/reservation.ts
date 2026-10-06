@@ -148,7 +148,7 @@ export const reservationForm: FormDef = {
         { key: "pitch_number", label: "Pitch Number", type: "text" },
         { key: "home_size", label: "Home Size", type: "text" },
         { key: "list_price", label: "List Price", type: "money" },
-        { key: "monthly_pitch_fee", label: "Initial Monthly Pitch Fee", type: "money" },
+        { key: "monthly_pitch_fee", parkField: "pitch_fee", label: "Initial Monthly Pitch Fee", type: "money" },
         { key: "pitch_fee_review_date", parkField: "pitch_fee_review_date", label: "Annual Pitch Fee Review Date", type: "text" },
         {
           key: "incentives",
