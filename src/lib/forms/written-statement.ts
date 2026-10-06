@@ -73,7 +73,7 @@ export const writtenStatementForm: FormDef = {
         text("part2_fee"),
         { key: "pitch_fee_from", label: "7. The pitch fee will be payable from:", type: "date" },
         text("part2_monthly"),
-        { key: "monthly_pitch_fee", label: "The pitch fee is:", type: "money" },
+        { key: "monthly_pitch_fee", parkField: "pitch_fee", label: "The pitch fee is:", type: "money" },
         {
           key: "services_included",
           label: "The following services are included in the pitch fee:",
