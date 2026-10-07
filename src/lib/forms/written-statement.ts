@@ -85,7 +85,6 @@ export const writtenStatementForm: FormDef = {
           label: "8. The pitch fee will be reviewed on the following date each year:",
           type: "text",
           parkField: "pitch_fee_review_date",
-          defaultValue: "1st January",
         },
         text("part2_additional"),
         {
