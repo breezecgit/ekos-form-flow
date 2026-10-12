@@ -74,18 +74,14 @@ export async function getEmailTestMode(): Promise<{ enabled: boolean; recipient:
   };
 }
 
-/** Verified Resend subdomain used as the sender while test mode is on. */
-export const TEST_SENDER_ADDRESS = "sales@forms.ekosgroup.co.uk";
-
 export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; error?: string | undefined }> {
   const intendedTo = clean(input.to);
   const toKeys = new Set(intendedTo.map((t) => t.toLowerCase()));
   const intendedCc = clean(input.cc).filter((c) => !toKeys.has(c.toLowerCase()));
 
   const testMode = await getEmailTestMode();
-  const baseFrom = input.from ?? FROM_CUSTOMER;
-  // Production sender is unchanged; test sends use the verified forms. subdomain.
-  const from = testMode.enabled ? baseFrom.replace(SALES_ADDRESS, TEST_SENDER_ADDRESS) : baseFrom;
+  // Sender is always sales@ekosgroup.co.uk, in test mode and production.
+  const from = input.from ?? FROM_CUSTOMER;
   const to = testMode.enabled ? testMode.recipients : intendedTo;
   const cc = testMode.enabled ? [] : intendedCc;
   const subject = testMode.enabled
