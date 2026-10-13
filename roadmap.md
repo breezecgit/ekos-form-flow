@@ -32,11 +32,11 @@
 ## Done (Sadie feedback)
 - Written Statement single-PDF layout checked; email links via App base URL; tracker deep-link after login; "Send test of every email" button
 - Dashboard: Sadie sees all parks and sales; reps see only their assigned parks and sales they created.
+- Resend connected and ekosgroup.co.uk verified — mail from sales@ekosgroup.co.uk delivers (Sadie received a test on 13 Oct 2026). Test mode still ON: all emails go to Emma, Eilidh and Sadie only.
 
 ## Blocked / needs the user
 - Publish the app (email links point at the published address)
 - Google Drive: connected account needs EDIT access to the EKOS Forms folder
-- Resend API key + verified sending domain for sales@ekosgroup.co.uk
 - Per-park Brochure / Site Licence / Park Rules URLs (blank = "link to follow")
 - Sadie's signature image upload (Admin > Settings)
 
