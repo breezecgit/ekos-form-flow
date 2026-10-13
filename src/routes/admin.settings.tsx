@@ -263,6 +263,25 @@ function SettingsPage() {
         <div className="mt-3">
           <SignaturePad value={signature} onChange={setSignature} />
         </div>
+        <div className="mt-2 flex items-center gap-3">
+          <input
+            ref={sigFileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onSignatureFile(f);
+              e.target.value = "";
+            }}
+          />
+          <Button type="button" variant="outline" size="sm" onClick={() => sigFileRef.current?.click()}>
+            Upload signature image
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            A scan or photo on plain white paper works best. Press Save settings afterwards.
+          </span>
+        </div>
       </section>
 
       <section className="mt-6 rounded-xl border bg-card p-6">
