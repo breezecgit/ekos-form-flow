@@ -51,7 +51,7 @@ function clean(list: string[] | undefined): string[] {
  * Sends through Resend (connector gateway). Never throws: delivery problems are
  * recorded in the email log (with recipients, CC and body) so it is always testable.
  */
-export const DEFAULT_TEST_RECIPIENT = "emma.frew@breezeconnection.co.uk, eilidh@breezeconnection.co.uk, sadie@ekosgroup.co.uk";
+export const DEFAULT_TEST_RECIPIENT = "emma.frew@breezeconnection.co.uk, sadie@ekosgroup.co.uk";
 export function parseRecipients(raw: string): string[] {
   return Array.from(new Set(raw.split(/[,;\s]+/).map((x) => x.trim()).filter((x) => x.includes("@"))));
 }
