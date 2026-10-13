@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,9 +116,40 @@ function SettingsPage() {
     setBaseUrl(String(data.settings["app_base_url"]?.["url"] ?? ""));
     setWelcomePack(
       String(data.settings["links"]?.["welcome_pack_url"] ?? "") ||
-        "https://ekosgroup.co.uk/ekos-welcome-pack",
+"https://ekosgroup.co.uk/ekos-welcome-pack",
     );
+    setSignature(data.directorSignatureDataUrl ?? "");
   }, [data]);
+
+  const sigFileRef = useRef<HTMLInputElement | null>(null);
+
+  // Turn an uploaded scan/photo of the signature into a transparent PNG data URL.
+  const onSignatureFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 600;
+        const scale = Math.min(1, maxW / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const px = imageData.data;
+        for (let i = 0; i < px.length; i += 4) {
+          if (px[i]! > 235 && px[i + 1]! > 235 && px[i + 2]! > 235) px[i + 3] = 0;
+        }
+        ctx.putImageData(imageData, 0, 0);
+        setSignature(canvas.toDataURL("image/png"));
+        toast.success("Signature image added — press Save settings to store it.");
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const save = useMutation({
     mutationFn: () =>
@@ -231,6 +262,25 @@ function SettingsPage() {
         </p>
         <div className="mt-3">
           <SignaturePad value={signature} onChange={setSignature} />
+        </div>
+        <div className="mt-2 flex items-center gap-3">
+          <input
+            ref={sigFileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onSignatureFile(f);
+              e.target.value = "";
+            }}
+          />
+          <Button type="button" variant="outline" size="sm" onClick={() => sigFileRef.current?.click()}>
+            Upload signature image
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            A scan or photo on plain white paper works best. Press Save settings afterwards.
+          </span>
         </div>
       </section>
 

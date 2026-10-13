@@ -34,7 +34,19 @@ export const getSettings = createServerFn({ method: "GET" })
       for (const [k, v] of Object.entries(value)) flat[k] = v == null ? "" : String(v);
       map[row.key] = flat;
     }
-    return { parks: parks ?? [], salesPeople: people ?? [], settings: map };
+    // Load the saved Director signature so Settings can display it.
+    let directorSignatureDataUrl = "";
+    const imagePath = map["director_signature"]?.["image_path"] ?? "";
+    if (imagePath) {
+      const dl = await db.storage.from("ekos-documents").download(imagePath);
+      if (dl.data) {
+        const buf = new Uint8Array(await dl.data.arrayBuffer());
+        let binary = "";
+        for (let i = 0; i < buf.length; i += 1) binary += String.fromCharCode(buf[i]!);
+        directorSignatureDataUrl = `data:image/png;base64,${btoa(binary)}`;
+      }
+    }
+    return { parks: parks ?? [], salesPeople: people ?? [], settings: map, directorSignatureDataUrl };
   });
 
 export const saveSettings = createServerFn({ method: "POST" })
