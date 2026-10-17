@@ -178,18 +178,20 @@ export async function syncTrackerSheet(saleId: string): Promise<{ ok: boolean; s
     };
     const latest = (ft: string) => driveFileLink(df.latest?.[ft] ?? byType.get(ft)?.drive_file_id ?? "");
     const mainFolder = driveFolderLink(String(s["google_drive"]?.["folder_id"] ?? ""));
+    // Escape user-typed text so the sheet never treats it as a formula.
+    const cellText = (v: unknown) => { const t = String(v ?? ""); return /^[=+\-@\t\r]/.test(t) ? `'${t}` : t; };
     const row = [
       created,
       today,
-      sale.customer_name,
-      sale.customer_email,
-      sale.customer_phone,
+      cellText(sale.customer_name),
+      cellText(sale.customer_email),
+      cellText(sale.customer_phone),
       sale.order_number,
       mainFolder,
       ...FORM_ORDER.map((ft) => df.folders?.[ft] ?? ""),
       ...FORM_ORDER.map(status),
-      sale.sales_person,
-      sale.park_name,
+      cellText(sale.sales_person),
+      cellText(sale.park_name),
       ...FORM_ORDER.map(latest),
       driveFileLink(df.ws_signed ?? ""),
     ];
