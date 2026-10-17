@@ -103,6 +103,17 @@ export async function buildAndStorePdf(
   const settings = await getSettingsMap();
 
   // Uploaded documents are embedded / appended in form order so the PDF is the full record.
+  // Only files uploaded to a form of this same sale may be embedded.
+  let prefixes: string[] | null = null;
+  const allowedPrefixes = async () => {
+    if (prefixes) return prefixes;
+    const { data: rows } = await supabaseAdmin
+      .from("form_submissions")
+      .select("id")
+      .eq("sale_id", submission.sale_id);
+    prefixes = [submission.id, ...(rows ?? []).map((r) => r.id)].map((id) => `submissions/${id}/files/`);
+    return prefixes;
+  };
   const attachments: PdfAttachment[] = [];
   const pdfCtx = { mode: "rep" as const, isDirector: true };
   let section = "";
@@ -115,6 +126,7 @@ export async function buildAndStorePdf(
     if (f.type !== "file" || !isVisible(f, values, pdfCtx)) continue;
     const list = Array.isArray(values[f.key]) ? (values[f.key] as UploadedFile[]) : [];
     for (const file of list) {
+      if (!(await allowedPrefixes()).some((p) => typeof file?.path === "string" && file.path.startsWith(p) && !file.path.includes(".."))) continue;
       const dl = await supabaseAdmin.storage.from(BUCKET).download(file.path);
       if (dl.data) {
         attachments.push({

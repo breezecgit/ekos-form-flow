@@ -122,6 +122,7 @@ export const startNextForm = createServerFn({ method: "POST" })
     const db = await admin();
     const { data: sale } = await db.from("sales").select("*").eq("id", data.saleId).maybeSingle();
     if (!sale) throw new Error("Sale not found");
+    if (sale.created_by !== context.userId && !(await isDirector(context.userId))) throw new Error("Sale not found");
     const { data: existing } = await db
       .from("form_submissions")
       .select("id")
