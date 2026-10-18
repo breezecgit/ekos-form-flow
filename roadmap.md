@@ -5,6 +5,7 @@
 - [x] Verify review and resume links for existing forms and the deleted EKOS-00055; signed-in checks passed, 13 link/field tests passed and build OK.
 
 ## Current Sadie feedback
+- [ ] Omit Status Guide and Status fields from every review and completed PDF; render both samples for each affected form.
 - [x] Correct every guide section to visible sentence bullets; all seven sections expanded and photographed, Reservation PDF pages 3–4 and New Home Order page 5 rendered and inspected; 17 regression tests passed, build OK. No saved sale changes or emails sent.
 - [x] TBC handover and optional Notes across matching fields
 - [x] Shared guide introduction, always-visible access notice and consistent bullets

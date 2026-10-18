@@ -348,7 +348,8 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   // Completed customer copies retain signatures, not the staff approval instructions.
   const completed = values["status"] === "Completed" || Boolean(input.directorSignature);
   const printable = (f: FieldDef) => isVisible(f, values, ctx) && !f.pdfHide &&
-    !(completed && ["status_guide", "status", "authorised_signatory_note", "construction_note"].includes(f.key));
+    !["status_guide", "status"].includes(f.key) &&
+    !(completed && ["authorised_signatory_note", "construction_note"].includes(f.key));
 
   const renderField = async (f: FieldDef) => {
     if (f.sectionLabel) {
