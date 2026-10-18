@@ -4,6 +4,7 @@
 - [x] Read-only backup/recovery investigation: backend healthy, test mode ON, Sheets OFF, Drive enabled flag absent; actual backup inventory/restore authority inaccessible. Evidence/access gaps and recovery procedure documented; no migration, fixtures or configuration changes performed.
 - [ ] Complete recovery coverage evidence: administrator reports successful restore-capable backup 18 October 2026 08:27:21 UTC; explicit grants/RLS backup recovery coverage remains unverified.
 - [ ] Apply conditionally reauthorised exact Section 5 restriction and test new fictional fixtures only — STOPPED: grants/RLS snapshot recovery coverage unverified. Fresh grants/policies and service-role rights re-read; approved executable SQL matches exactly. No migration or record changes performed.
+- [x] Document precise Section 5 hosted permission/workflow verification and narrow recovery procedure; source compatibility review complete, all post-migration checks NOT TESTED pending recovery gate.
 - [x] Reinspect R1–R7 and hosted configuration; preview deletion identity, submitted-form action protection, write/signing validation, error checks and fail-closed Drive gate implemented; 86 isolated tests pass and build OK. Invalid signing link visually verified; auth public settings read.
 - [ ] Prepare exact shared-boundary migration, compatibility and recovery proposal — awaiting owner approval before applying.
 - [ ] Verify direct authenticated database writes, atomic signing and audit/owner controls with approved isolated fixtures — blocked on migration/fixture approval.
