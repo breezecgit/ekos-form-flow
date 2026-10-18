@@ -49,6 +49,7 @@ function SubmissionDetail() {
   const q = useQuery({
     queryKey: ["submission", id],
     queryFn: () => getFn({ data: { submissionId: id } }),
+    retry: false,
   });
 
   const change = useMutation({
@@ -72,6 +73,22 @@ function SubmissionDetail() {
     onSuccess: () => toast.success("Email sent."),
     onError: (e: Error) => toast.error(e.message),
   });
+
+  if (q.isError) {
+    const missing = q.error.message.includes("Submission not found");
+    return (
+      <main className="mx-auto max-w-2xl px-4 py-12 text-center" role="alert">
+        <h1 className="ekos-title text-2xl">{missing ? "This form is no longer available" : "This form couldn’t be opened"}</h1>
+        <p className="mt-4 text-muted-foreground">
+          {missing ? "The sale or form linked in this email has been deleted. Check the tracker for your current sales." : q.error.message}
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          {!missing && <Button variant="outline" onClick={() => q.refetch()}>Try again</Button>}
+          <Button variant="brand" onClick={() => router.navigate({ to: "/admin" })}>View tracker</Button>
+        </div>
+      </main>
+    );
+  }
 
   if (!q.data) return <p className="p-8 text-center text-muted-foreground">Loading…</p>;
 
