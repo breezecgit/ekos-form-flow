@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertCustomerEmail, assertEditable, canResend, parseSubmitStatus } from "./security-rules";
+import { assertCustomerEmail, assertEditable, canOpenFormEditor, canResend, parseSubmitStatus } from "./security-rules";
 
 describe("submit status", () => {
   it("accepts the three allowed statuses", () => {
@@ -13,6 +13,18 @@ describe("submit status", () => {
 });
 
 describe("completed forms", () => {
+  it("the Director can open the Completed form editor", () => {
+    expect(canOpenFormEditor("Completed", false, true)).toBe(true);
+  });
+  it("reps cannot open the Completed form editor", () => {
+    expect(canOpenFormEditor("Completed", false, false)).toBe(false);
+  });
+  it("reps cannot reopen submitted review forms", () => {
+    expect(canOpenFormEditor("In Review", false, false)).toBe(false);
+  });
+  it("reps can open a Disapproved form for corrections", () => {
+    expect(canOpenFormEditor("Disapproved", false, false)).toBe(true);
+  });
   it("reps cannot change a completed form", () => {
     expect(() => assertEditable("Completed", false)).toThrow();
   });

@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getBootstrap, getSubmission, saveDraft, submitForm } from "@/lib/ekos.functions";
 import { FORM_TITLES, getForm, hasForm } from "@/lib/forms/registry";
 import type { FormValues } from "@/lib/forms/types";
+import { canOpenFormEditor } from "@/lib/security-rules";
 
 export const Route = createFileRoute("/forms/$formType/$submissionId")({
   head: () => ({
@@ -114,7 +115,7 @@ function FormPage() {
     welcome_pack_url: sub.data.welcomePackUrl,
   };
 
-  const locked = !submission.is_draft && submission.status !== "Disapproved" && !me.data?.isDirector;
+  const locked = !canOpenFormEditor(submission.status, submission.is_draft, Boolean(me.data?.isDirector));
 
   return (
     <div className="min-h-screen bg-background">
