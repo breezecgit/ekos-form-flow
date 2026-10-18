@@ -86,6 +86,14 @@ const onSiteOnly = (values: FormValues, ctx: { mode: string }) => {
   return values["status"] === "In Review" || Boolean(values["customer_one_signature"]);
 };
 
+function guideBullets(blocks: ContentBlock[]): ContentBlock[] {
+  return blocks.map((block) => block.kind === "accordion"
+    ? { ...block, blocks: block.blocks.flatMap((child): ContentBlock[] => child.kind === "paragraph"
+      ? [{ kind: "bullets", items: [child.text] }]
+      : [child]) }
+    : block);
+}
+
 export const reservationForm: FormDef = {
   type: "reservation",
   title: "Customer Reservation Form",
@@ -203,7 +211,7 @@ export const reservationForm: FormDef = {
         {
           key: "guide_content",
           type: "static",
-          content: [
+          content: guideBullets([
             { kind: "heading", text: "Our Helpful Guide to Your New Home" },
             { kind: "subheading", text: "What Comes as Standard with My New Home" },
             {
@@ -332,11 +340,7 @@ export const reservationForm: FormDef = {
               kind: "bold",
               text: "Until the completion date, we're unable to grant access to the property due to health, safety, and insurance requirements. However, we can provide photos and take any measurements you may need.",
             },
-          ].map((block): ContentBlock => block.kind === "accordion"
-            ? { ...block, blocks: block.blocks.map((child): ContentBlock => child.kind === "paragraph"
-              ? { kind: "bullets", items: [child.text] }
-              : child) }
-            : block as ContentBlock),
+          ]),
         },
       ],
     },
