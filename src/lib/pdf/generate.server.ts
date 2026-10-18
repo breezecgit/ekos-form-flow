@@ -51,6 +51,12 @@ export interface GeneratePdfInput {
   directorSignature?: DirectorSignature;
 }
 
+/** Staff workflow status never belongs in a customer-facing PDF. */
+export function omitPdfField(key: string, completed: boolean): boolean {
+  return ["status_guide", "status"].includes(key) ||
+    (completed && ["authorised_signatory_note", "construction_note"].includes(key));
+}
+
 async function drawAttachments(w: Writer, attachments: PdfAttachment[]) {
   for (const att of attachments) {
     if (att.mimeType === "application/pdf") {
@@ -348,8 +354,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   // Completed customer copies retain signatures, not the staff approval instructions.
   const completed = values["status"] === "Completed" || Boolean(input.directorSignature);
   const printable = (f: FieldDef) => isVisible(f, values, ctx) && !f.pdfHide &&
-    !["status_guide", "status"].includes(f.key) &&
-    !(completed && ["authorised_signatory_note", "construction_note"].includes(f.key));
+    !omitPdfField(f.key, completed);
 
   const renderField = async (f: FieldDef) => {
     if (f.sectionLabel) {
