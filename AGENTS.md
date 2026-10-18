@@ -16,3 +16,4 @@
 - Sale deletion: gated by public.user_permissions (email, 'can_delete_sales'), checked server-side in deleteSale; keyed by email so accounts can be pre-granted. Drive/Sheets copies are never touched.
 - Tracker and dashboard share SaleFormCell (status chip + Start/Open via startNextForm) so they cannot drift.
 - Rep dashboard scope combines sale ownership with park rep assignment from parks.rep_name; Sadie's director dashboard stays unrestricted, so chart totals cannot show unrelated parks.
+- Guide accordions render literal bullet glyphs independently of CSS list markers, and PDF text preserves the WinAnsi bullet glyph; this prevents resets or character cleaning from hiding bullets.

@@ -87,9 +87,11 @@ const onSiteOnly = (values: FormValues, ctx: { mode: string }) => {
 };
 
 function guideBullets(blocks: ContentBlock[]): ContentBlock[] {
+  // Split only guide paragraphs; keep every sentence's original wording and punctuation.
+  const sentences = (text: string) => text.split(/(?<=[.!?])\s+(?=[A-Z])/);
   return blocks.map((block) => block.kind === "accordion"
     ? { ...block, blocks: block.blocks.flatMap((child): ContentBlock[] => child.kind === "paragraph"
-      ? [{ kind: "bullets", items: [child.text] }]
+      ? [{ kind: "bullets", items: sentences(child.text) }]
       : [child]) }
     : block);
 }
