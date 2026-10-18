@@ -6,6 +6,11 @@ async function admin() {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 
+async function checkedWrite(operation: PromiseLike<{ error: unknown }>) {
+  const { error } = await operation;
+  if (error) throw new Error("Some settings could not be saved. Earlier changes may have saved; reload Settings before retrying.");
+}
+
 async function assertDirector(userId: string) {
   const db = await admin();
   const { data } = await db
@@ -42,7 +47,7 @@ export const getSettings = createServerFn({ method: "GET" })
       if (dl.data) {
         const buf = new Uint8Array(await dl.data.arrayBuffer());
         let binary = "";
-        for (let i = 0; i < buf.length; i += 1) binary += String.fromCharCode(buf[i]!);
+        for (const byte of buf) binary += String.fromCharCode(byte);
         directorSignatureDataUrl = `data:image/png;base64,${btoa(binary)}`;
       }
     }
@@ -95,6 +100,8 @@ export const saveSettings = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertDirector(context.userId);
+    // Owner identity has not been approved. Reject before any other write.
+    if (data.emailTestMode?.enabled === false) throw new Error("Email test mode must stay ON until the owner's account is verified and release approval is given.");
     const db = await admin();
 
     for (const p of data.parks) {
@@ -189,14 +196,14 @@ export const saveSettings = createServerFn({ method: "POST" })
     }
 
     if (data.emailTestMode) {
-      await db.from("app_settings").upsert({
+      await checkedWrite(db.from("app_settings").upsert({
         key: "email_test_mode",
         value: {
-          enabled: data.emailTestMode.enabled ? "true" : "false",
+          enabled: "true",
           recipient: data.emailTestMode.recipient.split(/[,;\s]+/).filter(Boolean).join(", "),
         } as never,
         updated_at: new Date().toISOString(),
-      });
+      }));
     }
 
     return { ok: true };
