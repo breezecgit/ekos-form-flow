@@ -78,6 +78,7 @@ async function drawAttachments(w: Writer, attachments: PdfAttachment[]) {
         const iw = img.width * scale;
         const ih = img.height * scale;
         w.page.drawImage(img, { x: MARGIN, y: w.y - ih, width: iw, height: ih });
+        w.fresh = false;
         w.y -= ih + 12;
       } catch {
         w.text(`Attached file: ${att.fileName}`, { color: MUTED });
@@ -105,6 +106,8 @@ class Writer {
   bold!: PDFFont;
   headerTitle = "";
   headerMeta = "";
+  /** True while the current page holds nothing but the running header. */
+  fresh = false;
 
   async init(title: string, meta: string) {
     this.doc = await PDFDocument.create();
@@ -116,6 +119,9 @@ class Writer {
   }
 
   newPage(withRunningHeader = true) {
+    // Never leave a page that only carries the running header – reuse it instead.
+    if (this.fresh && this.page) return;
+    this.fresh = true;
     this.page = this.doc.addPage([PAGE_W, PAGE_H]);
     this.y = PAGE_H - MARGIN;
     if (withRunningHeader) {
@@ -195,6 +201,7 @@ class Writer {
       const w = font.widthOfTextAtSize(line, size);
       const x = opts.align === "center" ? (PAGE_W - w) / 2 : MARGIN + indent;
       this.page.drawText(line, { x, y: this.y - size, size, font, color });
+      this.fresh = false;
       this.y -= lineHeight;
     }
     this.y -= opts.gap ?? 0;
@@ -209,6 +216,7 @@ class Writer {
     const x = MARGIN + 12;
     const y = this.y - size;
     this.page.drawText(text, { x, y, size, font: this.bold, color: LINK });
+    this.fresh = false;
     this.page.drawLine({
       start: { x, y: y - 1.5 },
       end: { x: x + w, y: y - 1.5 },
@@ -229,6 +237,7 @@ class Writer {
 
   rule() {
     this.ensure(12);
+    if (this.fresh) return; // a divider alone must not create or fill a page
     this.page.drawLine({
       start: { x: MARGIN, y: this.y },
       end: { x: PAGE_W - MARGIN, y: this.y },
@@ -304,6 +313,7 @@ async function drawSignature(
     const height = (img.height / img.width) * width;
     w.ensure(height + 8);
     w.page.drawImage(img, { x: MARGIN, y: w.y - height, width, height });
+    w.fresh = false;
     w.page.drawLine({
       start: { x: MARGIN, y: w.y - height - 2 },
       end: { x: MARGIN + width, y: w.y - height - 2 },
@@ -338,6 +348,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     const lw = 110;
     const lh = (logo.height / logo.width) * lw;
     w.page.drawImage(logo, { x: (PAGE_W - lw) / 2, y: w.y - lh, width: lw, height: lh });
+    w.fresh = false;
     w.y -= lh + 16;
   } catch {
     w.y -= 8;
@@ -419,6 +430,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
         const iw = (img.width / img.height) * ih;
         w.ensure(ih + 10);
         w.page.drawImage(img, { x: MARGIN, y: w.y - ih, width: iw, height: ih });
+        w.fresh = false;
         const top = w.y;
         w.y = top - 14;
         w.text(fieldValueText(f, values, grouped), { size: 11, indent: iw + 12 });
@@ -495,6 +507,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
         const width = 190;
         const height = (img.height / img.width) * width;
         w.page.drawImage(img, { x: MARGIN, y: w.y - height, width, height });
+        w.fresh = false;
         w.y -= height + 8;
       } catch {
         /* fall through to the text block */
@@ -512,5 +525,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     w.text(`Date: ${formatDate(ds.date)}`, { size: 10 });
   }
 
+  // Safety net: drop any trailing page that only has the running header.
+  if (w.fresh && w.doc.getPageCount() > 1) w.doc.removePage(w.doc.getPageCount() - 1);
   return await w.doc.save();
 }
