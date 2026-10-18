@@ -1,11 +1,11 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Controlled production-readiness phases
-- [ ] Phase 1: current scan, all open findings, security/secret review and release blockers; report before publishing.
+- [x] Phase 1 review: fresh backend/dependency scans, current hosted policies/grants, security/secret review and dated findings report; 48 tests pass. Release blocked on direct write protection, mutable deletion identity, signing atomicity and owner-only email switch; shared-backend remediation needs explicit approval.
 - [ ] Phase 2: reviewed release publishing and EKOS-00065 live Director/rep retest — blocked pending explicit approval and release-blocking findings.
 - [ ] Phase 3: complete Forms 1–4 normal-workflow live coverage using approved fictional records — blocked pending Phase 2 and workflow approval; no permission bypasses.
-- [ ] Phase 4: verify outstanding configuration and obtain business/manual decisions; no production integration changes without explicit approval.
-- [ ] Phase 5: document implemented/unverified backup, recovery, monitoring, failed delivery, staff offboarding and breach response responsibilities.
+- [ ] Phase 4: configuration read verified email test mode ON, Sheets OFF, Drive linked/configured without an OFF gate, signature path configured and missing park details; obtain business/manual decisions and approval for safe Drive controls.
+- [x] Phase 5 provisional operations checklist documented implemented/unverified controls and proposed processes; operational evidence and named responsibilities remain required for final approval.
 - [ ] Phase 6: consolidated release evidence and explicit go-live checklist — blocked pending required security, live workflow, configuration and operational approvals.
 
 ## Director editor release approval
