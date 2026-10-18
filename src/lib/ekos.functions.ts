@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCustomerEmail, assertEditable, canResend, parseSubmitStatus } from "@/lib/security-rules";
+import { validateFormWrite } from "@/lib/forms/write-validation";
+import { getForm } from "@/lib/forms/registry";
 
 const idInput = z.object({ submissionId: z.string().uuid() });
 
@@ -257,7 +259,7 @@ export const uploadFile = createServerFn({ method: "POST" })
     const path = `submissions/${data.submissionId}/files/${id}-${safe}`;
     const { error } = await db.storage.from("ekos-documents").upload(path, bytes, { contentType: mime });
     if (error) throw new Error(`Upload failed: ${error.message}`);
-    await db.from("submission_files").insert({
+    const { error: metadataError } = await db.from("submission_files").insert({
       id,
       submission_id: data.submissionId,
       field_key: data.fieldKey,
@@ -265,6 +267,9 @@ export const uploadFile = createServerFn({ method: "POST" })
       mime_type: mime,
       storage_path: path,
     });
+    if (metadataError) {
+      throw new Error("The file uploaded but could not be attached to the form. Please retry or contact EKOS.");
+    }
     return { id, name: data.fileName, path, mime };
   });
 
@@ -275,7 +280,7 @@ export const getSubmission = createServerFn({ method: "GET" })
     const submission = await assertAccess(data.submissionId, context.userId);
     const db = await admin();
     // Re-run carry-over on every open of a later-form draft: fill only boxes that are still empty.
-    if (submission.is_draft && submission.form_type !== "reservation") {
+    if (submission.status !== "Completed" && submission.is_draft && submission.form_type !== "reservation") {
       const { data: saleRow } = await db.from("sales").select("*").eq("id", submission.sale_id).maybeSingle();
       if (saleRow) {
         const prefill = await buildPrefill(saleRow, submission.form_type, submission.id);
@@ -289,7 +294,8 @@ export const getSubmission = createServerFn({ method: "GET" })
           }
         }
         if (changed) {
-          await db.from("form_submissions").update({ data: cur as never }).eq("id", submission.id);
+          const { error } = await db.from("form_submissions").update({ data: cur as never }).eq("id", submission.id);
+          if (error) throw new Error("The carried-over answers could not be saved. Please retry.");
           (submission as { data: unknown }).data = cur;
         }
       }
@@ -355,7 +361,8 @@ export const saveDraft = createServerFn({ method: "POST" })
     assertEditable(submission.status, await isDirector(context.userId));
     const db = await admin();
     data.values = await lockPark(submission, data.values);
-    await db
+    validateFormWrite(getForm(submission.form_type), data.values, { mode: "rep", isDirector: await isDirector(context.userId) }, "draft", (submission.data ?? {}) as Record<string, unknown>);
+    const { error: saveError } = await db
       .from("form_submissions")
       .update({
         data: data.values as never,
@@ -365,6 +372,7 @@ export const saveDraft = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       })
       .eq("id", data.submissionId);
+    if (saveError) throw new Error("The form could not be saved. Please retry.");
     await syncSale(submission.sale_id, data.values, submission.form_type);
     const s = await server();
     await s.addAudit({
@@ -404,7 +412,8 @@ async function syncSale(saleId: string, values: Record<string, unknown>, formTyp
   if (values["customer_phone"]) patch['customer_phone'] = String(values["customer_phone"]);
   if (values["sales_person"]) patch['sales_person'] = String(values["sales_person"]);
   if (values["deposit_date"]) patch['deposit_date'] = String(values["deposit_date"]);
-  await db.from("sales").update(patch as never).eq("id", saleId);
+  const { error } = await db.from("sales").update(patch as never).eq("id", saleId);
+  if (error) throw new Error("The answers were saved but the sale summary could not be updated. Please retry.");
 }
 
 export const submitForm = createServerFn({ method: "POST" })
@@ -436,12 +445,13 @@ export const submitForm = createServerFn({ method: "POST" })
     }
     const status = requested;
     data.values = await lockPark(submission, data.values);
+    validateFormWrite(getForm(submission.form_type), data.values, { mode: "rep", isDirector: director }, "submit", (submission.data ?? {}) as Record<string, unknown>);
     if (isWS) {
       const { getStatementTemplate } = await import("@/lib/statement.server");
       data.values["statement_version"] = (await getStatementTemplate()).version;
     }
     const signedOnSite = isWS && status === "In Review";
-    await db
+    const { error: submitError } = await db
       .from("form_submissions")
       .update({
         data: data.values as never,
@@ -453,6 +463,7 @@ export const submitForm = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       })
       .eq("id", data.submissionId);
+    if (submitError) throw new Error("The form could not be submitted. Please retry.");
     await syncSale(submission.sale_id, data.values, submission.form_type);
 
     const s = await server();
@@ -511,7 +522,7 @@ export const setStatus = createServerFn({ method: "POST" })
       );
     }
 
-    await db
+    const { error: statusError } = await db
       .from("form_submissions")
       .update({
         status: data.status,
@@ -520,6 +531,7 @@ export const setStatus = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       })
       .eq("id", data.submissionId);
+    if (statusError) throw new Error("The status could not be saved. Please retry.");
 
     await s.addAudit({
       submissionId: data.submissionId,
@@ -601,11 +613,12 @@ export const sendTestOfEveryEmail = createServerFn({ method: "POST" })
     return s.sendAllTestEmails(context.userId, String(context.claims["email"] ?? ""));
   });
 
-async function canDeleteSales(userId: string): Promise<boolean> {
+async function canDeleteSales(userId: string, verifiedEmail: unknown): Promise<boolean> {
+  // Identity comes from verified authentication claims, never editable profiles.
+  if (!(await isDirector(userId))) return false;
+  const email = typeof verifiedEmail === "string" ? verifiedEmail.trim().toLowerCase() : "";
+  if (email !== "sadie@ekosgroup.co.uk") return false;
   const db = await admin();
-  const { data: profile } = await db.from("profiles").select("email").eq("id", userId).maybeSingle();
-  const email = (profile?.email ?? "").toLowerCase();
-  if (!email) return false;
   const { data } = await db
     .from("user_permissions")
     .select("id")
@@ -618,14 +631,14 @@ async function canDeleteSales(userId: string): Promise<boolean> {
 /** Does the signed-in user hold can_delete_sales? */
 export const getMyPermissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => ({ canDeleteSales: await canDeleteSales(context.userId) }));
+  .handler(async ({ context }) => ({ canDeleteSales: await canDeleteSales(context.userId, context.claims["email"]) }));
 
 /** Permanently deletes a sale + its forms, tokens, files and stored files. Never touches Drive/Sheets, sends no email. */
 export const deleteSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ saleId: z.string().uuid(), confirmOrderNumber: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
-    if (!(await canDeleteSales(context.userId))) {
+    if (!(await canDeleteSales(context.userId, context.claims["email"]))) {
       throw new Error("You do not have permission to delete sales.");
     }
     const db = await admin();
