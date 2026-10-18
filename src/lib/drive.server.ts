@@ -7,7 +7,7 @@ export async function driveWritesEnabled(): Promise<boolean> {
     const { data, error } = await supabaseAdmin.from("app_settings").select("value").eq("key", "google_drive").maybeSingle();
     if (error) return false;
     const value = (data?.value ?? {}) as Record<string, unknown>;
-    return value["enabled"] === true || value["enabled"] === "true";
+    return value["enabled"] === true;
   } catch {
     return false;
   }
