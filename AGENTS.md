@@ -22,3 +22,4 @@
 - Shared write-validation checks payload types and visible required fields at server boundaries, with partial drafts allowed, so browser validation is not the authority.
 - Drive writes require an explicit enabled setting at both orchestration and external-call boundaries; missing or unreadable settings fail closed so configured destinations cannot enable test writes.
 - Upload validation lives in a shared client-safe module and checks form field identity, decoded bounds and file header before storage writes; metadata validation alone cannot establish file content.
+- Settings mutations share a checked-write boundary so partial save failures are visible and never reported as all-success.
