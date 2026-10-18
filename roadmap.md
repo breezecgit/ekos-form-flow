@@ -1,11 +1,14 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Parallel readiness request — 18 October 2026
-- [ ] Document a concrete isolated recovery rehearsal; no shared migration until grants/RLS recovery is evidenced.
-- [ ] Continue preview-only signing concurrency, trusted audit, owner/test-mode, validation/error and Drive safeguards without hosted changes.
-- [ ] Run regression and safe read-only hosted boundary checks; distinguish mocked, preview and hosted evidence.
-- [ ] Review missing park/signature/auth/token policy decisions and run fresh available security/dependency scans.
-- [ ] Return a short action report, exact next action and named blockers; no publication or production configuration changes.
+- [x] Rehearse exact Section 5 and captured ACL/RLS/data reconstruction in disposable local PostgreSQL; provider snapshot recovery remains unverified, shared migration paused.
+- [x] Implement safe preview email routing pinned ON/approved recipient allowlist, Settings disable rejection and checked writes, upload boundary validation, signing read guards and thrown-error Drive denial.
+- [x] Run 109 passing mocked/unit tests and actual hosted read-only Ben/Sadie/anonymous and cross-owner file checks; local transactional signing prototype passes 12-request concurrency and rollback/retry.
+- [x] Fresh backend/dependency scans and hosted auth/park checks completed; stale application deep scan and unavailable infrastructure scan disclosed.
+- [x] Short action report and concrete recovery next steps provided; nothing published or changed in hosted records/settings.
+- [ ] Integrate atomic signing RPC plus durable side-effect retry/audit transaction — requires separate shared migration approval and verified recovery safeguard; prototype alone does not fix published signing.
+- [ ] Complete owner-only hosted settings write gate — owner identity/authority and separate policy migration approval required; preview delivery pinned ON meanwhile.
+- [ ] Complete Forms 1–4 all-screen/action/PDF/signature workflows — needs isolated backend/app destination or separately approved safe fictional fixtures; existing fixture incomplete and no stored corrections performed.
 
 ## Current controlled remediation request
 - [x] Read-only backup/recovery investigation: backend healthy, test mode ON, Sheets OFF, Drive enabled flag absent; actual backup inventory/restore authority inaccessible. Evidence/access gaps and recovery procedure documented; no migration, fixtures or configuration changes performed.
