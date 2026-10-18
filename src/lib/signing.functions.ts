@@ -14,6 +14,11 @@ async function admin() {
 
 class TokenError extends Error {}
 
+async function persistSigningWrite(operation: PromiseLike<{ error: unknown }>) {
+  const { error } = await operation;
+  if (error) throw new Error("Your signing details could not be saved. Please contact EKOS before trying again.");
+}
+
 async function loadByToken(token: string) {
   const db = await admin();
   const { data: row } = await db
@@ -110,11 +115,11 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
     const merged = { ...existing, ...v };
 
     if (kind === "construction") {
-      await db
+      await persistSigningWrite(db
         .from("form_submissions")
         .update({ data: merged as never, construction_signed_at: now, updated_at: now })
-        .eq("id", submission.id);
-      await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
+        .eq("id", submission.id));
+      await persistSigningWrite(db.from("signing_tokens").update({ used_at: now }).eq("token", row.token));
       const built = await s.buildAndStorePdf(submission.id);
       await Promise.all([
         s.publishInReview(submission.id, built.bytes),
@@ -132,11 +137,11 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
       if (!submission.customer_signed_at) {
         throw new Error("The customer must sign before the Director and witness.");
       }
-      await db
+      await persistSigningWrite(db
         .from("form_submissions")
         .update({ data: merged as never, status: "Completed", is_draft: false, updated_at: now })
-        .eq("id", submission.id);
-      await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
+        .eq("id", submission.id));
+      await persistSigningWrite(db.from("signing_tokens").update({ used_at: now }).eq("token", row.token));
       await s.addAudit({
         submissionId: submission.id,
         actorLabel: `${String(v["director_name"])} (Director) with witness ${String(v["witness_name"])}`,
@@ -148,11 +153,11 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
       return { ok: true };
     }
 
-    await db
+    await persistSigningWrite(db
       .from("form_submissions")
       .update({ data: merged as never, customer_signed_at: now, updated_at: now })
-      .eq("id", submission.id);
-    await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
+      .eq("id", submission.id));
+    await persistSigningWrite(db.from("signing_tokens").update({ used_at: now }).eq("token", row.token));
     const built = await s.buildAndStorePdf(submission.id);
     // Drive copy, audit and emails are independent once the PDF exists – run together.
     await Promise.all([
