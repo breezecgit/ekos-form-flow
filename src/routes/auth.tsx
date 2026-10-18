@@ -130,21 +130,8 @@ function AuthPage() {
               {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
           </form>
-          <button
-            type="button"
-            className="mt-4 text-sm text-muted-foreground underline"
-            onClick={() => {
-              setMode(mode === "signin" ? "signup" : "signin");
-              setMessage("");
-            }}
-          >
-            {mode === "signin"
-              ? "Need an account? Create one"
-              : "Already have an account? Sign in"}
-          </button>
           <p className="mt-4 text-xs text-muted-foreground">
-            The account created with sadie@ekosgroup.co.uk automatically becomes the Director
-            account. All other accounts are sales reps.
+            Accounts are by invitation only. Please contact EKOS Group if you need staff access.
           </p>
         </div>
       </main>
