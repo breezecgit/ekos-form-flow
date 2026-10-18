@@ -30,5 +30,13 @@ describe("Drive fail-safe write gate", () => {
     expect(await driveWritesEnabled()).toBe(false);
   });
   it("explicit false denies writes", async () => { fixture.value = { enabled: "false" }; expect(await driveWritesEnabled()).toBe(false); });
-  it("only explicit true enables the gate (no external write executed)", async () => { fixture.value = { enabled: "true" }; expect(await driveWritesEnabled()).toBe(true); });
+  it("only boolean true enables the gate; the string \"true\" is refused", async () => { fixture.value = { enabled: "true" }; expect(await driveWritesEnabled()).toBe(false); fixture.value = { enabled: true }; expect(await driveWritesEnabled()).toBe(true); });
+});describe("automation Drive paths stay closed", () => {
+  it("folder creation and stage uploads return early without Drive calls", async () => {
+    const network = vi.spyOn(globalThis, "fetch");
+    const { ensureSaleFolders, saveStageToDrive } = await import("./automations.server");
+    expect(await ensureSaleFolders("fictional-sale")).toEqual({});
+    expect(await saveStageToDrive({ saleId: "fictional-sale", submissionId: "fictional", formType: "reservation", suffix: "In Review", bytes: new Uint8Array() })).toBeNull();
+    expect(network).not.toHaveBeenCalled();
+  });
 });
