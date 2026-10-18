@@ -34,9 +34,9 @@ export const STANDARD_BLOCKS: ContentBlock[] = (() => {
   return guide.slice(i, i + 3);
 })();
 
-/** "On Move-In Day" collapsible row: 5 bullets and the "Until the completion date…" paragraph. */
+/** Shared move-in section and its always-visible access notice. */
 export const MOVE_IN_BLOCKS: ContentBlock[] = guide.filter(
-  (b) => b.kind === "accordion" && b.title === "On Move-In Day",
+  (b) => (b.kind === "accordion" && b.title === "On Move-In Day") || b.kind === "bold",
 );
 
 /** The six Important Information links. */

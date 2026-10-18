@@ -272,6 +272,8 @@ function contentBlocks(w: Writer, blocks: ContentBlock[]) {
       contentBlocks(w, b.blocks);
     } else if (b.kind === "note") {
       w.text(b.text, { size: 9.5, color: MUTED, gap: 6 });
+    } else if (b.kind === "bold") {
+      w.text(b.text, { font: w.bold, gap: 6 });
     } else {
       w.text(b.text, { gap: 6 });
     }
@@ -388,7 +390,6 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     }
     if (f.type === "checkbox") {
       const ticked = values[f.key] === true;
-      if (f.help) w.text(f.help, { size: 10, font: w.bold, color: BRAND, gap: 2 });
       w.text(`${ticked ? "[X]" : "[ ]"}  ${f.label ?? ""}`, { size: 10, gap: 6 });
       return;
     }
@@ -396,7 +397,6 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     if (!labelRepeatsSection(f, "pdf")) {
       w.text(`${f.pdfLabel ?? f.label ?? f.key}`, { size: 10, font: w.bold, color: BRAND });
     }
-    if (f.help) w.text(f.help, { size: 8.5, color: MUTED });
     const chosen = f.type === "radio" ? f.options?.find((o) => o.value === values[f.key]) : undefined;
     const imgB64 = chosen?.image && chosen.image !== "blank" ? CHOICE_IMAGES_JPG_BASE64[chosen.image] : undefined;
     if (imgB64) {

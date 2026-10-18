@@ -315,6 +315,19 @@ export function FieldInput({
       break;
     case "date":
       control = (
+        <div className="space-y-2">
+          {field.allowTbc && (
+            <label className="flex items-center gap-2 text-sm text-ekos-field-text">
+              <Checkbox
+                checked={value === "TBC"}
+                disabled={disabled}
+                onCheckedChange={(checked) => set(checked ? "TBC" : "")}
+                aria-label={`${field.label ?? "Date"} – TBC`}
+              />
+              TBC
+            </label>
+          )}
+          {value !== "TBC" && (
         <Input
           id={field.key}
           className="ekos-input"
@@ -323,6 +336,8 @@ export function FieldInput({
           disabled={disabled}
           onChange={(e) => set(e.target.value)}
         />
+          )}
+        </div>
       );
       break;
     default:
@@ -421,6 +436,8 @@ function Blocks({ blocks }: { blocks: ContentBlock[] }) {
             </ul>
           );
         if (b.kind === "accordion") return <AccordionRow key={i} title={b.title} blocks={b.blocks} />;
+        if (b.kind === "bold")
+          return <p key={i} className="text-[15px] font-bold leading-[1.7] text-ekos-slate">{b.text}</p>;
         if (b.kind === "note")
           return (
             <p key={i} className="text-[15px] font-medium leading-[1.7] text-ekos-slate">
