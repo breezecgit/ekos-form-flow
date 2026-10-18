@@ -48,7 +48,6 @@ function AuthPage() {
   useEffect(() => {
     if (!loading && session) {
       if (redirect) goAfterLogin(redirect);
-      else if (redirect) goAfterLogin(redirect);
       else router.navigate({ to: "/dashboard" });
     }
   }, [loading, session, router, redirect]);

@@ -343,6 +343,10 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
 
   const templates = ctx.templates ?? STATEMENT_V1;
   const grouped = def.pdfLayout === "grouped";
+  // Completed customer copies retain signatures, not the staff approval instructions.
+  const completed = values["status"] === "Completed" || Boolean(input.directorSignature);
+  const printable = (f: FieldDef) => isVisible(f, values, ctx) && !f.pdfHide &&
+    !(completed && ["status_guide", "status", "authorised_signatory_note", "construction_note"].includes(f.key));
 
   const renderField = async (f: FieldDef) => {
     if (f.sectionLabel) {
@@ -421,7 +425,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
 
   if (!grouped) {
     for (const step of def.steps) {
-      const fields = step.fields.filter((f) => isVisible(f, values, ctx) && !f.pdfHide);
+      const fields = step.fields.filter(printable);
       if (!fields.length) continue;
       if (step.heading) {
         w.ensure(40);
@@ -435,7 +439,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   } else {
     const all = def.steps
       .flatMap((s) => s.fields)
-      .filter((f) => isVisible(f, values, ctx) && !f.pdfHide);
+      .filter(printable);
     // (a) the full statement wording
     for (const f of all) if (f.type === "static" && !f.pdfSection) await renderField(f);
     // (b) customer / home entries + attachments
