@@ -1,7 +1,8 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Current controlled remediation request
-- [ ] Read-only backup/recovery investigation requested at 14:08 UTC: report actual evidence and access gaps, then await renewed owner confirmation; no migration, fixtures or configuration changes permitted.
+- [x] Read-only backup/recovery investigation: backend healthy, test mode ON, Sheets OFF, Drive enabled flag absent; actual backup inventory/restore authority inaccessible. Evidence/access gaps and recovery procedure documented; no migration, fixtures or configuration changes performed.
+- [ ] Obtain administrator backup timestamp/status, restore access/authority and recovery coverage evidence, then present findings and await renewed owner confirmation before restriction migration.
 - [ ] Apply owner-approved exact Section 5 direct-write restriction and verify with new fictional fixtures only — STOPPED at preflight: backup inventory/restore access not verified. Approval received 18 October 2026; fresh privileges/policies captured, SQL unchanged; no migration or record changes performed. Await owner confirmation from More → Database → Manage → Backups and export/recovery access.
 - [x] Reinspect R1–R7 and hosted configuration; preview deletion identity, submitted-form action protection, write/signing validation, error checks and fail-closed Drive gate implemented; 86 isolated tests pass and build OK. Invalid signing link visually verified; auth public settings read.
 - [ ] Prepare exact shared-boundary migration, compatibility and recovery proposal — awaiting owner approval before applying.
