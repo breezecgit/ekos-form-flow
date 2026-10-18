@@ -31,6 +31,7 @@ function checkValue(f: FieldDef, value: unknown) {
     return;
   }
   if (value.length > 100_000) invalid(f);
+  if (f.type === "money" && (!/^-?(?:\d+(?:,\d{3})*)(?:\.\d{1,2})?$/.test(value.replace(/^£\s*/, "")) || !Number.isFinite(Number(value.replace(/^£\s*/, "").replace(/,/g, ""))))) invalid(f);
   if (f.type === "email" && !z.string().trim().email().max(255).safeParse(value).success) invalid(f);
   if (f.type === "date") {
     if (f.allowTbc && value === "TBC") return;
@@ -60,6 +61,7 @@ export function validateFormWrite(def: FormDef, values: FormValues, ctx: RenderC
     if (key === "status" && def.type === "identification") { if (value !== "In Review") throw new Error("That status is not allowed."); continue; }
     const f = fields.get(key);
     if (!f) throw new Error("Unexpected form details were supplied.");
+    if (!ctx.isDirector && f.options?.some((option) => option.directorOnly && option.value === value) && value !== existing[key]) throw new Error("Only the Director can select that option.");
     checkValue(f, value);
   }
   if (stage === "submit" && Object.keys(validateAll(def, values, ctx)).length) throw new Error("Please complete every required box before submitting.");
@@ -74,7 +76,10 @@ export function validateSigningWrite(def: FormDef, values: FormValues, existing:
   const echo: FormValues = { ...existing, order_number: orderNumber };
   for (const [key, value] of Object.entries(values)) {
     const f = byKey.get(key);
-    if (f) { checkValue(f, value); patch[key] = value; continue; }
+    if (f) {
+      if (f.showIf && !f.showIf({ ...existing, ...values }, ctx)) throw new Error("Only the visible signing details can be changed through this link.");
+      checkValue(f, value); patch[key] = value; continue;
+    }
     if (!["order_number", "customer_name", "customer_email", "park_name", "status"].includes(key) || value !== echo[key]) throw new Error("Only the signing details can be changed through this link.");
   }
   if (Object.keys(validateFields(fields, { ...existing, ...patch }, ctx)).length) throw new Error("Please complete every required signing box.");

@@ -2,11 +2,15 @@ const GATEWAY = "https://connector-gateway.lovable.dev/google_drive";
 
 /** Missing/unreadable configuration fails closed; folder IDs never imply approval. */
 export async function driveWritesEnabled(): Promise<boolean> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("app_settings").select("value").eq("key", "google_drive").maybeSingle();
-  if (error) return false;
-  const value = (data?.value ?? {}) as Record<string, unknown>;
-  return value["enabled"] === true || value["enabled"] === "true";
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.from("app_settings").select("value").eq("key", "google_drive").maybeSingle();
+    if (error) return false;
+    const value = (data?.value ?? {}) as Record<string, unknown>;
+    return value["enabled"] === true || value["enabled"] === "true";
+  } catch {
+    return false;
+  }
 }
 
 function keys() {

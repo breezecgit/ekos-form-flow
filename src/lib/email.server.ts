@@ -57,22 +57,22 @@ export function parseRecipients(raw: string): string[] {
   return clean(raw.split(/[,;\s]+/));
 }
 
-/** Test mode is ON unless the setting explicitly says "false" (fail-safe). */
+/** Release safeguard: live delivery stays unavailable until owner authority is verified. */
 export async function getEmailTestMode(): Promise<{ enabled: boolean; recipient: string; recipients: string[] }> {
-  const { data } = await supabaseAdmin
-    .from("app_settings")
-    .select("value")
-    .eq("key", "email_test_mode")
-    .maybeSingle();
-  const v = (data?.value ?? {}) as Record<string, unknown>;
-  const recipient = String(v["recipient"] ?? "").trim();
-  let recipients = parseRecipients(recipient);
-  if (!recipients.length) recipients = parseRecipients(DEFAULT_TEST_RECIPIENT);
-  return {
-    enabled: String(v["enabled"] ?? "true") !== "false",
-    recipient: recipients.join(", "),
-    recipients,
-  };
+  const approved = parseRecipients(DEFAULT_TEST_RECIPIENT);
+  let recipients = approved;
+  try {
+    const { data, error } = await supabaseAdmin.from("app_settings").select("value").eq("key", "email_test_mode").maybeSingle();
+    if (!error) {
+      const v = (data?.value ?? {}) as Record<string, unknown>;
+      const allowed = new Set(approved.map((email) => email.toLowerCase()));
+      const selected = parseRecipients(String(v["recipient"] ?? "")).filter((email) => allowed.has(email.toLowerCase()));
+      if (selected.length) recipients = selected;
+    }
+  } catch {
+    // An unavailable setting must never fall through to customer delivery.
+  }
+  return { enabled: true, recipient: recipients.join(", "), recipients };
 }
 
 export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; error?: string | undefined }> {
