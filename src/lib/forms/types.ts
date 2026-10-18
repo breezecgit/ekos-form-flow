@@ -46,6 +46,7 @@ export type ContentBlock =
   | { kind: "heading"; text: string }
   | { kind: "subheading"; text: string }
   | { kind: "paragraph"; text: string }
+  | { kind: "bold"; text: string }
   | { kind: "note"; text: string }
   | { kind: "bullets"; items: string[] }
   /** Collapsible "+" row on the page (closed by default); printed expanded in the PDF. */
@@ -85,6 +86,8 @@ export interface FieldDef {
   defaultValue?: string;
   /** Date fields that default to today. */
   defaultToday?: boolean;
+  /** Date may be explicitly left to be confirmed. */
+  allowTbc?: boolean;
   /** Sub-heading rendered above this field. */
   sectionLabel?: string;
   /** Static content blocks (type: 'static'). */

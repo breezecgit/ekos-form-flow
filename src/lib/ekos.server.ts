@@ -18,6 +18,7 @@ import {
 import { contactsFor, emailFormName, saveStageToDrive, syncTrackerSheet } from "@/lib/automations.server";
 import type { FormValues, UploadedFile } from "@/lib/forms/types";
 import { isVisible } from "@/lib/forms/types";
+import { staffEmailLink } from "@/lib/email-links";
 
 /** Forms that need the Construction team to sign before Sadie reviews. */
 export function needsConstruction(formType: string): boolean {
@@ -31,7 +32,7 @@ export function needsDirectorWitness(formType: string): boolean {
 
 export const BUCKET = "ekos-documents";
 
-export const DEFAULT_APP_BASE_URL = "https://project--bcc818c5-4e07-4ebe-94b2-ee00eb74094c.lovable.app";
+export const DEFAULT_APP_BASE_URL = "https://forms.ekosgroup.co.uk";
 
 /**
  * Every link in emails / copied links is built from Admin > Settings "App base URL"
@@ -115,7 +116,7 @@ export async function buildAndStorePdf(
     return prefixes;
   };
   const attachments: PdfAttachment[] = [];
-  const pdfCtx = { mode: "rep" as const, isDirector: true };
+  const pdfCtx = { mode: "director" as const, isDirector: true };
   let section = "";
   for (const f of def.steps.flatMap((s) => s.fields)) {
     if (f.sectionLabel) section = f.sectionLabel;
@@ -161,7 +162,7 @@ export async function buildAndStorePdf(
   const bytes = await generateFormPdf({
     def,
     values,
-    ctx: { mode: "rep", isDirector: true, ...(tpl ? { templates: tpl.sections } : {}) },
+    ctx: { mode: "director", isDirector: true, ...(tpl ? { templates: tpl.sections } : {}) },
     orderNumber: submission.order_number,
     park: parkName,
     customerName,
@@ -280,8 +281,8 @@ export async function sendReviewRequiredEmail(submissionId: string) {
       ${c.table}
       ${isWS ? p("<strong>Director and Witness signature required before completion.</strong>") + button("Sign the form", signLink) : ""}
       ${c.pdfLink ? button("Open the form PDF", c.pdfLink) : ""}
-      ${outlineButton("View the tracker", `${c.origin}/admin/submissions/${submissionId}`)}
-      ${outlineButton("Log in to the website", `${c.origin}/auth`)}
+      ${outlineButton("View the tracker", staffEmailLink(c.origin, `/admin/submissions/${submissionId}`))}
+      ${outlineButton("Log in to the website", staffEmailLink(c.origin, `/admin/submissions/${submissionId}`))}
       ${c.pdfLink ? p("The form PDF is also attached to this email.") : ""}`,
   });
 
@@ -417,7 +418,7 @@ export async function sendDisapprovalEmail(submissionId: string, note: string) {
       ${p(`The ${esc(c.formName)} for ${esc(c.name)} (${esc(c.submission.order_number)}) has been disapproved and reopened for edits.`)}
       ${goldBox(`Note from the Director: ${esc(note || "(no note)")}`)}
       ${c.table}
-      ${button("Open the form", `${c.origin}/forms/${c.submission.form_type}/${c.submission.id}`)}`,
+      ${button("Open the form", staffEmailLink(c.origin, `/forms/${c.submission.form_type}/${c.submission.id}`))}`,
   });
   await sendEmail({
     from: FROM_INTERNAL,
@@ -436,7 +437,7 @@ export async function sendResumeLinkEmail(submissionId: string, repEmail: string
     heading: "Your saved draft",
     bodyHtml: `
       ${p(`${esc(yourForm(c.formName))} draft for ${esc(c.name || c.submission.order_number)} has been saved.`)}
-      ${button("Resume this form", `${c.origin}/forms/${c.submission.form_type}/${c.submission.id}`)}`,
+      ${button("Resume this form", staffEmailLink(c.origin, `/forms/${c.submission.form_type}/${c.submission.id}`))}`,
   });
   await sendEmail({
     from: FROM_INTERNAL,

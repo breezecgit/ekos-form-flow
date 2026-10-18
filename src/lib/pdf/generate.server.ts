@@ -272,6 +272,8 @@ function contentBlocks(w: Writer, blocks: ContentBlock[]) {
       contentBlocks(w, b.blocks);
     } else if (b.kind === "note") {
       w.text(b.text, { size: 9.5, color: MUTED, gap: 6 });
+    } else if (b.kind === "bold") {
+      w.text(b.text, { font: w.bold, gap: 6 });
     } else {
       w.text(b.text, { gap: 6 });
     }
@@ -341,6 +343,10 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
 
   const templates = ctx.templates ?? STATEMENT_V1;
   const grouped = def.pdfLayout === "grouped";
+  // Completed customer copies retain signatures, not the staff approval instructions.
+  const completed = values["status"] === "Completed" || Boolean(input.directorSignature);
+  const printable = (f: FieldDef) => isVisible(f, values, ctx) && !f.pdfHide &&
+    !(completed && ["status_guide", "status", "authorised_signatory_note", "construction_note"].includes(f.key));
 
   const renderField = async (f: FieldDef) => {
     if (f.sectionLabel) {
@@ -388,7 +394,6 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     }
     if (f.type === "checkbox") {
       const ticked = values[f.key] === true;
-      if (f.help) w.text(f.help, { size: 10, font: w.bold, color: BRAND, gap: 2 });
       w.text(`${ticked ? "[X]" : "[ ]"}  ${f.label ?? ""}`, { size: 10, gap: 6 });
       return;
     }
@@ -396,7 +401,6 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     if (!labelRepeatsSection(f, "pdf")) {
       w.text(`${f.pdfLabel ?? f.label ?? f.key}`, { size: 10, font: w.bold, color: BRAND });
     }
-    if (f.help) w.text(f.help, { size: 8.5, color: MUTED });
     const chosen = f.type === "radio" ? f.options?.find((o) => o.value === values[f.key]) : undefined;
     const imgB64 = chosen?.image && chosen.image !== "blank" ? CHOICE_IMAGES_JPG_BASE64[chosen.image] : undefined;
     if (imgB64) {
@@ -421,7 +425,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
 
   if (!grouped) {
     for (const step of def.steps) {
-      const fields = step.fields.filter((f) => isVisible(f, values, ctx) && !f.pdfHide);
+      const fields = step.fields.filter(printable);
       if (!fields.length) continue;
       if (step.heading) {
         w.ensure(40);
@@ -435,7 +439,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   } else {
     const all = def.steps
       .flatMap((s) => s.fields)
-      .filter((f) => isVisible(f, values, ctx) && !f.pdfHide);
+      .filter(printable);
     // (a) the full statement wording
     for (const f of all) if (f.type === "static" && !f.pdfSection) await renderField(f);
     // (b) customer / home entries + attachments

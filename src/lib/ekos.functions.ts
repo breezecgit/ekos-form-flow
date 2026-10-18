@@ -367,7 +367,8 @@ export const saveDraft = createServerFn({ method: "POST" })
       action: "Draft saved",
     });
     const origin = await s.appOrigin();
-    const resumeLink = `${origin}/forms/${submission.form_type}/${data.submissionId}`;
+    const { staffEmailLink } = await import("@/lib/email-links");
+    const resumeLink = staffEmailLink(origin, `/forms/${submission.form_type}/${data.submissionId}`);
     if (data.emailLink !== false) {
       const { data: profile } = await db
         .from("profiles")

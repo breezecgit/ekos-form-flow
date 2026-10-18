@@ -86,6 +86,14 @@ const onSiteOnly = (values: FormValues, ctx: { mode: string }) => {
   return values["status"] === "In Review" || Boolean(values["customer_one_signature"]);
 };
 
+function guideBullets(blocks: ContentBlock[]): ContentBlock[] {
+  return blocks.map((block) => block.kind === "accordion"
+    ? { ...block, blocks: block.blocks.flatMap((child): ContentBlock[] => child.kind === "paragraph"
+      ? [{ kind: "bullets", items: [child.text] }]
+      : [child]) }
+    : block);
+}
+
 export const reservationForm: FormDef = {
   type: "reservation",
   title: "Customer Reservation Form",
@@ -193,8 +201,8 @@ export const reservationForm: FormDef = {
           compute: computeTotalCost,
           help: "Auto-calculated from the List Price minus any discounts. You can overwrite it.",
         },
-        { key: "handover_date", label: "Handover Date (Completion Date)", type: "date" },
-        { key: "notes", label: "Notes", type: "textarea" },
+        { key: "handover_date", label: "Handover Date (Completion Date)", type: "date", allowTbc: true },
+        { key: "notes", label: "Notes", type: "textarea", required: false },
       ],
     },
     {
@@ -203,7 +211,7 @@ export const reservationForm: FormDef = {
         {
           key: "guide_content",
           type: "static",
-          content: [
+          content: guideBullets([
             { kind: "heading", text: "Our Helpful Guide to Your New Home" },
             { kind: "subheading", text: "What Comes as Standard with My New Home" },
             {
@@ -286,6 +294,20 @@ export const reservationForm: FormDef = {
             },
             {
               kind: "accordion",
+              title: "Introducing You to Our Wider EKOS Team",
+              blocks: [
+                {
+                  kind: "bullets",
+                  items: [
+                    "We will introduce you to two members of our wider EKOS team, Amy Lawrie and Daniel Harrison-Cox, who will be working closely with me to support you throughout the remainder of your journey to becoming an EKOS resident and beyond.",
+                    "Amy will support you with the progression of your purchase and, where applicable, your part exchange or managed sale process, liaising with Spring / QMP, and your solicitor to keep everything moving forward.",
+                    "Daniel is our Group Operations and Resident Experience Director and can provide you with dedicated support to help make your journey to your new home as smooth and enjoyable as possible.",
+                  ],
+                },
+              ],
+            },
+            {
+              kind: "accordion",
               title: "Before Build",
               blocks: [
                 {
@@ -312,13 +334,13 @@ export const reservationForm: FormDef = {
                     "You will sign your Unit Sale Agreement.",
                   ],
                 },
-                {
-                  kind: "paragraph",
-                  text: "Until the completion date, we're unable to grant access to the property due to health, safety, and insurance requirements. However, we can provide photos and take any measurements you may need.",
-                },
               ],
             },
-          ],
+            {
+              kind: "bold",
+              text: "Until the completion date, we're unable to grant access to the property due to health, safety, and insurance requirements. However, we can provide photos and take any measurements you may need.",
+            },
+          ]),
         },
       ],
     },
