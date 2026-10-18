@@ -1,5 +1,12 @@
 # EKOS Customer Sales Form — roadmap
 
+## Parallel readiness request — 18 October 2026
+- [ ] Document a concrete isolated recovery rehearsal; no shared migration until grants/RLS recovery is evidenced.
+- [ ] Continue preview-only signing concurrency, trusted audit, owner/test-mode, validation/error and Drive safeguards without hosted changes.
+- [ ] Run regression and safe read-only hosted boundary checks; distinguish mocked, preview and hosted evidence.
+- [ ] Review missing park/signature/auth/token policy decisions and run fresh available security/dependency scans.
+- [ ] Return a short action report, exact next action and named blockers; no publication or production configuration changes.
+
 ## Current controlled remediation request
 - [x] Read-only backup/recovery investigation: backend healthy, test mode ON, Sheets OFF, Drive enabled flag absent; actual backup inventory/restore authority inaccessible. Evidence/access gaps and recovery procedure documented; no migration, fixtures or configuration changes performed.
 - [ ] Complete recovery coverage evidence: administrator reports successful restore-capable backup 18 October 2026 08:27:21 UTC; explicit grants/RLS backup recovery coverage remains unverified.
