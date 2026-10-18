@@ -41,7 +41,7 @@ export function hasForm(type: string): boolean {
 }
 
 export const MANDATORY_HELPER =
-  "All boxes are mandatory – type TBC if you're waiting on information, or use Save & Resume to finish later.";
+  "All required boxes must be completed – type TBC if you're waiting on information, or use Save & Resume to finish later.";
 
 export const SIGNING_HELPER =
-  "All boxes are mandatory – please complete every box before submitting.";
+  "Please complete every required box before submitting.";
