@@ -19,6 +19,7 @@ const fixture = vi.hoisted(() => ({
   email: "ben-test@example.invalid",
   grant: false,
   writeError: null as null | { message: string },
+  zeroRows: false,
 }));
 
 vi.mock("@tanstack/react-start", () => ({
@@ -47,7 +48,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
         ilike: (key: string, value: unknown) => { fixture.filters.push({ table, key, value }); return query; },
         update: (patch: Record<string, unknown>) => { fixture.writes.push({ table, patch }); return query; },
         maybeSingle: async () => ({ data: table === "form_submissions" ? fixture.submission : table === "user_roles" && fixture.director ? { role: "director" } : table === "user_permissions" && fixture.grant ? { id: "grant" } : null }),
-        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: [], error: fixture.writeError }).then(resolve),
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: fixture.zeroRows ? [] : [{ id: "row" }], error: fixture.writeError }).then(resolve),
       };
       return query;
     },
