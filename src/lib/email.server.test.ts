@@ -4,9 +4,12 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from:
   const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: { value: fixture.mode } }), insert: async (row: Record<string, unknown>) => { fixture.logs.push(row); return { error: null }; } };
   return q;
 } } }));
-import { getEmailTestMode, sendEmail } from "./email.server";
+import { getEmailTestMode, parseRecipients, sendEmail } from "./email.server";
 beforeEach(() => { fixture.mode = {}; fixture.logs = []; vi.restoreAllMocks(); vi.stubEnv("LOVABLE_API_KEY", "fictional-key"); vi.stubEnv("RESEND_API_KEY", "fictional-key"); });
 describe("central email test routing (mock provider, no emails)", () => {
+  it("malformed recipients are rejected and addresses deduplicated", () => {
+    expect(parseRecipients("bad@;emma.frew@breezeconnection.co.uk;EMMA.FREW@breezeconnection.co.uk")).toEqual(["emma.frew@breezeconnection.co.uk"]);
+  });
   it("missing setting fails safe to approved Emma and Sadie recipients", async () => {
     expect(await getEmailTestMode()).toMatchObject({ enabled: true, recipients: ["emma.frew@breezeconnection.co.uk", "sadie@ekosgroup.co.uk"] });
   });

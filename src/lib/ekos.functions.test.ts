@@ -103,7 +103,7 @@ describe("deletion authority and failed saves", () => {
     await expect(saveDraft({ data: { submissionId: fixture.submission.id, values: { created_by: "spoofed-owner" } } })).rejects.toThrow("Unexpected");
     expect(fixture.writes).toEqual([]);
   });
-  it.each(["In Review", "In Review (Offsite"])("submitted %s save attempts cannot reopen a rep form", async (status) => {
+  it.each(["In Review", "In Review (Offsite)"])("submitted %s save attempts cannot reopen a rep form", async (status) => {
     fixture.submission.status = status;
     await expect(save()).rejects.toThrow("read-only");
     expect(fixture.writes).toEqual([]);
