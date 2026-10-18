@@ -1,5 +1,11 @@
 # EKOS Customer Sales Form — roadmap
 
+## Director editor release approval
+- [x] Review preview Director editing and rep restrictions; 48 regression tests pass, including eight new server-action tests; Sadie's unchanged-answer Completed UI save and Ben's Completed/cross-owner denials verified.
+- [x] Present exact release changes and Pass / Fail / Not Tested evidence in the dated release-review report; request explicit publishing approval.
+- [ ] Publish only after approval — blocked pending the owner's approval.
+- [ ] Retest EKOS-00065 live as Sadie and Ben: Completed save, own-sale restrictions, editable drafts, Forms 1–4 screens, required fields, conditionals, park autofill/lock and Save & Resume — blocked until approved publishing; use existing accounts/sale only, fictional data, test emails ON and production integrations unchanged.
+
 ## Published live smoke test
 - [x] Verify live security and Completed edit protection with Ben Cook and Sadie on fictional EKOS-00065.
 - [ ] Click through Forms 1–4 live — blocked: Sadie's editor correction is unpublished at the user's request.

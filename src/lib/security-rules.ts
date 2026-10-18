@@ -23,6 +23,7 @@ export function assertEditable(status: string, isDirector: boolean) {
 
 /** Submitted forms remain read-only for reps; the Director can open the editor. */
 export function canOpenFormEditor(status: string, isDraft: boolean, isDirector: boolean): boolean {
+  if (status === "Completed") return isDirector;
   return isDirector || isDraft || status === "Disapproved";
 }
 

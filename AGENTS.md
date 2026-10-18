@@ -15,6 +15,7 @@
 - Park autofill: form fields declare parkField (a parks column); FormRunner fills them on park change (overwrite) and on load (empty only). parks.inbox_email is the single park inbox/Email source.
 - Sale deletion: gated by public.user_permissions (email, 'can_delete_sales'), checked server-side in deleteSale; keyed by email so accounts can be pre-granted. Drive/Sheets copies are never touched.
 - Form editor access uses the shared canOpenFormEditor rule: submitted forms stay read-only for reps while the Director can edit, matching server-side Completed-form protection.
+- Unit tests use the dedicated Vitest configuration without application RPC transforms, so server action tests execute real handler bodies with mocked external boundaries.
 - Tracker and dashboard share SaleFormCell (status chip + Start/Open via startNextForm) so they cannot drift.
 - Rep dashboard scope combines sale ownership with park rep assignment from parks.rep_name; Sadie's director dashboard stays unrestricted, so chart totals cannot show unrelated parks.
 - Guide accordions render literal bullet glyphs independently of CSS list markers, and PDF text preserves the WinAnsi bullet glyph; this prevents resets or character cleaning from hiding bullets.
