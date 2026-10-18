@@ -19,6 +19,7 @@ const fixture = vi.hoisted(() => ({
   email: "ben-test@example.invalid",
   grant: false,
   writeError: null as null | { message: string },
+  zeroRows: false,
 }));
 
 vi.mock("@tanstack/react-start", () => ({
@@ -47,7 +48,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
         ilike: (key: string, value: unknown) => { fixture.filters.push({ table, key, value }); return query; },
         update: (patch: Record<string, unknown>) => { fixture.writes.push({ table, patch }); return query; },
         maybeSingle: async () => ({ data: table === "form_submissions" ? fixture.submission : table === "user_roles" && fixture.director ? { role: "director" } : table === "user_permissions" && fixture.grant ? { id: "grant" } : null }),
-        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: [], error: fixture.writeError }).then(resolve),
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: fixture.zeroRows ? [] : [{ id: "row" }], error: fixture.writeError }).then(resolve),
       };
       return query;
     },
@@ -72,6 +73,7 @@ beforeEach(() => {
   fixture.email = "ben-test@example.invalid";
   fixture.grant = false;
   fixture.writeError = null;
+  fixture.zeroRows = false;
   vi.clearAllMocks();
 });
 
@@ -97,6 +99,16 @@ describe("deletion authority and failed saves", () => {
     fixture.submission.status = "Draft"; fixture.writeError = { message: "fixture failure" };
     await expect(save()).rejects.toThrow("could not be saved");
     expect(fixture.audit).not.toHaveBeenCalled(); expect(fixture.resumeEmail).not.toHaveBeenCalled();
+  });
+  it("a save that changes no rows (status changed elsewhere) is refused and not audited", async () => {
+    fixture.submission.status = "Draft"; fixture.zeroRows = true;
+    await expect(save()).rejects.toThrow("changed elsewhere");
+    expect(fixture.audit).not.toHaveBeenCalled(); expect(fixture.resumeEmail).not.toHaveBeenCalled();
+  });
+  it("saves are conditioned on the status that was checked", async () => {
+    fixture.submission.status = "Draft";
+    await save();
+    expect(fixture.filters).toContainEqual({ table: "form_submissions", key: "status", value: "Draft" });
   });
   it("invalid draft fields are rejected before persistence", async () => {
     fixture.submission.status = "Draft";
