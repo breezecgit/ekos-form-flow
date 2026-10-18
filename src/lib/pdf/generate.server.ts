@@ -265,6 +265,9 @@ function contentBlocks(w: Writer, blocks: ContentBlock[]) {
     } else if (b.kind === "bullets") {
       for (const item of b.items) w.text(`\u2022  ${item}`, { indent: 10, gap: 1 });
       w.y -= 4;
+    } else if (b.kind === "subbullets") {
+      for (const item of b.items) w.text(`\u2013  ${item}`, { indent: 22, gap: 1 });
+      w.y -= 4;
     } else if (b.kind === "accordion") {
       // Collapsible rows on the page are printed expanded so every word is in the PDF.
       w.y -= 3;
