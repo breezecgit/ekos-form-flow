@@ -78,6 +78,7 @@ async function drawAttachments(w: Writer, attachments: PdfAttachment[]) {
         const iw = img.width * scale;
         const ih = img.height * scale;
         w.page.drawImage(img, { x: MARGIN, y: w.y - ih, width: iw, height: ih });
+        w.fresh = false;
         w.y -= ih + 12;
       } catch {
         w.text(`Attached file: ${att.fileName}`, { color: MUTED });
@@ -312,6 +313,7 @@ async function drawSignature(
     const height = (img.height / img.width) * width;
     w.ensure(height + 8);
     w.page.drawImage(img, { x: MARGIN, y: w.y - height, width, height });
+    w.fresh = false;
     w.page.drawLine({
       start: { x: MARGIN, y: w.y - height - 2 },
       end: { x: MARGIN + width, y: w.y - height - 2 },
@@ -346,6 +348,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     const lw = 110;
     const lh = (logo.height / logo.width) * lw;
     w.page.drawImage(logo, { x: (PAGE_W - lw) / 2, y: w.y - lh, width: lw, height: lh });
+    w.fresh = false;
     w.y -= lh + 16;
   } catch {
     w.y -= 8;
@@ -427,6 +430,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
         const iw = (img.width / img.height) * ih;
         w.ensure(ih + 10);
         w.page.drawImage(img, { x: MARGIN, y: w.y - ih, width: iw, height: ih });
+        w.fresh = false;
         const top = w.y;
         w.y = top - 14;
         w.text(fieldValueText(f, values, grouped), { size: 11, indent: iw + 12 });
@@ -503,6 +507,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
         const width = 190;
         const height = (img.height / img.width) * width;
         w.page.drawImage(img, { x: MARGIN, y: w.y - height, width, height });
+        w.fresh = false;
         w.y -= height + 8;
       } catch {
         /* fall through to the text block */
