@@ -21,6 +21,11 @@ export function assertEditable(status: string, isDirector: boolean) {
   }
 }
 
+/** Submitted forms remain read-only for reps; the Director can open the editor. */
+export function canOpenFormEditor(status: string, isDraft: boolean, isDirector: boolean): boolean {
+  return isDirector || isDraft || status === "Disapproved";
+}
+
 const emailSchema = z.string().trim().email().max(255);
 
 /** Off-site signing needs exactly one valid customer email address. */
