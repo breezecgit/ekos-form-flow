@@ -359,8 +359,9 @@ export const saveDraft = createServerFn({ method: "POST" })
       .from("form_submissions")
       .update({
         data: data.values as never,
-        is_draft: true,
-        status: submission.status === "Disapproved" ? "Disapproved" : "Draft",
+        // A Director editing a completed form keeps it Completed rather than reopening it as a draft.
+        is_draft: submission.status !== "Completed",
+        status: submission.status === "Completed" ? "Completed" : submission.status === "Disapproved" ? "Disapproved" : "Draft",
         updated_at: new Date().toISOString(),
       })
       .eq("id", data.submissionId);
