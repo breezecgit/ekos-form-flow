@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/AppHeader";
+import { Button } from "@/components/ui/button";
 import { FormRunner } from "@/components/form-engine/FormRunner";
 import { useAuth } from "@/hooks/useAuth";
 import { getBootstrap, getSubmission, saveDraft, submitForm } from "@/lib/ekos.functions";
@@ -73,6 +74,25 @@ function FormPage() {
   }
 
   const def = getForm(formType);
+
+  if (sub.isError) {
+    const missing = sub.error.message.includes("Submission not found");
+    return (
+      <div className="min-h-screen bg-background">
+        <AppHeader isDirector={me.data?.isDirector} email={me.data?.email} />
+        <main className="mx-auto max-w-2xl px-4 py-12 text-center" role="alert">
+          <h1 className="ekos-title text-2xl">{missing ? "This form is no longer available" : "This form couldn’t be opened"}</h1>
+          <p className="mt-4 text-muted-foreground">
+            {missing ? "The sale or form linked in this email has been deleted. Check your dashboard for your current sales." : sub.error.message}
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            {!missing && <Button variant="outline" onClick={() => sub.refetch()}>Try again</Button>}
+            <Button variant="brand" onClick={() => router.navigate({ to: "/dashboard" })}>View dashboard</Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (sub.isLoading || !sub.data) {
     return (

@@ -1,5 +1,9 @@
 # EKOS Customer Sales Form — roadmap
 
+## Email loading report
+- [ ] Replace endless loading on missing/inaccessible email destinations with a clear message and retry/navigation.
+- [ ] Verify review and resume links for existing forms and the deleted EKOS-00055.
+
 ## Current Sadie feedback
 - [x] TBC handover and optional Notes across matching fields
 - [x] Shared guide introduction, always-visible access notice and consistent bullets
