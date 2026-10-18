@@ -404,10 +404,22 @@ function StaticContent({
   return <Blocks blocks={field.content ?? []} />;
 }
 
-function Blocks({ blocks }: { blocks: ContentBlock[] }) {
+function Blocks({ blocks, explicitBullets = false }: { blocks: ContentBlock[]; explicitBullets?: boolean }) {
   return (
     <div className="space-y-4">
       {blocks.map((b, i) => {
+        if (explicitBullets && (b.kind === "bullets" || b.kind === "subbullets")) {
+          return (
+            <ul key={i} role="list" className={`list-none space-y-1.5 text-[15px] font-medium leading-[1.7] text-ekos-slate ${b.kind === "subbullets" ? "pl-10" : "pl-4"}`}>
+              {b.items.map((item) => (
+                <li key={item} className="grid grid-cols-[1rem_minmax(0,1fr)] gap-2">
+                  <span aria-hidden="true">•</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        }
         if (b.kind === "heading")
           return (
             <h2 key={i} className="ekos-step-heading">
@@ -481,7 +493,7 @@ function AccordionRow({ title, blocks }: { title: string; blocks: ContentBlock[]
       </button>
       {open && (
         <div className="pb-4">
-          <Blocks blocks={blocks} />
+          <Blocks blocks={blocks} explicitBullets />
         </div>
       )}
     </div>

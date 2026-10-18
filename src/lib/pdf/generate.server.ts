@@ -87,9 +87,8 @@ function clean(text: string): string {
   return (text ?? "")
     .replace(/\u00A0/g, " ")
     .replace(/\u00D7/g, "x")
-    .replace(/\u2022/g, "\u00B7")
     // eslint-disable-next-line no-control-regex
-    .replace(/[^\u0000-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2026]/g, "?");
+    .replace(/[^\u0000-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026]/g, "?");
 }
 
 class Writer {
@@ -266,7 +265,7 @@ function contentBlocks(w: Writer, blocks: ContentBlock[]) {
       for (const item of b.items) w.text(`\u2022  ${item}`, { indent: 10, gap: 1 });
       w.y -= 4;
     } else if (b.kind === "subbullets") {
-      for (const item of b.items) w.text(`\u2013  ${item}`, { indent: 22, gap: 1 });
+      for (const item of b.items) w.text(`\u2022  ${item}`, { indent: 22, gap: 1 });
       w.y -= 4;
     } else if (b.kind === "accordion") {
       // Collapsible rows on the page are printed expanded so every word is in the PDF.
