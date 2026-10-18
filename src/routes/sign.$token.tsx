@@ -58,8 +58,8 @@ function SignPage() {
             <h1 className="ekos-title text-xl">Thank you</h1>
             <p className="mt-3 text-sm text-muted-foreground">
               {ctx.data && !("error" in ctx.data) && ctx.data.kind === "director"
-                ? "Thank you – the statement is now Completed. The signed copy has been emailed to the customer, the park, sales@ and you, and saved to Google Drive."
-                : "Your signature has been received and sent to EKOS Group for final approval. You'll receive your completed copy by email."}
+                ? "Thank you – your signatures have been received and the statement is now Completed."
+                : "Your signature has been received for EKOS Group's final approval."}
             </p>
           </div>
         )}
@@ -154,7 +154,10 @@ function SignPage() {
               }
               onSubmit={async (values) => {
                 try {
-                  const res = await submitFn({ data: { token, values } });
+                  const group = kind === "construction" ? "constructionSignature" : kind === "director" ? "directorSignature" : "customerSignature";
+                  const keys = new Set(def.steps.flatMap((step) => step.fields).filter((field) => field.group === group).map((field) => field.key));
+                  const signingValues = Object.fromEntries(Object.entries(values).filter(([key]) => keys.has(key)));
+                  const res = await submitFn({ data: { token, values: signingValues } });
                   if (res && "error" in res && res.error) {
                     await ctx.refetch();
                     return;

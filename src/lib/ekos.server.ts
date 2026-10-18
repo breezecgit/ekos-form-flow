@@ -173,14 +173,16 @@ export async function buildAndStorePdf(
 
   const fileName = pdfFileName(def.title, parkName, customerName, submission.order_number);
   const path = `submissions/${submissionId}/${fileName}`;
-  await supabaseAdmin.storage.from(BUCKET).upload(path, bytes, {
+  const { error: uploadError } = await supabaseAdmin.storage.from(BUCKET).upload(path, bytes, {
     contentType: "application/pdf",
     upsert: true,
   });
-  await supabaseAdmin
+  if (uploadError) throw new Error("The PDF could not be stored. Please retry generation.");
+  const { error: pathError } = await supabaseAdmin
     .from("form_submissions")
     .update({ pdf_path: path, updated_at: new Date().toISOString() })
     .eq("id", submissionId);
+  if (pathError) throw new Error("The PDF was stored but could not be linked to the form. Please retry generation.");
 
   return { bytes, path, fileName };
 }
@@ -199,7 +201,7 @@ export async function addAudit(entry: {
   toStatus?: string | null;
   note?: string | null;
 }) {
-  await supabaseAdmin.from("audit_log").insert({
+  const { error } = await supabaseAdmin.from("audit_log").insert({
     submission_id: entry.submissionId,
     actor_id: entry.actorId ?? null,
     actor_label: entry.actorLabel,
@@ -208,6 +210,7 @@ export async function addAudit(entry: {
     to_status: entry.toStatus ?? null,
     note: entry.note ?? null,
   });
+  if (error) throw new Error("The action could not be recorded in the audit history. Please contact EKOS before retrying.");
 }
 
 export function newToken(): string {

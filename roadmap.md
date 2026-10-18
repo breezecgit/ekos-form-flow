@@ -1,5 +1,14 @@
 # EKOS Customer Sales Form — roadmap
 
+## Current controlled remediation request
+- [x] Reinspect R1–R7 and hosted configuration; preview deletion identity, submitted-form action protection, write/signing validation, error checks and fail-closed Drive gate implemented; 86 isolated tests pass and build OK. Invalid signing link visually verified; auth public settings read.
+- [ ] Prepare exact shared-boundary migration, compatibility and recovery proposal — awaiting owner approval before applying.
+- [ ] Verify direct authenticated database writes, atomic signing and audit/owner controls with approved isolated fixtures — blocked on migration/fixture approval.
+- [ ] Complete Forms 1–4 workflow coverage — blocked on approved normal corrections and safe integration boundary.
+- [ ] Confirm owner identity, link policy, genuine missing park details and operational requirements — awaiting business input.
+- [ ] Produce final criterion-by-criterion evidence and request publishing approval only after blockers are resolved.
+- [x] Intermediate evidence and exact first shared direct-write SQL/compatibility/recovery proposal supplied; no hosted migration, workflow mutation, external integration call or publishing executed.
+
 ## Controlled production-readiness phases
 - [x] Phase 1 review: fresh backend/dependency scans, current hosted policies/grants, security/secret review and dated findings report; 48 tests pass. Release blocked on direct write protection, mutable deletion identity, signing atomicity and owner-only email switch; shared-backend remediation needs explicit approval.
 - [ ] Phase 2: reviewed release publishing and EKOS-00065 live Director/rep retest — blocked pending explicit approval and release-blocking findings.

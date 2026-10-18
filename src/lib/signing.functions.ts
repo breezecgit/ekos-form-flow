@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { validateSigningWrite } from "@/lib/forms/write-validation";
 
 /**
  * Public (tokenised) signing pages: customer off-site signing and the
@@ -12,6 +13,11 @@ async function admin() {
 }
 
 class TokenError extends Error {}
+
+async function persistSigningWrite(operation: PromiseLike<{ error: unknown }>) {
+  const { error } = await operation;
+  if (error) throw new Error("Your signing details could not be saved. Please contact EKOS before trying again.");
+}
 
 async function loadByToken(token: string) {
   const db = await admin();
@@ -37,7 +43,7 @@ async function loadByToken(token: string) {
 }
 
 export const getSigningContext = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ token: z.string().min(10) }).parse(d))
+  .inputValidator((d) => z.object({ token: z.string().min(10).max(128) }).parse(d))
   .handler(async ({ data }) => {
     let loaded;
     try {
@@ -80,15 +86,10 @@ function kindOf(raw: string): Kind {
   return raw === "construction" ? "construction" : raw === "director" ? "director" : "customer";
 }
 
-function isEmpty(type: string, v: unknown) {
-  if (type === "checkbox") return v !== true;
-  return v === undefined || v === null || String(v).trim() === "";
-}
-
 export const submitCustomerSignature = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
-      .object({ token: z.string().min(10), values: z.record(z.string(), z.unknown()) })
+      .object({ token: z.string().min(10).max(128), values: z.record(z.string(), z.unknown()) })
       .parse(d),
   )
   .handler(async ({ data }) => {
@@ -104,32 +105,21 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
     const db = await admin();
     const s = await import("@/lib/ekos.server");
     const { getForm } = await import("@/lib/forms/registry");
-    const { allFields, isRequired, isVisible } = await import("@/lib/forms/types");
     const def = getForm(submission.form_type);
     const now = new Date().toISOString();
     const existing = (submission.data ?? {}) as Record<string, unknown>;
 
     // Only this page's own fields may be written, and every visible one is mandatory.
-    const fields = allFields(def).filter((f) => f.group === GROUP[kind]);
-    const v: Record<string, unknown> = {};
-    for (const f of fields) if (data.values[f.key] !== undefined) v[f.key] = data.values[f.key];
-    const merged = { ...existing, ...v };
     const ctx = { mode: MODE[kind], isDirector: false };
-    const missing = fields.filter(
-      (f) => isRequired(f) && isVisible(f, merged, ctx) && isEmpty(f.type, merged[f.key]),
-    );
-    if (missing.length) {
-      throw new Error(
-        `Please complete every box before submitting (missing: ${missing.map((f) => f.label ?? f.key).join(", ")}).`,
-      );
-    }
+    const v = validateSigningWrite(def, data.values, existing, ctx, GROUP[kind], submission.order_number);
+    const merged = { ...existing, ...v };
 
     if (kind === "construction") {
-      await db
+      await persistSigningWrite(db
         .from("form_submissions")
         .update({ data: merged as never, construction_signed_at: now, updated_at: now })
-        .eq("id", submission.id);
-      await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
+        .eq("id", submission.id));
+      await persistSigningWrite(db.from("signing_tokens").update({ used_at: now }).eq("token", row.token));
       const built = await s.buildAndStorePdf(submission.id);
       await Promise.all([
         s.publishInReview(submission.id, built.bytes),
@@ -147,11 +137,11 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
       if (!submission.customer_signed_at) {
         throw new Error("The customer must sign before the Director and witness.");
       }
-      await db
+      await persistSigningWrite(db
         .from("form_submissions")
         .update({ data: merged as never, status: "Completed", is_draft: false, updated_at: now })
-        .eq("id", submission.id);
-      await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
+        .eq("id", submission.id));
+      await persistSigningWrite(db.from("signing_tokens").update({ used_at: now }).eq("token", row.token));
       await s.addAudit({
         submissionId: submission.id,
         actorLabel: `${String(v["director_name"])} (Director) with witness ${String(v["witness_name"])}`,
@@ -163,11 +153,11 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
       return { ok: true };
     }
 
-    await db
+    await persistSigningWrite(db
       .from("form_submissions")
       .update({ data: merged as never, customer_signed_at: now, updated_at: now })
-      .eq("id", submission.id);
-    await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
+      .eq("id", submission.id));
+    await persistSigningWrite(db.from("signing_tokens").update({ used_at: now }).eq("token", row.token));
     const built = await s.buildAndStorePdf(submission.id);
     // Drive copy, audit and emails are independent once the PDF exists – run together.
     await Promise.all([

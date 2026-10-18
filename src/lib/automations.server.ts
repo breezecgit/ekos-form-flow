@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { FORM_ORDER } from "@/lib/forms/registry";
-import { createDriveFolder, driveFileLink, driveFolderLink, uploadPdfToDrive } from "@/lib/drive.server";
+import { createDriveFolder, driveFileLink, driveFolderLink, driveWritesEnabled, uploadPdfToDrive } from "@/lib/drive.server";
 
 type Settings = Record<string, Record<string, unknown>>;
 
@@ -67,6 +67,7 @@ async function saveFolders(saleId: string, df: DriveFolders) {
 
 /** First submission for a customer: create the 5 per-form sub-folders. */
 export async function ensureSaleFolders(saleId: string): Promise<DriveFolders> {
+  if (!(await driveWritesEnabled())) return {};
   const sale = await loadSale(saleId);
   if (!sale) return {};
   const df = (sale.drive_folders ?? {}) as DriveFolders;
@@ -103,6 +104,7 @@ export async function saveStageToDrive(opts: {
   bytes: Uint8Array;
   latest?: boolean;
 }): Promise<string | null> {
+  if (!(await driveWritesEnabled())) return null;
   const df = await ensureSaleFolders(opts.saleId);
   const folder = df.folders?.[opts.formType] ?? "";
   if (!folder) return null;

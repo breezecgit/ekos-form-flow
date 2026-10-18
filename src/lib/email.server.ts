@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { z } from "zod";
 
 export const SALES_ADDRESS = "sales@ekosgroup.co.uk";
 /** Customer-facing emails. */
@@ -38,7 +39,7 @@ function clean(list: string[] | undefined): string[] {
   const out: string[] = [];
   for (const raw of list ?? []) {
     const t = (raw || "").trim();
-    if (!t || !t.includes("@")) continue;
+    if (!z.string().email().max(255).safeParse(t).success) continue;
     const k = t.toLowerCase();
     if (seen.has(k)) continue;
     seen.add(k);
@@ -53,7 +54,7 @@ function clean(list: string[] | undefined): string[] {
  */
 export const DEFAULT_TEST_RECIPIENT = "emma.frew@breezeconnection.co.uk, sadie@ekosgroup.co.uk";
 export function parseRecipients(raw: string): string[] {
-  return Array.from(new Set(raw.split(/[,;\s]+/).map((x) => x.trim()).filter((x) => x.includes("@"))));
+  return clean(raw.split(/[,;\s]+/));
 }
 
 /** Test mode is ON unless the setting explicitly says "false" (fail-safe). */
@@ -88,9 +89,9 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
     ? `[TEST → To: ${intendedTo.join(", ") || "(none)"}; CC: ${intendedCc.join(", ") || "(none)"}] ${input.subject}`
     : input.subject;
 
-  const links = Array.from(new Set(Array.from(input.html.matchAll(/href="([^"]+)"/g), (m) => m[1]!.replace(/&amp;/g, "&"))));
-  const log = (status: string, error: string | null) =>
-    supabaseAdmin.from("email_log").insert({
+  const links = Array.from(new Set(Array.from(input.html.matchAll(/href="([^"]+)"/g), (m) => (m[1] ?? "").replace(/&amp;/g, "&"))));
+  const log = async (status: string, error: string | null) => {
+    const { error: logError } = await supabaseAdmin.from("email_log").insert({
       submission_id: input.submissionId ?? null,
       to_addresses: to,
       cc_addresses: cc,
@@ -105,6 +106,8 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
       status,
       error,
     });
+    if (logError) throw new Error("Email delivery could not be recorded. Please contact EKOS before resending.");
+  };
 
   if (!intendedTo.length) {
     await log("no_recipient", "No recipient email address – check Admin > Settings.");
@@ -142,12 +145,12 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
       });
       if (!res.ok) {
         status = "failed";
-        error = `Resend request failed [${res.status}]: ${await res.text()}`;
+        error = `Email provider rejected the request (${res.status}). Please check delivery in Emails.`;
         console.error(error);
       }
     } catch (e) {
       status = "failed";
-      error = e instanceof Error ? e.message : String(e);
+      error = "The email provider could not be reached. Please check delivery in Emails.";
       console.error("Email send failed:", error);
     }
   }
