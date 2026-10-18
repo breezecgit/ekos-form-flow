@@ -105,6 +105,8 @@ class Writer {
   bold!: PDFFont;
   headerTitle = "";
   headerMeta = "";
+  /** True while the current page holds nothing but the running header. */
+  fresh = false;
 
   async init(title: string, meta: string) {
     this.doc = await PDFDocument.create();
@@ -116,6 +118,9 @@ class Writer {
   }
 
   newPage(withRunningHeader = true) {
+    // Never leave a page that only carries the running header – reuse it instead.
+    if (this.fresh && this.page) return;
+    this.fresh = true;
     this.page = this.doc.addPage([PAGE_W, PAGE_H]);
     this.y = PAGE_H - MARGIN;
     if (withRunningHeader) {
@@ -195,6 +200,7 @@ class Writer {
       const w = font.widthOfTextAtSize(line, size);
       const x = opts.align === "center" ? (PAGE_W - w) / 2 : MARGIN + indent;
       this.page.drawText(line, { x, y: this.y - size, size, font, color });
+      this.fresh = false;
       this.y -= lineHeight;
     }
     this.y -= opts.gap ?? 0;
@@ -209,6 +215,7 @@ class Writer {
     const x = MARGIN + 12;
     const y = this.y - size;
     this.page.drawText(text, { x, y, size, font: this.bold, color: LINK });
+    this.fresh = false;
     this.page.drawLine({
       start: { x, y: y - 1.5 },
       end: { x: x + w, y: y - 1.5 },
@@ -229,6 +236,7 @@ class Writer {
 
   rule() {
     this.ensure(12);
+    if (this.fresh) return; // a divider alone must not create or fill a page
     this.page.drawLine({
       start: { x: MARGIN, y: this.y },
       end: { x: PAGE_W - MARGIN, y: this.y },
@@ -512,5 +520,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     w.text(`Date: ${formatDate(ds.date)}`, { size: 10 });
   }
 
+  // Safety net: drop any trailing page that only has the running header.
+  if (w.fresh && w.doc.getPageCount() > 1) w.doc.removePage(w.doc.getPageCount() - 1);
   return await w.doc.save();
 }
