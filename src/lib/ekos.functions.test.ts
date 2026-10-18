@@ -16,6 +16,9 @@ const fixture = vi.hoisted(() => ({
   filters: [] as Array<{ table: string; key: string; value: unknown }>,
   audit: vi.fn(),
   resumeEmail: vi.fn(),
+  email: "ben-test@example.invalid",
+  grant: false,
+  writeError: null as null | { message: string },
 }));
 
 vi.mock("@tanstack/react-start", () => ({
@@ -26,7 +29,7 @@ vi.mock("@tanstack/react-start", () => ({
       inputValidator: (validator: (data: unknown) => unknown) => { validate = validator; return builder; },
       handler: (handler: (input: unknown) => unknown) => (input?: { data: unknown }) => handler({
         data: validate ? validate(input?.data) : input?.data,
-        context: { userId: fixture.userId, claims: {} },
+        context: { userId: fixture.userId, claims: { email: fixture.email } },
       }),
     };
     return builder;
@@ -41,9 +44,10 @@ vi.mock("@/integrations/supabase/client.server", () => ({
         eq: (key: string, value: unknown) => { fixture.filters.push({ table, key, value }); return query; },
         order: () => query,
         in: () => query,
+        ilike: (key: string, value: unknown) => { fixture.filters.push({ table, key, value }); return query; },
         update: (patch: Record<string, unknown>) => { fixture.writes.push({ table, patch }); return query; },
-        maybeSingle: async () => ({ data: table === "form_submissions" ? fixture.submission : table === "user_roles" && fixture.director ? { role: "director" } : null }),
-        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(resolve),
+        maybeSingle: async () => ({ data: table === "form_submissions" ? fixture.submission : table === "user_roles" && fixture.director ? { role: "director" } : table === "user_permissions" && fixture.grant ? { id: "grant" } : null }),
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: [], error: fixture.writeError }).then(resolve),
       };
       return query;
     },
@@ -55,7 +59,7 @@ vi.mock("@/lib/ekos.server", () => ({
   sendResumeLinkEmail: fixture.resumeEmail,
 }));
 
-import { getSubmission, listSales, saveDraft, uploadFile } from "./ekos.functions";
+import { deleteSale, getMyPermissions, getSubmission, listSales, saveDraft, uploadFile } from "./ekos.functions";
 
 beforeEach(() => {
   fixture.userId = "ben-test";
@@ -65,7 +69,40 @@ beforeEach(() => {
   fixture.submission.is_draft = false;
   fixture.writes.length = 0;
   fixture.filters.length = 0;
+  fixture.email = "ben-test@example.invalid";
+  fixture.grant = false;
+  fixture.writeError = null;
   vi.clearAllMocks();
+});
+
+describe("deletion authority and failed saves", () => {
+  it("a rep claiming Sadie's email and holding a grant still cannot delete", async () => {
+    fixture.email = "sadie@ekosgroup.co.uk"; fixture.grant = true;
+    await expect(deleteSale({ data: { saleId: fixture.submission.id, confirmOrderNumber: "EKOS-FICTIONAL" } })).rejects.toThrow("permission");
+    expect(fixture.writes).toEqual([]);
+    expect(fixture.filters.some((f) => f.table === "sales")).toBe(false);
+  });
+  it("another Director cannot use Sadie's grant", async () => {
+    fixture.director = true; fixture.grant = true;
+    expect(await getMyPermissions()).toEqual({ canDeleteSales: false });
+    expect(fixture.filters.some((f) => f.table === "profiles")).toBe(false);
+  });
+  it("Sadie's authenticated Director identity still needs the explicit grant", async () => {
+    fixture.director = true; fixture.email = "sadie@ekosgroup.co.uk";
+    expect(await getMyPermissions()).toEqual({ canDeleteSales: false });
+    fixture.grant = true;
+    expect(await getMyPermissions()).toEqual({ canDeleteSales: true });
+  });
+  it("failed draft persistence never reports success or sends a resume email", async () => {
+    fixture.submission.status = "Draft"; fixture.writeError = { message: "fixture failure" };
+    await expect(save()).rejects.toThrow("could not be saved");
+    expect(fixture.audit).not.toHaveBeenCalled(); expect(fixture.resumeEmail).not.toHaveBeenCalled();
+  });
+  it("invalid draft fields are rejected before persistence", async () => {
+    fixture.submission.status = "Draft";
+    await expect(saveDraft({ data: { submissionId: fixture.submission.id, values: { created_by: "spoofed-owner" } } })).rejects.toThrow("Unexpected");
+    expect(fixture.writes).toEqual([]);
+  });
 });
 
 const save = () => saveDraft({ data: { submissionId: fixture.submission.id, values: { customer_name: "Test Fictional Customer" }, emailLink: false } });
