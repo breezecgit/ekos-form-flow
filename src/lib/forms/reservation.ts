@@ -254,7 +254,7 @@ export const reservationForm: FormDef = {
                   text: "Two forms of identification will be required within the next two weeks:",
                 },
                 {
-                  kind: "bullets",
+                  kind: "subbullets",
                   items: [
                     "One form of photographic identification: either a valid passport or a valid UK driving licence.",
                     "One form of proof of address: either a recent council tax statement, bank statement, or utility bill showing the Customer's current residential address.",
