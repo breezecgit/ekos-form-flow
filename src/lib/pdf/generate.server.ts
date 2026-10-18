@@ -273,7 +273,7 @@ function contentBlocks(w: Writer, blocks: ContentBlock[]) {
     } else if (b.kind === "note") {
       w.text(b.text, { size: 9.5, color: MUTED, gap: 6 });
     } else if (b.kind === "bold") {
-      w.text(b.text, { font: w.bold, gap: 6 });
+      w.text(b.text, { font: w.bold, color: GOLD, gap: 6 });
     } else {
       w.text(b.text, { gap: 6 });
     }
