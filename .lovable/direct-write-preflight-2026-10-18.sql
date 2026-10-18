@@ -10,6 +10,15 @@
 -- No PUBLIC table ACL entry returned.
 -- The approved SQL revokes INSERT/UPDATE/DELETE ONLY; it does not revoke
 -- TRUNCATE, REFERENCES, TRIGGER or MAINTAIN. This is not comprehensive lockdown.
+-- Re-read after owner's 14:14 UTC request: same ACLs, eleven policies and RLS flags.
+-- Executable Section 5 SQL SHA-256:
+-- 638ad2c9554da678d6716b7f90612e75a9faaa313a296eaeb65ce8f1a732f681
+-- Administrator-reported snapshot: 2026-10-18 08:27:21 UTC, successful/restorable.
+-- Snapshot ACL/RLS recovery coverage not independently confirmed.
+
+-- Exact pre-change grant reconstruction from aclexplode; NOT executed:
+GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON TABLE public.sales, public.form_submissions, public.submission_files, public.audit_log TO anon, authenticated, postgres, service_role;
+GRANT INSERT, SELECT ON TABLE public.sales, public.form_submissions, public.submission_files, public.audit_log TO sandbox_exec;
 
 CREATE POLICY "sales insert" ON public.sales AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (created_by = auth.uid());
 CREATE POLICY "sales read" ON public.sales AS PERMISSIVE FOR SELECT TO authenticated USING ((created_by = auth.uid()) OR is_director());
