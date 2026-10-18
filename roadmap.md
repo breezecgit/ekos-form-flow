@@ -1,5 +1,12 @@
 # EKOS Customer Sales Form — roadmap
 
+## Current Sadie feedback
+- [ ] TBC handover and optional Notes across matching fields
+- [ ] Shared guide introduction, always-visible access notice and consistent bullets
+- [ ] Working draft resume and review-email links
+- [ ] PDF helper removal and redundant approval-page removal
+- [ ] Tests and end-to-end checks; five-form applicability summary
+
 ## Done
 - Lovable Cloud enabled (database, auth, storage)
 - Schema: profiles, user_roles (rep/director), parks, sales_people, app_settings, sales (EKOS-00001 order numbers), form_submissions, submission_files, audit_log, signing_tokens, email_log
