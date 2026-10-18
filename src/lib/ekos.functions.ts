@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertCustomerEmail, assertEditable, canResend, parseSubmitStatus } from "@/lib/security-rules";
 
 const idInput = z.object({ submissionId: z.string().uuid() });
 
@@ -58,7 +59,10 @@ export const getBootstrap = createServerFn({ method: "GET" })
       salesPeople: people ?? [],
       emailTestMode: {
         enabled: String(tmv["enabled"] ?? "true") !== "false",
-        recipient: String(tmv["recipient"] ?? "") || "emma.frew@breezeconnection.co.uk, eilidh@breezeconnection.co.uk",
+        // Test recipient addresses are internal: only the Director sees them.
+        recipient: director
+          ? String(tmv["recipient"] ?? "") || "emma.frew@breezeconnection.co.uk, eilidh@breezeconnection.co.uk"
+          : "the test inbox",
       },
     };
   });
@@ -241,7 +245,8 @@ export const uploadFile = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAccess(data.submissionId, context.userId);
+    const target = await assertAccess(data.submissionId, context.userId);
+    assertEditable(target.status, await isDirector(context.userId));
     const allowed = ["image/png", "image/jpeg", "application/pdf"];
     const mime = data.mimeType === "image/jpg" ? "image/jpeg" : data.mimeType;
     if (!allowed.includes(mime)) throw new Error("Please upload a JPG, PNG or PDF file.");
@@ -347,6 +352,7 @@ export const saveDraft = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const submission = await assertAccess(data.submissionId, context.userId);
+    assertEditable(submission.status, await isDirector(context.userId));
     const db = await admin();
     data.values = await lockPark(submission, data.values);
     await db
@@ -411,7 +417,8 @@ export const submitForm = createServerFn({ method: "POST" })
     const submission = await assertAccess(data.submissionId, context.userId);
     const db = await admin();
     const director = await isDirector(context.userId);
-    const requested = String(data.values["status"] ?? "In Review");
+    assertEditable(submission.status, director);
+    const requested = parseSubmitStatus(data.values["status"]);
     if (requested === "Completed" && !director) {
       throw new Error("Only the Director can mark a form as Completed.");
     }
@@ -422,6 +429,9 @@ export const submitForm = createServerFn({ method: "POST" })
     }
     if (submission.form_type === "identification" && requested === "In Review (Offsite)") {
       throw new Error("Identification Checks are not signed by the customer. Submit with \"In Review\".");
+    }
+    if (requested === "In Review (Offsite)") {
+      data.values["customer_email"] = assertCustomerEmail(data.values["customer_email"]);
     }
     const status = requested;
     data.values = await lockPark(submission, data.values);
@@ -542,7 +552,11 @@ export const resendEmails = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAccess(data.submissionId, context.userId);
+    const current = await assertAccess(data.submissionId, context.userId);
+    if (!canResend(data.kind, current.status, await isDirector(context.userId))) {
+      throw new Error("Only the Director can resend this email.");
+    }
+    if (data.kind === "offsite") assertCustomerEmail(((current.data ?? {}) as Record<string, unknown>)["customer_email"]);
     const s = await server();
     if (data.kind === "review") await s.sendReviewRequiredEmail(data.submissionId);
     if (data.kind === "offsite") await s.sendOffsiteCustomerEmail(data.submissionId);
