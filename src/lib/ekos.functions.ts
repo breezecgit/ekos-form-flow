@@ -234,6 +234,13 @@ async function lockPark(submission: { form_type: string; sale_id: string }, valu
   return out;
 }
 
+
+/** Fails when a write errors or changes no rows (stale status, missing record). */
+async function expectRows(op: PromiseLike<{ data: unknown; error: unknown }>, message: string) {
+  const { data, error } = await op;
+  if (error || !Array.isArray(data) || data.length === 0) throw new Error(message);
+}
+
 export const uploadFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
@@ -267,6 +274,7 @@ export const uploadFile = createServerFn({ method: "POST" })
       storage_path: path,
     });
     if (metadataError) {
+      await db.storage.from("ekos-documents").remove([path]);
       throw new Error("The file uploaded but could not be attached to the form. Please retry or contact EKOS.");
     }
     return { id, name: data.fileName, path, mime };
@@ -362,7 +370,7 @@ export const saveDraft = createServerFn({ method: "POST" })
     const db = await admin();
     data.values = await lockPark(submission, data.values);
     validateFormWrite(getForm(submission.form_type), data.values, { mode: "rep", isDirector: await isDirector(context.userId) }, "draft", (submission.data ?? {}) as Record<string, unknown>);
-    const { error: saveError } = await db
+    await expectRows(db
       .from("form_submissions")
       .update({
         data: data.values as never,
@@ -371,8 +379,9 @@ export const saveDraft = createServerFn({ method: "POST" })
         status: submission.status === "Completed" ? "Completed" : submission.status === "Disapproved" ? "Disapproved" : "Draft",
         updated_at: new Date().toISOString(),
       })
-      .eq("id", data.submissionId);
-    if (saveError) throw new Error("The form could not be saved. Please retry.");
+      .eq("id", data.submissionId)
+      .eq("status", submission.status)
+      .select("id"), "The form could not be saved – it may have changed elsewhere. Please reload and retry.");
     await syncSale(submission.sale_id, data.values, submission.form_type);
     const s = await server();
     await s.addAudit({
@@ -522,7 +531,7 @@ export const setStatus = createServerFn({ method: "POST" })
       );
     }
 
-    const { error: statusError } = await db
+    const { data: statusRows, error: statusError } = await db
       .from("form_submissions")
       .update({
         status: data.status,
@@ -530,8 +539,9 @@ export const setStatus = createServerFn({ method: "POST" })
         disapproval_note: data.status === "Disapproved" ? (data.note ?? "") : null,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", data.submissionId);
-    if (statusError) throw new Error("The status could not be saved. Please retry.");
+      .eq("id", data.submissionId)
+      .select("id");
+    if (statusError || !statusRows?.length) throw new Error("The status could not be saved. Please retry.");
 
     await s.addAudit({
       submissionId: data.submissionId,
