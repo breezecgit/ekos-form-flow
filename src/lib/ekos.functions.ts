@@ -245,7 +245,8 @@ export const uploadFile = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAccess(data.submissionId, context.userId);
+    const target = await assertAccess(data.submissionId, context.userId);
+    assertEditable(target.status, await isDirector(context.userId));
     const allowed = ["image/png", "image/jpeg", "application/pdf"];
     const mime = data.mimeType === "image/jpg" ? "image/jpeg" : data.mimeType;
     if (!allowed.includes(mime)) throw new Error("Please upload a JPG, PNG or PDF file.");
