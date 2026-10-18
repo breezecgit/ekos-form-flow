@@ -114,7 +114,7 @@ function FormPage() {
     welcome_pack_url: sub.data.welcomePackUrl,
   };
 
-  const locked = !submission.is_draft && submission.status !== "Disapproved";
+  const locked = !submission.is_draft && submission.status !== "Disapproved" && !me.data?.isDirector;
 
   return (
     <div className="min-h-screen bg-background">
