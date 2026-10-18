@@ -165,19 +165,21 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
       .update({ data: merged as never, customer_signed_at: now, updated_at: now })
       .eq("id", submission.id);
     await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
-    await s.publishInReview(submission.id, (await s.buildAndStorePdf(submission.id)).bytes);
-    await s.addAudit({
-      submissionId: submission.id,
-      actorLabel: String(v["customer_one_name"] ?? v["occupier_one_name"] ?? "Customer"),
-      action: "Customer signed off site",
-    });
-    await s.sendSignatureCompleteEmail(submission.id);
-    if (s.needsDirectorWitness(submission.form_type)) {
-      await s.sendDirectorWitnessEmail(submission.id);
-    } else if (s.needsConstruction(submission.form_type) && !submission.construction_signed_at) {
-      await s.sendConstructionEmail(submission.id);
-    } else {
-      await s.sendReviewRequiredEmail(submission.id);
-    }
+    const built = await s.buildAndStorePdf(submission.id);
+    // Drive copy, audit and emails are independent once the PDF exists – run together.
+    await Promise.all([
+      s.publishInReview(submission.id, built.bytes),
+      s.addAudit({
+        submissionId: submission.id,
+        actorLabel: String(v["customer_one_name"] ?? v["occupier_one_name"] ?? "Customer"),
+        action: "Customer signed off site",
+      }),
+      s.sendSignatureCompleteEmail(submission.id),
+      s.needsDirectorWitness(submission.form_type)
+        ? s.sendDirectorWitnessEmail(submission.id)
+        : s.needsConstruction(submission.form_type) && !submission.construction_signed_at
+          ? s.sendConstructionEmail(submission.id)
+          : s.sendReviewRequiredEmail(submission.id),
+    ]);
     return { ok: true };
   });
