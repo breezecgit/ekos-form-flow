@@ -105,7 +105,7 @@ export const saveSettings = createServerFn({ method: "POST" })
     const db = await admin();
 
     for (const p of data.parks) {
-      await db
+      await checkedWrite(db
         .from("parks")
         .update({
           address: p.address,
@@ -125,7 +125,7 @@ export const saveSettings = createServerFn({ method: "POST" })
           ...(p.manager_email !== undefined ? { manager_email: p.manager_email } : {}),
           ...(p.rep_name !== undefined ? { rep_name: p.rep_name } : {}),
         })
-        .eq("id", p.id);
+        .eq("id", p.id));
     }
 
     const { data: existing } = await db.from("sales_people").select("id, name");
@@ -134,57 +134,57 @@ export const saveSettings = createServerFn({ method: "POST" })
       .filter((p) => p.name);
     const keep = new Set(list.map((p) => p.name));
     for (const row of existing ?? []) {
-      if (!keep.has(row.name)) await db.from("sales_people").delete().eq("id", row.id);
+      if (!keep.has(row.name)) await checkedWrite(db.from("sales_people").delete().eq("id", row.id));
     }
     let order = 0;
     for (const p of list) {
       order += 1;
-      await db
+      await checkedWrite(db
         .from("sales_people")
-        .upsert({ name: p.name, email: p.email, sort_order: order }, { onConflict: "name" });
+        .upsert({ name: p.name, email: p.email, sort_order: order }, { onConflict: "name" }));
     }
 
-    await db
+    await checkedWrite(db
       .from("app_settings")
-      .upsert({ key: "notifications", value: data.notifications as never, updated_at: new Date().toISOString() });
+      .upsert({ key: "notifications", value: data.notifications as never, updated_at: new Date().toISOString() }));
     if (data.appBaseUrl) {
-      await db.from("app_settings").upsert({
+      await checkedWrite(db.from("app_settings").upsert({
         key: "app_base_url",
         value: { url: data.appBaseUrl.replace(/\/+$/, "") } as never,
         updated_at: new Date().toISOString(),
-      });
+      }));
     }
     if (data.welcomePackUrl !== undefined) {
       const { data: cur } = await db.from("app_settings").select("value").eq("key", "links").maybeSingle();
-      await db.from("app_settings").upsert({
+      await checkedWrite(db.from("app_settings").upsert({
         key: "links",
         value: { ...((cur?.value ?? {}) as Record<string, unknown>), welcome_pack_url: data.welcomePackUrl } as never,
         updated_at: new Date().toISOString(),
-      });
+      }));
     }
-    await db.from("app_settings").upsert({
+    await checkedWrite(db.from("app_settings").upsert({
       key: "google_drive",
       value: { folder_id: data.driveFolderId, ...(data.driveFormFolders ?? {}) } as never,
       updated_at: new Date().toISOString(),
-    });
+    }));
 
     if (data.sheets) {
-      await db.from("app_settings").upsert({
+      await checkedWrite(db.from("app_settings").upsert({
         key: "google_sheets",
         value: { enabled: data.sheets.enabled ? "true" : "false", spreadsheet_id: data.sheets.spreadsheet_id } as never,
         updated_at: new Date().toISOString(),
-      });
+      }));
     }
 
     if (data.directorSignatureDataUrl) {
       const base64 = data.directorSignatureDataUrl.split(",")[1] ?? "";
       const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
       const path = `settings/director-signature.png`;
-      await db.storage.from("ekos-documents").upload(path, bytes, {
+      await checkedWrite(db.storage.from("ekos-documents").upload(path, bytes, {
         contentType: "image/png",
         upsert: true,
-      });
-      await db.from("app_settings").upsert({
+      }));
+      await checkedWrite(db.from("app_settings").upsert({
         key: "director_signature",
         value: {
           name: "Sadie Deveraux",
@@ -192,7 +192,7 @@ export const saveSettings = createServerFn({ method: "POST" })
           image_path: path,
         } as never,
         updated_at: new Date().toISOString(),
-      });
+      }));
     }
 
     if (data.emailTestMode) {
@@ -235,9 +235,9 @@ export const setDeletePermission = createServerFn({ method: "POST" })
     const db = await admin();
     const email = data.email.toLowerCase();
     if (data.enabled) {
-      await db.from("user_permissions").upsert({ email, permission: "can_delete_sales" }, { onConflict: "email,permission" });
+      await checkedWrite(db.from("user_permissions").upsert({ email, permission: "can_delete_sales" }, { onConflict: "email,permission" }));
     } else {
-      await db.from("user_permissions").delete().eq("email", email).eq("permission", "can_delete_sales");
+      await checkedWrite(db.from("user_permissions").delete().eq("email", email).eq("permission", "can_delete_sales"));
     }
     return { ok: true };
   });
