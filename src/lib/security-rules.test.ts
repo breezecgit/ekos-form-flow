@@ -13,6 +13,12 @@ describe("submit status", () => {
 });
 
 describe("completed forms", () => {
+  it.each(["In Review", "In Review (Offsite)"])("reps cannot mutate submitted %s forms through actions", (status) => {
+    expect(() => assertEditable(status, false)).toThrow("read-only");
+  });
+  it("a rep can correct a Disapproved form", () => {
+    expect(() => assertEditable("Disapproved", false)).not.toThrow();
+  });
   it("the Director can open the Completed form editor", () => {
     expect(canOpenFormEditor("Completed", false, true)).toBe(true);
   });

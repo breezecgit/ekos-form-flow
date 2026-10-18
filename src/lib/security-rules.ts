@@ -19,6 +19,9 @@ export function assertEditable(status: string, isDirector: boolean) {
   if (status === "Completed" && !isDirector) {
     throw new Error("This form is completed and can only be changed by the Director.");
   }
+  if (!isDirector && status !== "Draft" && status !== "Disapproved") {
+    throw new Error("This submitted form is read-only. Please ask the Director for corrections.");
+  }
 }
 
 /** Submitted forms remain read-only for reps; the Director can open the editor. */
