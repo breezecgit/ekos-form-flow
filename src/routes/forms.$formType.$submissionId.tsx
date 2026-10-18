@@ -57,6 +57,7 @@ function FormPage() {
     queryKey: ["submission", submissionId],
     queryFn: () => getFn({ data: { submissionId } }),
     enabled: Boolean(session),
+    retry: false,
   });
 
   if (!hasForm(formType)) {

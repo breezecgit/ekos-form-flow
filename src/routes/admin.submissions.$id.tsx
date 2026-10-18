@@ -49,6 +49,7 @@ function SubmissionDetail() {
   const q = useQuery({
     queryKey: ["submission", id],
     queryFn: () => getFn({ data: { submissionId: id } }),
+    retry: false,
   });
 
   const change = useMutation({
