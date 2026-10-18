@@ -19,6 +19,18 @@ describe("completed forms", () => {
   it("reps cannot open the Completed form editor", () => {
     expect(canOpenFormEditor("Completed", false, false)).toBe(false);
   });
+  it("a stale draft flag never unlocks a Completed form for a rep", () => {
+    expect(canOpenFormEditor("Completed", true, false)).toBe(false);
+  });
+  it("reps can edit their draft forms", () => {
+    expect(canOpenFormEditor("Draft", true, false)).toBe(true);
+  });
+  it("reps cannot reopen submitted off-site signing forms", () => {
+    expect(canOpenFormEditor("In Review (Offsite)", false, false)).toBe(false);
+  });
+  it.each(["In Review", "In Review (Offsite)", "Disapproved"])("the Director can edit %s forms", (status) => {
+    expect(canOpenFormEditor(status, false, true)).toBe(true);
+  });
   it("reps cannot reopen submitted review forms", () => {
     expect(canOpenFormEditor("In Review", false, false)).toBe(false);
   });
