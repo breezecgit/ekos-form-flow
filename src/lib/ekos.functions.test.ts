@@ -73,6 +73,7 @@ beforeEach(() => {
   fixture.email = "ben-test@example.invalid";
   fixture.grant = false;
   fixture.writeError = null;
+  fixture.zeroRows = false;
   vi.clearAllMocks();
 });
 
@@ -98,6 +99,16 @@ describe("deletion authority and failed saves", () => {
     fixture.submission.status = "Draft"; fixture.writeError = { message: "fixture failure" };
     await expect(save()).rejects.toThrow("could not be saved");
     expect(fixture.audit).not.toHaveBeenCalled(); expect(fixture.resumeEmail).not.toHaveBeenCalled();
+  });
+  it("a save that changes no rows (status changed elsewhere) is refused and not audited", async () => {
+    fixture.submission.status = "Draft"; fixture.zeroRows = true;
+    await expect(save()).rejects.toThrow("changed elsewhere");
+    expect(fixture.audit).not.toHaveBeenCalled(); expect(fixture.resumeEmail).not.toHaveBeenCalled();
+  });
+  it("saves are conditioned on the status that was checked", async () => {
+    fixture.submission.status = "Draft";
+    await save();
+    expect(fixture.filters).toContainEqual({ table: "form_submissions", key: "status", value: "Draft" });
   });
   it("invalid draft fields are rejected before persistence", async () => {
     fixture.submission.status = "Draft";
