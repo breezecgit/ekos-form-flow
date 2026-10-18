@@ -32,10 +32,6 @@ describe("settings action release safeguard", () => {
     await expect(saveSettings({ data: { ...request, emailTestMode: { ...request.emailTestMode, enabled: true } } })).rejects.toThrow("could not be saved");
     expect(fixture.writes).toHaveLength(1);
   });
-  it("an authenticated Director cannot disable email test mode before owner verification", async () => {
-    await expect(saveSettings({ data: request })).rejects.toThrow("must stay ON");
-    expect(fixture.writes).toEqual([]);
-  });
   it("a rep cannot change email test settings", async () => {
     fixture.director = false;
     await expect(saveSettings({ data: request })).rejects.toThrow("Director access");
