@@ -1,5 +1,14 @@
 const GATEWAY = "https://connector-gateway.lovable.dev/google_drive";
 
+/** Missing/unreadable configuration fails closed; folder IDs never imply approval. */
+export async function driveWritesEnabled(): Promise<boolean> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.from("app_settings").select("value").eq("key", "google_drive").maybeSingle();
+  if (error) return false;
+  const value = (data?.value ?? {}) as Record<string, unknown>;
+  return value["enabled"] === true || value["enabled"] === "true";
+}
+
 function keys() {
   const lovableKey = process.env["LOVABLE_API_KEY"];
   const driveKey = process.env["GOOGLE_DRIVE_API_KEY"];
@@ -16,6 +25,7 @@ export function driveFileLink(id: string) {
 
 /** Creates a sub-folder inside `parentId`. Returns the folder id or null. */
 export async function createDriveFolder(name: string, parentId: string): Promise<string | null> {
+  if (!(await driveWritesEnabled())) return null;
   const k = keys();
   if (!k || !parentId) return null;
   try {
@@ -52,6 +62,7 @@ export async function uploadPdfToDrive(
   folderId: string,
   bytes: Uint8Array,
 ): Promise<string | null> {
+  if (!(await driveWritesEnabled())) return null;
   const k = keys();
   if (!k) {
     console.warn("Google Drive is not connected – skipping upload.");
