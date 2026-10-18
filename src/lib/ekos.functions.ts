@@ -446,25 +446,27 @@ export const submitForm = createServerFn({ method: "POST" })
 
     const s = await server();
     const built = await s.buildAndStorePdf(data.submissionId);
-    await s.publishInReview(data.submissionId, built.bytes);
-    await s.addAudit({
-      submissionId: data.submissionId,
-      actorId: context.userId,
-      actorLabel: String(context.claims["email"] ?? ""),
-      action: "Form submitted",
-      fromStatus: submission.status,
-      toStatus: status,
-    });
-
-    if (status === "In Review (Offsite)") {
-      await s.sendOffsiteCustomerEmail(data.submissionId);
-    } else if (isWS) {
-      await s.sendDirectorWitnessEmail(data.submissionId);
-    } else if (s.needsConstruction(submission.form_type) && !submission.construction_signed_at) {
-      await s.sendConstructionEmail(data.submissionId);
-    } else {
-      await s.sendReviewRequiredEmail(data.submissionId);
-    }
+    // Drive copy, audit and the next email are independent once the PDF exists – run together.
+    const sendNext = () =>
+      status === "In Review (Offsite)"
+        ? s.sendOffsiteCustomerEmail(data.submissionId)
+        : isWS
+          ? s.sendDirectorWitnessEmail(data.submissionId)
+          : s.needsConstruction(submission.form_type) && !submission.construction_signed_at
+            ? s.sendConstructionEmail(data.submissionId)
+            : s.sendReviewRequiredEmail(data.submissionId);
+    await Promise.all([
+      s.publishInReview(data.submissionId, built.bytes),
+      s.addAudit({
+        submissionId: data.submissionId,
+        actorId: context.userId,
+        actorLabel: String(context.claims["email"] ?? ""),
+        action: "Form submitted",
+        fromStatus: submission.status,
+        toStatus: status,
+      }),
+      sendNext(),
+    ]);
     return { status };
   });
 
