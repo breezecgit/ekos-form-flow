@@ -130,13 +130,16 @@ export const submitCustomerSignature = createServerFn({ method: "POST" })
         .update({ data: merged as never, construction_signed_at: now, updated_at: now })
         .eq("id", submission.id);
       await db.from("signing_tokens").update({ used_at: now }).eq("token", row.token);
-      await s.publishInReview(submission.id, (await s.buildAndStorePdf(submission.id)).bytes);
-      await s.addAudit({
-        submissionId: submission.id,
-        actorLabel: `${String(v["construction_name"])} (Construction team)`,
-        action: "Construction team signed",
-      });
-      await s.sendReviewRequiredEmail(submission.id);
+      const built = await s.buildAndStorePdf(submission.id);
+      await Promise.all([
+        s.publishInReview(submission.id, built.bytes),
+        s.addAudit({
+          submissionId: submission.id,
+          actorLabel: `${String(v["construction_name"])} (Construction team)`,
+          action: "Construction team signed",
+        }),
+        s.sendReviewRequiredEmail(submission.id),
+      ]);
       return { ok: true };
     }
 
