@@ -437,7 +437,7 @@ function Blocks({ blocks }: { blocks: ContentBlock[] }) {
           );
         if (b.kind === "accordion") return <AccordionRow key={i} title={b.title} blocks={b.blocks} />;
         if (b.kind === "bold")
-          return <p key={i} className="text-[15px] font-bold leading-[1.7] text-ekos-slate">{b.text}</p>;
+          return <p key={i} className="text-[15px] font-bold leading-[1.7] text-ekos-heading-gold">{b.text}</p>;
         if (b.kind === "note")
           return (
             <p key={i} className="text-[15px] font-medium leading-[1.7] text-ekos-slate">
