@@ -435,6 +435,17 @@ function Blocks({ blocks }: { blocks: ContentBlock[] }) {
               ))}
             </ul>
           );
+        if (b.kind === "subbullets")
+          return (
+            <ul
+              key={i}
+              className="list-disc space-y-1.5 pl-12 text-[15px] font-medium leading-[1.7] text-ekos-slate marker:text-[0.7em]"
+            >
+              {b.items.map((it) => (
+                <li key={it}>{it}</li>
+              ))}
+            </ul>
+          );
         if (b.kind === "accordion") return <AccordionRow key={i} title={b.title} blocks={b.blocks} />;
         if (b.kind === "bold")
           return <p key={i} className="text-[15px] font-bold leading-[1.7] text-ekos-heading-gold">{b.text}</p>;

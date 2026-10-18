@@ -49,6 +49,7 @@ export type ContentBlock =
   | { kind: "bold"; text: string }
   | { kind: "note"; text: string }
   | { kind: "bullets"; items: string[] }
+  | { kind: "subbullets"; items: string[] }
   /** Collapsible "+" row on the page (closed by default); printed expanded in the PDF. */
   | { kind: "accordion"; title: string; blocks: ContentBlock[] };
 
