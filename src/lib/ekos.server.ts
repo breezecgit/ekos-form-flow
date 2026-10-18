@@ -223,7 +223,7 @@ export async function getOrCreateSigningToken(
   submissionId: string,
   kind: "customer_offsite" | "construction" | "director" = "customer_offsite",
 ): Promise<string> {
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("signing_tokens")
     .select("token")
     .eq("submission_id", submissionId)
@@ -233,9 +233,11 @@ export async function getOrCreateSigningToken(
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (error) throw new Error("A signing link could not be checked. Please retry without resending.");
   if (data?.token) return data.token;
   const token = newToken();
-  await supabaseAdmin.from("signing_tokens").insert({ submission_id: submissionId, token, kind });
+  const { error: insertError } = await supabaseAdmin.from("signing_tokens").insert({ submission_id: submissionId, token, kind });
+  if (insertError) throw new Error("A signing link could not be created. Please retry.");
   return token;
 }
 

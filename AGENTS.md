@@ -8,7 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
-- Email test mode: enforced inside sendEmail (fails safe to ON; only an explicit "false" setting disables it) so no caller can bypass it. Test recipients are a list (default Emma + Eilidh at breezeconnection.co.uk).
+- Email test mode is pinned ON at the send boundary until verified owner authorization is implemented; configured recipients are intersected with the approved test allowlist so direct settings edits cannot route production email.
 - Email links: every link is built from the Settings "App base URL" (app_base_url), never the request origin, because the editor preview needs a Lovable login.
 - Staff email links go through the login page with an encoded internal return path so drafts and reviews reopen after sign-in.
 - PDF generation uses director rendering context to preserve captured signatures; the shared field filter excludes workflow status fields from every copy and other approval instructions from completed copies so review and completed outputs cannot drift.
@@ -21,3 +21,5 @@
 - Guide accordions render literal bullet glyphs independently of CSS list markers, and PDF text preserves the WinAnsi bullet glyph; this prevents resets or character cleaning from hiding bullets.
 - Shared write-validation checks payload types and visible required fields at server boundaries, with partial drafts allowed, so browser validation is not the authority.
 - Drive writes require an explicit enabled setting at both orchestration and external-call boundaries; missing or unreadable settings fail closed so configured destinations cannot enable test writes.
+- Upload validation lives in a shared client-safe module and checks form field identity, decoded bounds and file header before storage writes; metadata validation alone cannot establish file content.
+- Settings mutations share a checked-write boundary so partial save failures are visible and never reported as all-success.

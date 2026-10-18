@@ -21,24 +21,29 @@ async function persistSigningWrite(operation: PromiseLike<{ error: unknown }>) {
 
 async function loadByToken(token: string) {
   const db = await admin();
-  const { data: row } = await db
+  const { data: row, error: tokenReadError } = await db
     .from("signing_tokens")
     .select("*")
     .eq("token", token)
     .maybeSingle();
+  if (tokenReadError) throw new Error("This signing link could not be checked. Please try again later.");
   if (!row) throw new TokenError("This signing link is not valid.");
   if (row.used_at) throw new TokenError("This form has already been signed.");
-  if (new Date(row.expires_at).getTime() < Date.now()) {
+  const expiry = new Date(row.expires_at).getTime();
+  if (!Number.isFinite(expiry) || expiry <= Date.now()) {
     throw new TokenError("This signing link has expired. Please contact EKOS Group.");
   }
-  const { data: submission } = await db
+  const { data: submission, error: submissionReadError } = await db
     .from("form_submissions")
     .select("*")
     .eq("id", row.submission_id)
     .maybeSingle();
+  if (submissionReadError) throw new Error("The form could not be loaded. Please try again later.");
   if (!submission) throw new TokenError("This signing link is not valid.");
   if (submission.form_type === "identification") throw new TokenError("This signing link is not valid.");
   if (submission.status === "Completed") throw new TokenError("This form has already been completed.");
+  if (!["customer_offsite", "construction", "director"].includes(row.kind)) throw new TokenError("This signing link is not valid.");
+  if ((row.kind === "customer_offsite" && submission.customer_signed_at) || (row.kind === "construction" && submission.construction_signed_at)) throw new TokenError("This form has already been signed.");
   return { row, submission };
 }
 

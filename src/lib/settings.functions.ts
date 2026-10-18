@@ -6,6 +6,11 @@ async function admin() {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 
+async function checkedWrite(operation: PromiseLike<{ error: unknown }>) {
+  const { error } = await operation;
+  if (error) throw new Error("Some settings could not be saved. Earlier changes may have saved; reload Settings before retrying.");
+}
+
 async function assertDirector(userId: string) {
   const db = await admin();
   const { data } = await db
@@ -42,7 +47,7 @@ export const getSettings = createServerFn({ method: "GET" })
       if (dl.data) {
         const buf = new Uint8Array(await dl.data.arrayBuffer());
         let binary = "";
-        for (let i = 0; i < buf.length; i += 1) binary += String.fromCharCode(buf[i]!);
+        for (const byte of buf) binary += String.fromCharCode(byte);
         directorSignatureDataUrl = `data:image/png;base64,${btoa(binary)}`;
       }
     }
@@ -95,10 +100,12 @@ export const saveSettings = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertDirector(context.userId);
+    // Owner identity has not been approved. Reject before any other write.
+    if (data.emailTestMode?.enabled === false) throw new Error("Email test mode must stay ON until the owner's account is verified and release approval is given.");
     const db = await admin();
 
     for (const p of data.parks) {
-      await db
+      await checkedWrite(db
         .from("parks")
         .update({
           address: p.address,
@@ -118,7 +125,7 @@ export const saveSettings = createServerFn({ method: "POST" })
           ...(p.manager_email !== undefined ? { manager_email: p.manager_email } : {}),
           ...(p.rep_name !== undefined ? { rep_name: p.rep_name } : {}),
         })
-        .eq("id", p.id);
+        .eq("id", p.id));
     }
 
     const { data: existing } = await db.from("sales_people").select("id, name");
@@ -127,57 +134,57 @@ export const saveSettings = createServerFn({ method: "POST" })
       .filter((p) => p.name);
     const keep = new Set(list.map((p) => p.name));
     for (const row of existing ?? []) {
-      if (!keep.has(row.name)) await db.from("sales_people").delete().eq("id", row.id);
+      if (!keep.has(row.name)) await checkedWrite(db.from("sales_people").delete().eq("id", row.id));
     }
     let order = 0;
     for (const p of list) {
       order += 1;
-      await db
+      await checkedWrite(db
         .from("sales_people")
-        .upsert({ name: p.name, email: p.email, sort_order: order }, { onConflict: "name" });
+        .upsert({ name: p.name, email: p.email, sort_order: order }, { onConflict: "name" }));
     }
 
-    await db
+    await checkedWrite(db
       .from("app_settings")
-      .upsert({ key: "notifications", value: data.notifications as never, updated_at: new Date().toISOString() });
+      .upsert({ key: "notifications", value: data.notifications as never, updated_at: new Date().toISOString() }));
     if (data.appBaseUrl) {
-      await db.from("app_settings").upsert({
+      await checkedWrite(db.from("app_settings").upsert({
         key: "app_base_url",
         value: { url: data.appBaseUrl.replace(/\/+$/, "") } as never,
         updated_at: new Date().toISOString(),
-      });
+      }));
     }
     if (data.welcomePackUrl !== undefined) {
       const { data: cur } = await db.from("app_settings").select("value").eq("key", "links").maybeSingle();
-      await db.from("app_settings").upsert({
+      await checkedWrite(db.from("app_settings").upsert({
         key: "links",
         value: { ...((cur?.value ?? {}) as Record<string, unknown>), welcome_pack_url: data.welcomePackUrl } as never,
         updated_at: new Date().toISOString(),
-      });
+      }));
     }
-    await db.from("app_settings").upsert({
+    await checkedWrite(db.from("app_settings").upsert({
       key: "google_drive",
       value: { folder_id: data.driveFolderId, ...(data.driveFormFolders ?? {}) } as never,
       updated_at: new Date().toISOString(),
-    });
+    }));
 
     if (data.sheets) {
-      await db.from("app_settings").upsert({
+      await checkedWrite(db.from("app_settings").upsert({
         key: "google_sheets",
         value: { enabled: data.sheets.enabled ? "true" : "false", spreadsheet_id: data.sheets.spreadsheet_id } as never,
         updated_at: new Date().toISOString(),
-      });
+      }));
     }
 
     if (data.directorSignatureDataUrl) {
       const base64 = data.directorSignatureDataUrl.split(",")[1] ?? "";
       const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
       const path = `settings/director-signature.png`;
-      await db.storage.from("ekos-documents").upload(path, bytes, {
+      await checkedWrite(db.storage.from("ekos-documents").upload(path, bytes, {
         contentType: "image/png",
         upsert: true,
-      });
-      await db.from("app_settings").upsert({
+      }));
+      await checkedWrite(db.from("app_settings").upsert({
         key: "director_signature",
         value: {
           name: "Sadie Deveraux",
@@ -185,18 +192,18 @@ export const saveSettings = createServerFn({ method: "POST" })
           image_path: path,
         } as never,
         updated_at: new Date().toISOString(),
-      });
+      }));
     }
 
     if (data.emailTestMode) {
-      await db.from("app_settings").upsert({
+      await checkedWrite(db.from("app_settings").upsert({
         key: "email_test_mode",
         value: {
-          enabled: data.emailTestMode.enabled ? "true" : "false",
+          enabled: "true",
           recipient: data.emailTestMode.recipient.split(/[,;\s]+/).filter(Boolean).join(", "),
         } as never,
         updated_at: new Date().toISOString(),
-      });
+      }));
     }
 
     return { ok: true };
@@ -228,9 +235,9 @@ export const setDeletePermission = createServerFn({ method: "POST" })
     const db = await admin();
     const email = data.email.toLowerCase();
     if (data.enabled) {
-      await db.from("user_permissions").upsert({ email, permission: "can_delete_sales" }, { onConflict: "email,permission" });
+      await checkedWrite(db.from("user_permissions").upsert({ email, permission: "can_delete_sales" }, { onConflict: "email,permission" }));
     } else {
-      await db.from("user_permissions").delete().eq("email", email).eq("permission", "can_delete_sales");
+      await checkedWrite(db.from("user_permissions").delete().eq("email", email).eq("permission", "can_delete_sales"));
     }
     return { ok: true };
   });

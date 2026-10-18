@@ -15,6 +15,14 @@ const def: FormDef = { type: "fixture", title: "Fictional", steps: [{ id: "one",
 const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4f8AAAAASUVORK5CYII=";
 
 describe("form write validation", () => {
+  it("rep draft payloads cannot choose the Director-only Completed option", () => {
+    expect(() => validateFormWrite(getForm("reservation"), { status: "Completed" }, ctx, "draft")).toThrow("Director");
+  });
+  it("rejects invalid money without changing editable legitimate totals", () => {
+    const moneyDef: FormDef = { type: "fixture", title: "Fictional", steps: [{ id: "one", fields: [{ key: "total", type: "money" }] }] };
+    expect(() => validateFormWrite(moneyDef, { total: "not-money" }, ctx, "draft")).toThrow();
+    expect(() => validateFormWrite(moneyDef, { total: "£1,234.50" }, ctx, "draft")).not.toThrow();
+  });
   it.each(["reservation", "identification", "new_home_order", "unit_sale_agreement"])("allows a partial %s draft", (type) => {
     expect(() => validateFormWrite(getForm(type), {}, ctx, "draft")).not.toThrow();
   });

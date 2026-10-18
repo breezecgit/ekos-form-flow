@@ -1,5 +1,15 @@
 # EKOS Customer Sales Form — roadmap
 
+## Parallel readiness request — 18 October 2026
+- [x] Rehearse exact Section 5 and captured ACL/RLS/data reconstruction in disposable local PostgreSQL; provider snapshot recovery remains unverified, shared migration paused.
+- [x] Implement safe preview email routing pinned ON/approved recipient allowlist, Settings disable rejection and checked writes, upload boundary validation, signing read guards and thrown-error Drive denial.
+- [x] Run 109 passing mocked/unit tests and actual hosted read-only Ben/Sadie/anonymous and cross-owner file checks; local transactional signing prototype passes 12-request concurrency and rollback/retry.
+- [x] Fresh backend/dependency scans and hosted auth/park checks completed; stale application deep scan and unavailable infrastructure scan disclosed.
+- [x] Short action report and concrete recovery next steps provided; nothing published or changed in hosted records/settings.
+- [ ] Integrate atomic signing RPC plus durable side-effect retry/audit transaction — requires separate shared migration approval and verified recovery safeguard; prototype alone does not fix published signing.
+- [ ] Complete owner-only hosted settings write gate — owner identity/authority and separate policy migration approval required; preview delivery pinned ON meanwhile.
+- [ ] Complete Forms 1–4 all-screen/action/PDF/signature workflows — needs isolated backend/app destination or separately approved safe fictional fixtures; existing fixture incomplete and no stored corrections performed.
+
 ## Current controlled remediation request
 - [x] Read-only backup/recovery investigation: backend healthy, test mode ON, Sheets OFF, Drive enabled flag absent; actual backup inventory/restore authority inaccessible. Evidence/access gaps and recovery procedure documented; no migration, fixtures or configuration changes performed.
 - [ ] Complete recovery coverage evidence: administrator reports successful restore-capable backup 18 October 2026 08:27:21 UTC; explicit grants/RLS backup recovery coverage remains unverified.

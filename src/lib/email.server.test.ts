@@ -1,12 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const fixture = vi.hoisted(() => ({ mode: {} as Record<string, unknown>, logs: [] as Record<string, unknown>[] }));
+const fixture = vi.hoisted(() => ({ mode: {} as Record<string, unknown>, logs: [] as Record<string, unknown>[], readError: false, throws: false }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: (table: string) => {
-  const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: { value: fixture.mode } }), insert: async (row: Record<string, unknown>) => { fixture.logs.push(row); return { error: null }; } };
+  const q = { select: () => q, eq: () => q, maybeSingle: async () => { if (fixture.throws) throw new Error("fixture"); return { data: { value: fixture.mode }, error: fixture.readError ? { message: "fixture" } : null }; }, insert: async (row: Record<string, unknown>) => { fixture.logs.push(row); return { error: null }; } };
   return q;
 } } }));
 import { getEmailTestMode, parseRecipients, sendEmail } from "./email.server";
-beforeEach(() => { fixture.mode = {}; fixture.logs = []; vi.restoreAllMocks(); vi.stubEnv("LOVABLE_API_KEY", "fictional-key"); vi.stubEnv("RESEND_API_KEY", "fictional-key"); });
+beforeEach(() => { fixture.mode = {}; fixture.logs = []; fixture.readError = false; fixture.throws = false; vi.restoreAllMocks(); vi.stubEnv("LOVABLE_API_KEY", "fictional-key"); vi.stubEnv("RESEND_API_KEY", "fictional-key"); });
 describe("central email test routing (mock provider, no emails)", () => {
+  it("a direct false setting cannot enable customer delivery while owner verification is pending", async () => {
+    fixture.mode = { enabled: "false", recipient: "attacker@example.invalid" };
+    const network = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    await sendEmail({ to: ["fictional@example.invalid"], subject: "Fictional", html: "", template: "fixture" });
+    expect(JSON.parse(String(network.mock.calls[0]?.[1]?.body)).to).toEqual(["emma.frew@breezeconnection.co.uk", "sadie@ekosgroup.co.uk"]);
+    expect(fixture.logs[0]?.["test_mode"]).toBe(true);
+  });
+  it.each(["returned", "thrown"])("%s setting failure retains approved test recipients", async (failure) => {
+    fixture.mode = { enabled: "false", recipient: "fictional@example.invalid" };
+    fixture.readError = failure === "returned"; fixture.throws = failure === "thrown";
+    expect(await getEmailTestMode()).toEqual({ enabled: true, recipient: "emma.frew@breezeconnection.co.uk, sadie@ekosgroup.co.uk", recipients: ["emma.frew@breezeconnection.co.uk", "sadie@ekosgroup.co.uk"] });
+  });
   it("malformed recipients are rejected and addresses deduplicated", () => {
     expect(parseRecipients("bad@;emma.frew@breezeconnection.co.uk;EMMA.FREW@breezeconnection.co.uk")).toEqual(["emma.frew@breezeconnection.co.uk"]);
   });

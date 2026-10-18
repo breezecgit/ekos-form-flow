@@ -85,7 +85,7 @@ function FormPage() {
         <main className="mx-auto max-w-2xl px-4 py-12 text-center" role="alert">
           <h1 className="ekos-title text-2xl">{missing ? "This form is no longer available" : "This form couldn’t be opened"}</h1>
           <p className="mt-4 text-muted-foreground">
-            {missing ? "The sale or form linked in this email has been deleted. Check your dashboard for your current sales." : sub.error.message}
+            {missing ? "The sale or form linked in this email has been deleted. Check your dashboard for your current sales." : "Check that you have access to this form, or try again. Contact EKOS if it still cannot be opened."}
           </p>
           <div className="mt-6 flex justify-center gap-3">
             {!missing && <Button variant="outline" onClick={() => sub.refetch()}>Try again</Button>}
@@ -106,6 +106,9 @@ function FormPage() {
   }
 
   const submission = sub.data.submission;
+  if (submission.form_type !== formType) {
+    return <div className="min-h-screen bg-background"><AppHeader isDirector={me.data?.isDirector} email={me.data?.email} /><main className="mx-auto max-w-2xl px-4 py-12 text-center" role="alert"><h1 className="ekos-title text-2xl">This link does not match the form</h1><Button className="mt-6" variant="brand" onClick={() => router.navigate({ to: "/dashboard" })}>View dashboard</Button></main></div>;
+  }
   const values = (submission.data ?? {}) as FormValues;
   const park = sub.data.parks.find((p) => p.name === values["park_name"]);
   const parkLinks = {

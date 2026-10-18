@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCustomerEmail, assertEditable, canResend, parseSubmitStatus } from "@/lib/security-rules";
 import { validateFormWrite } from "@/lib/forms/write-validation";
 import { getForm } from "@/lib/forms/registry";
+import { validateUpload } from "@/lib/forms/upload-validation";
 
 const idInput = z.object({ submissionId: z.string().uuid() });
 
@@ -249,16 +250,14 @@ export const uploadFile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const target = await assertAccess(data.submissionId, context.userId);
     assertEditable(target.status, await isDirector(context.userId));
-    const allowed = ["image/png", "image/jpeg", "application/pdf"];
     const mime = data.mimeType === "image/jpg" ? "image/jpeg" : data.mimeType;
-    if (!allowed.includes(mime)) throw new Error("Please upload a JPG, PNG or PDF file.");
+    const bytes = validateUpload(getForm(target.form_type), data.fieldKey, mime, data.base64);
     const db = await admin();
-    const bytes = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
     const id = crypto.randomUUID();
     const safe = data.fileName.replace(/[^\w.\- ]+/g, "_");
     const path = `submissions/${data.submissionId}/files/${id}-${safe}`;
     const { error } = await db.storage.from("ekos-documents").upload(path, bytes, { contentType: mime });
-    if (error) throw new Error(`Upload failed: ${error.message}`);
+    if (error) throw new Error("The file could not be uploaded. Please retry or contact EKOS.");
     const { error: metadataError } = await db.from("submission_files").insert({
       id,
       submission_id: data.submissionId,
@@ -309,11 +308,12 @@ export const getSubmission = createServerFn({ method: "GET" })
       db.from("parks").select("*").order("sort_order"),
       isDirector(context.userId),
     ]);
-    const { data: audit } = await db
+    const { data: audit, error: auditError } = await db
       .from("audit_log")
       .select("*")
       .eq("submission_id", submission.id)
       .order("created_at", { ascending: false });
+    if (auditError) throw new Error("The audit history could not be loaded. Please retry.");
     const s = await server();
     const pdfUrl = submission.pdf_path ? await s.signedPdfUrl(submission.pdf_path) : "";
     const { data: tokens } = await db
@@ -678,12 +678,13 @@ export const deleteSale = createServerFn({ method: "POST" })
     const { data: profile } = await db.from("profiles").select("email, full_name").eq("id", context.userId).maybeSingle();
     const { FORM_TITLES } = await import("@/lib/forms/registry");
     const forms = (subs ?? []).map((s) => FORM_TITLES[s.form_type] ?? s.form_type);
-    await db.from("audit_log").insert({
+    const { error: auditError } = await db.from("audit_log").insert({
       submission_id: null,
       actor_id: context.userId,
       actor_label: profile?.full_name || profile?.email || "",
       action: "sale_deleted",
       note: `Deleted sale ${sale.order_number} · Customer: ${sale.customer_name || "—"} · Park: ${sale.park_name || "—"} · Forms deleted: ${forms.join(", ") || "none"} · Files removed: ${unique.length}`,
     });
+    if (auditError) throw new Error("The sale was deleted but its audit entry could not be recorded. Contact EKOS; do not repeat the deletion.");
     return { ok: true, orderNumber: sale.order_number };
   });
