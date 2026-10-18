@@ -1,9 +1,10 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Published live smoke test
-- [ ] Verify live security and Completed edit protection with Ben Cook and Sadie on fictional EKOS-00065.
-- [ ] Click through Forms 1–4; verify signing, PDFs, emails, tracker and audit history without enabling production integrations.
-- [ ] Report executed results and remaining release actions.
+- [x] Verify live security and Completed edit protection with Ben Cook and Sadie on fictional EKOS-00065.
+- [ ] Click through Forms 1–4 live — blocked: Sadie's editor correction is unpublished at the user's request.
+- [x] Verify live signing, PDFs, emails, tracker and audit history without enabling production integrations.
+- [x] Report executed results and remaining release actions.
 
 ## Email loading report
 - [x] Replace endless loading on missing/inaccessible email destinations with a clear message and retry/navigation.
