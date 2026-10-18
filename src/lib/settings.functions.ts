@@ -101,8 +101,14 @@ export const saveSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertDirector(context.userId);
     // Owner identity has not been approved. Reject before any other write.
-    if (data.emailTestMode?.enabled === false) throw new Error("Email test mode must stay ON until the owner's account is verified and release approval is given.");
     const db = await admin();
+    if (data.emailTestMode?.enabled === false) {
+      const { isVerifiedOwner } = await import("@/lib/security-rules");
+      const { data: authUser, error: authError } = await db.auth.admin.getUserById(context.userId);
+      if (authError || !isVerifiedOwner(authUser?.user)) throw new Error("Only the verified owner can switch email test mode off.");
+      // Owner verified – sending stays pinned to test mode until separate go-live approval.
+      throw new Error("Email test mode stays ON until go-live approval is given.");
+    }
 
     for (const p of data.parks) {
       await checkedWrite(db

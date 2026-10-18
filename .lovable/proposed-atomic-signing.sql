@@ -69,3 +69,13 @@ CREATE TABLE IF NOT EXISTS public.app_owners (
 );
 GRANT ALL ON public.app_owners TO service_role;
 ALTER TABLE public.app_owners ENABLE ROW LEVEL SECURITY;
+
+-- C2: email test-mode row can only be changed by the server (owner check lives there),
+-- never by a Director writing to the database directly.
+DROP POLICY IF EXISTS "settings write" ON public.app_settings;
+CREATE POLICY "settings write" ON public.app_settings FOR ALL TO authenticated
+  USING (public.is_director() AND key <> 'email_test_mode')
+  WITH CHECK (public.is_director() AND key <> 'email_test_mode');
+
+-- C3: TRUNCATE ignores row rules; nobody but the server needs it.
+REVOKE TRUNCATE ON ALL TABLES IN SCHEMA public FROM PUBLIC, anon, authenticated;
