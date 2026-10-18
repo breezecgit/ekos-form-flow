@@ -48,3 +48,11 @@ export function canResend(kind: ResendKind, status: string, isDirector: boolean)
   if (kind === "offsite") return status === "In Review (Offsite)";
   return false;
 }
+
+/** The single verified owner allowed to switch email test mode off (confirmed by the administrator). */
+export const EMAIL_TEST_MODE_OWNER = "emma.frew@breezeconnection.co.uk";
+
+/** Owner identity comes from the confirmed sign-in record, never from editable profile fields. */
+export function isVerifiedOwner(user: { email?: string | null; email_confirmed_at?: string | null } | null | undefined): boolean {
+  return Boolean(user?.email_confirmed_at) && (user?.email ?? "").trim().toLowerCase() === EMAIL_TEST_MODE_OWNER;
+}
