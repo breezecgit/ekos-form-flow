@@ -178,6 +178,8 @@ export function FormRunner({
     setBusy(true);
     try {
       await onSubmit(values);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "The form could not be submitted. Please retry.");
     } finally {
       setBusy(false);
     }
