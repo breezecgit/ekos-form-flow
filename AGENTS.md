@@ -12,6 +12,7 @@
 - Email links: every link is built from the Settings "App base URL" (app_base_url), never the request origin, because the editor preview needs a Lovable login.
 - Staff email links go through the login page with an encoded internal return path so drafts and reviews reopen after sign-in.
 - PDF generation uses director rendering context to preserve captured signatures; the shared field filter excludes workflow status fields from every copy and other approval instructions from completed copies so review and completed outputs cannot drift.
+- Generated PDFs use a fixed form.pdf storage key under the submission UUID, separate from their readable download filename, so customer text cannot invalidate storage keys.
 - Park autofill: form fields declare parkField (a parks column); FormRunner fills them on park change (overwrite) and on load (empty only). parks.inbox_email is the single park inbox/Email source.
 - Sale deletion requires server-verified Director role, authenticated Sadie identity and the email-keyed permission; editable profile fields never establish authority. Drive/Sheets copies are never touched.
 - Form editor access uses the shared canOpenFormEditor rule: submitted forms stay read-only for reps while the Director can edit, matching server-side Completed-form protection.

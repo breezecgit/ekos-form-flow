@@ -173,12 +173,17 @@ export async function buildAndStorePdf(
   });
 
   const fileName = pdfFileName(def.title, parkName, customerName, submission.order_number);
-  const path = `submissions/${submissionId}/${fileName}`;
+  // Storage keys reject some Unicode characters (including an en dash in a
+  // customer name). Keep the readable download name separate from the key.
+  const path = `submissions/${submissionId}/form.pdf`;
   const { error: uploadError } = await supabaseAdmin.storage.from(BUCKET).upload(path, bytes, {
     contentType: "application/pdf",
     upsert: true,
   });
-  if (uploadError) throw new Error("The PDF could not be stored. Please retry generation.");
+  if (uploadError) {
+    console.error("PDF storage upload failed", { submissionId, message: uploadError.message });
+    throw new Error("The PDF could not be stored. Please retry generation.");
+  }
   const { error: pathError } = await supabaseAdmin
     .from("form_submissions")
     .update({ pdf_path: path, updated_at: new Date().toISOString() })
