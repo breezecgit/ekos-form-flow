@@ -1,5 +1,5 @@
 import { parseMoney } from "@/lib/format";
-import type { FieldDef, FormDef, FormValues, OptionDef, RenderContext } from "./types";
+import type { FormDef, FormValues, OptionDef } from "./types";
 import {
   MOVE_IN_BLOCKS,
   REQUIRED_OPTS,
@@ -45,46 +45,23 @@ export function computeCostTotal(v: FormValues): string {
   return any ? total.toLocaleString("en-GB", { maximumFractionDigits: 2 }) : "";
 }
 
-/** Construction sign-off fields: only on the construction page and once signed. */
-const constructionVisible = (v: FormValues, ctx: RenderContext) =>
-  ctx.mode === "construction" || Boolean(v["construction_signature"]);
+const num = (v: FormValues, key: string) => parseMoney(v[key]) ?? 0;
+const fmt = (n: number) => n.toLocaleString("en-GB", { maximumFractionDigits: 2 });
 
-const constructionFields: FieldDef[] = [
-  {
-    key: "construction_name",
-    label: "Name",
-    type: "text",
-    group: "constructionSignature",
-    showIf: constructionVisible,
-  },
-  {
-    key: "construction_signature",
-    label: "Construction Team Signature",
-    type: "signature",
-    group: "constructionSignature",
-    showIf: constructionVisible,
-  },
-  {
-    key: "construction_date",
-    label: "Construction Team Date of signing",
-    type: "date",
-    defaultToday: true,
-    group: "constructionSignature",
-    showIf: constructionVisible,
-  },
-  {
-    key: "construction_note",
-    type: "static",
-    group: "constructionSignature",
-    showIf: constructionVisible,
-    content: [
-      {
-        kind: "note",
-        text: "Orders are not valid until they have been approved and signed by an authorised signatory of EKOS Group",
-      },
-    ],
-  },
-];
+/** Balance on completion = Total Cost − Deposit − (route-applicable) Estate Agent Fees,
+ *  Legal Fee Contribution and Customer Top Up. Hidden, blank or TBC counts as 0. */
+export function computeBalanceOnCompletion(v: FormValues): string {
+  const r = route(v);
+  let n = num(v, "cost_total") - num(v, "cost_deposit");
+  if (r === "Spring Managed Sale") n -= num(v, "estate_agent_fees") + num(v, "legal_fee_contribution");
+  if (r === "QMP Assisted Move") n -= num(v, "customer_topup");
+  return fmt(n);
+}
+
+/** Customer Payment Required = Balance − Proceeds. Negative = equity released to the customer. */
+export function computeCustomerPayment(v: FormValues): string {
+  return fmt(num(v, "balance_on_completion") - num(v, "proceeds"));
+}
 
 const STEPS_OPTS: OptionDef[] = [
   { value: "Brick", image: "brick_composite" },
@@ -270,7 +247,7 @@ export const newHomeOrderForm: FormDef = {
           type: "file",
           sectionLabel: "Check Sheet - Spec Sign Off",
         },
-        { key: "special_requests", label: "Special Requests", type: "textarea", sectionLabel: "Special Requests" },
+        { key: "special_requests", label: "Special Requests", type: "textarea", sectionLabel: "Special Requests", required: false },
       ],
     },
     {
@@ -325,13 +302,25 @@ export const newHomeOrderForm: FormDef = {
           type: "money",
           showIf: (v) => route(v) === "Spring Managed Sale",
         },
-        { key: "balance_on_completion", label: "Balance to be paid on completion", type: "money" },
+        {
+          key: "balance_on_completion",
+          label: "Balance to be paid on completion",
+          type: "money",
+          help: "Auto-calculated from the costs above. You can overwrite it.",
+          compute: computeBalanceOnCompletion,
+        },
         {
           key: "proceeds",
           label: "Proceeds from either Part exchange, Managed Sale or Assisted Move",
           type: "money",
         },
-        { key: "customer_payment_required", label: "Customer Payment Required", type: "money" },
+        {
+          key: "customer_payment_required",
+          label: "Customer Payment Required",
+          type: "money",
+          help: "Auto-calculated (balance minus proceeds). A negative figure means equity released to the customer. You can overwrite it.",
+          compute: computeCustomerPayment,
+        },
       ],
     },
     {
@@ -358,10 +347,5 @@ export const newHomeOrderForm: FormDef = {
       ],
     },
     { id: "step-7", fields: customerSignatureFields() },
-    {
-      id: "construction",
-      heading: "New Home Order Form Signatures (Construction Signatures)",
-      fields: constructionFields,
-    },
   ],
 };
