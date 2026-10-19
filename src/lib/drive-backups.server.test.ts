@@ -8,8 +8,9 @@ vi.mock("@supabase/supabase-js", () => ({ createClient: () => ({
     return q;
   }, storage: { from: () => ({ upload: f.upload }) },
 }) }));
-import { snapshotPdf, processBackupBatch } from "./drive-backups.server";
-vi.mock("@tanstack/react-start/server", () => ({ getRequest: () => ({ waitUntil: vi.fn() }) }));
+import { snapshotPdf, processBackupBatch, backgroundBackup } from "./drive-backups.server";
+const lifetime = vi.hoisted(() => ({ waitUntil: vi.fn() }));
+vi.mock("@tanstack/react-start/server", () => ({ getRequest: () => lifetime }));
 beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("SUPABASE_URL", "http://localhost"); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fictional-test-key"); f.enabled = false; f.root = "14Df5SRJ1B_EfowB22LfO82piSDl88zr_"; });
 it("disabled Drive backup performs no staging upload or provider write", async () => {
   await snapshotPdf("test", new Uint8Array([37,80,68,70]), "form.pdf");
@@ -30,4 +31,11 @@ it("two regenerations store distinct immutable keys with the original bytes", as
   const bytes = new Uint8Array([37,80,68,70]);
   await snapshotPdf("test", bytes, "form.pdf"); await snapshotPdf("test", bytes, "form.pdf");
   expect(f.upload.mock.calls[0]?.[0]).not.toBe(f.upload.mock.calls[1]?.[0]); expect(f.upload.mock.calls[0]?.[1]).toBe(bytes);
+});
+it("immediate backup is attached to request lifetime without waiting for Drive", () => {
+  lifetime.waitUntil.mockClear();
+  const work = vi.fn(() => new Promise(() => {}));
+  expect(backgroundBackup(work)).toBeUndefined();
+  expect(lifetime.waitUntil).toHaveBeenCalledTimes(1);
+  expect(work).toHaveBeenCalledTimes(1);
 });
