@@ -26,5 +26,5 @@ it("two regenerations store distinct immutable keys with the original bytes", as
   f.enabled = true; f.upload.mockResolvedValue({ error: null }); f.insert.mockResolvedValue({ error: null });
   const bytes = new Uint8Array([37,80,68,70]);
   await snapshotPdf("test", bytes, "form.pdf"); await snapshotPdf("test", bytes, "form.pdf");
-  expect(f.upload.mock.calls[0][0]).not.toBe(f.upload.mock.calls[1][0]); expect(f.upload.mock.calls[0][1]).toBe(bytes);
+  expect(f.upload.mock.calls[0]?.[0]).not.toBe(f.upload.mock.calls[1]?.[0]); expect(f.upload.mock.calls[0]?.[1]).toBe(bytes);
 });

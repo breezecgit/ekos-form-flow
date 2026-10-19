@@ -14,7 +14,7 @@ const submissionInput = z.object({ submissionId: z.string().uuid() });
 export const getDriveBackupStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => submissionInput.parse(d)).handler(async ({ data, context }) => {
     await director(context.userId);
-    const { backupDb, backupEnabled, reconcileBackup } = await import("./drive-backups.server");
+    const { backupDb, backupEnabled } = await import("./drive-backups.server");
     const db = backupDb();
     if (!(await backupEnabled(db))) return { enabled: false, pending: 0, failed: 0, done: 0, unavailable: false };
     const jobs = await db.from("drive_backup_jobs").select("status").eq("submission_id", data.submissionId);
