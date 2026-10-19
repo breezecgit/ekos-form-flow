@@ -3,7 +3,7 @@
 ## Urgent published PDF storage failure — 19 October 2026
 - [x] Reproduce the provider rejection without modifying EKOS-00074: customer-name en dash produces StorageApiError 400 Invalid key; ASCII equivalent succeeds.
 - [x] Separate generated PDF storage key from readable filename; preserve upload restrictions and add provider-error logging.
-- [ ] Run all-five-form storage regression tests and full fictional New Home Order UI submit with PNG uploads, stored PDF and automatic test email; delete only new test fixtures.
+- [x] All 134 unit/mocked tests pass, including each of five forms' review/director PDF storage. Actual preview UI: EKOS-00075 seven-step New Home Order with two PNGs and on-site signature submitted, PDF read back, automatic review email accepted only to approved test recipients; Director approval retained stored merged PDF and sent test completion email. Deleted only new EKOS-00075 and its files. Inbox receipt and other four full UI workflows not tested in this turn.
 - [ ] Publish/live retest — requires explicit approval; EKOS-00074 must remain untouched.
 
 ## Parallel readiness request — 18 October 2026
