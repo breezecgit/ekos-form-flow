@@ -1,0 +1,11 @@
+# Approved Drive activation — actual result
+
+- Applied backup-only proposal as `drizzle/migrations/0014_drive_backup_journal.sql`. Executable definitions retained; transaction wrapper removed because the migration tool owns the transaction. Signing Migration C was not touched.
+- Hosted checks: all five new tables have RLS enabled; anon has no SELECT, authenticated has no INSERT, service_role retains INSERT. All three backup functions deny anon/authenticated EXECUTE and allow service_role.
+- Existing Breeze connection remains linked. Email test mode confirmed ON; Sheets OFF; legacy Drive gate has no enabled flag and the new backup gate is absent/OFF. Zero backup jobs at verification.
+- Google creation of `_TEST – delete` through the required connection action tool was blocked before execution: required approval cannot display in this session. No workaround via direct script/provider credentials was attempted. No synthetic folder, files or test sale was created, so no cleanup required.
+- 156 unit/mocked regression checks pass; latest preview harness build OK. These are not end-to-end Google evidence.
+- Current-sales review CSV contains all 68 hosted sales. 67 tentatively look like tests/placeholders/tester names; EKOS-00054 “dsd” is ambiguous and shown separately as “Looks live — uncertain; confirm”, not asserted to be real. Status is the set of current form statuses, not an invented overall sale status. No classification or backfill was executed.
+- Automatic schedule NOT created. The current managed tools support static schedules, but enqueue wake authentication and runtime temporary schedule arm/disarm are not established. A permanent sweep or manually written managed HTTP cron would violate the queue scheduling safeguards. Do not enable Drive until this is resolved and the synthetic transfer passes.
+
+Next action: Emma sends the Drive synthetic-test request through the Lovable editor chat so Google can display its approval; allowing future connection actions there can unblock this session. Then complete the supported queue wake/retry mechanism, synthetic form submission/PDF/upload/readback/duplicate check/cleanup, and enable only explicitly confirmed new-live sales. New-sale live classification still requires a server-authorised explicit choice; do not infer it from a name. No publishing is authorised.
