@@ -9,7 +9,7 @@ export function backupDb() {
   return createClient(url, key, { auth: { persistSession: false }, global: { fetch: (input, init) => {
     const h = new Headers(init?.headers); h.set("apikey", key);
     if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization");
-    return fetch(input, { ...init, headers: h });
+    return fetch(input, { ...init, headers: h, signal: init?.signal ?? AbortSignal.timeout(5_000) });
   } } });
 }
 
@@ -132,5 +132,30 @@ export async function processBackupBatch() {
     return { processed };
   } finally {
     await db.from("drive_backup_worker").update({ owner: null, lease_until: null }).eq("owner", owner);
+  }
+}
+
+/** Repairs durable app objects whose enqueue failed. Explicitly scoped by Director. */
+export async function reconcileBackup(submissionId: string) {
+  const db = backupDb();
+  if (!(await backupEnabled(db))) throw new Error("Drive backups are not enabled.");
+  const files = await db.from("submission_files").select("storage_path,file_name").eq("submission_id", submissionId);
+  if (files.error) throw files.error;
+  for (const file of files.data) {
+    if (!backupSourceAllowed(submissionId, file.storage_path)) continue;
+    const queued = await db.from("drive_backup_jobs").upsert({ submission_id: submissionId, source_path: file.storage_path, file_name: file.file_name, kind: "attachment" }, { onConflict: "source_path", ignoreDuplicates: true });
+    if (queued.error) throw queued.error;
+  }
+  // Includes staged versions whose metadata insert failed; never read other sales.
+  const staged = await db.storage.from("ekos-documents").list(`backup-versions/${submissionId}`, { limit: 1000 });
+  if (staged.error) throw staged.error;
+  for (const file of staged.data) {
+    const path = `backup-versions/${submissionId}/${file.name}`;
+    if (!backupSourceAllowed(submissionId, path)) continue;
+    const id = file.name.slice(0, -4);
+    const version = await db.from("drive_backup_versions").upsert({ id, submission_id: submissionId, source_path: path, file_name: "Recovered PDF version.pdf" }, { onConflict: "id", ignoreDuplicates: true });
+    if (version.error) throw version.error;
+    const job = await db.from("drive_backup_jobs").upsert({ submission_id: submissionId, source_path: path, file_name: "Recovered PDF version.pdf", kind: "pdf" }, { onConflict: "source_path", ignoreDuplicates: true });
+    if (job.error) throw job.error;
   }
 }

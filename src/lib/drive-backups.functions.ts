@@ -14,7 +14,7 @@ const submissionInput = z.object({ submissionId: z.string().uuid() });
 export const getDriveBackupStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => submissionInput.parse(d)).handler(async ({ data, context }) => {
     await director(context.userId);
-    const { backupDb, backupEnabled } = await import("./drive-backups.server");
+    const { backupDb, backupEnabled, reconcileBackup } = await import("./drive-backups.server");
     const db = backupDb();
     if (!(await backupEnabled(db))) return { enabled: false, pending: 0, failed: 0, done: 0, unavailable: false };
     const jobs = await db.from("drive_backup_jobs").select("status").eq("submission_id", data.submissionId);
@@ -26,9 +26,10 @@ export const getDriveBackupStatus = createServerFn({ method: "GET" }).middleware
 export const retryDriveBackup = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => submissionInput.parse(d)).handler(async ({ data, context }) => {
     await director(context.userId);
-    const { backupDb, backupEnabled } = await import("./drive-backups.server");
+    const { backupDb, backupEnabled, reconcileBackup } = await import("./drive-backups.server");
     const db = backupDb();
     if (!(await backupEnabled(db))) throw new Error("Drive backups are not enabled.");
+    await reconcileBackup(data.submissionId);
     const write = await db.from("drive_backup_jobs").update({ status: "pending", next_attempt_at: new Date().toISOString() }).eq("submission_id", data.submissionId).eq("status", "failed");
     if (write.error) throw new Error("The backup retry could not be queued.");
     return { queued: true };
