@@ -160,10 +160,10 @@ export async function processBackupBatch() {
       const saved = await db.from("drive_backup_jobs").update({ status: "done", error: null, finished_at: new Date().toISOString(), lease_until: null }).eq("id", job.id);
       if (saved.error) throw saved.error;
       processed++;
-    } catch {
+    } catch (error) {
       const saved = await db.from("drive_backup_jobs").update({ status: "failed", error: "Drive backup failed – retry", next_attempt_at: nextBackupRetry(job.attempts), lease_until: null }).eq("id", job.id);
       if (saved.error) throw saved.error;
-      console.error("Drive backup job failed", { jobId: job.id });
+      console.error("Drive backup job failed", { jobId: job.id, reason: error instanceof Error ? error.message : "Unknown failure" });
     }
     }
     return { processed };
