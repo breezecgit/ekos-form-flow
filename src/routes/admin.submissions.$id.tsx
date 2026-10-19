@@ -14,6 +14,7 @@ import { allFields, isVisible } from "@/lib/forms/types";
 import type { FormValues } from "@/lib/forms/types";
 import { formatDate, formatMoney } from "@/lib/format";
 import { WordDownloadButton } from "@/components/WordDownload";
+import { DriveBackupStatus } from "@/components/DriveBackupStatus";
 
 export const Route = createFileRoute("/admin/submissions/$id")({
   head: () => ({
@@ -60,7 +61,7 @@ function SubmissionDetail() {
       qc.invalidateQueries({ queryKey: ["sales"] });
       toast.success(
         vars.status === "Completed"
-          ? "Marked complete – signature merged, emails sent and copied to Google Drive."
+          ? "Marked complete – signature merged and emails sent."
           : "Disapproved – the sales rep has been emailed.",
       );
     },
@@ -127,6 +128,7 @@ function SubmissionDetail() {
           </div>
         </div>
 
+        <DriveBackupStatus submissionId={s.id} />
         <div className="mt-4 flex flex-wrap gap-2">
           {q.data.pdfUrl && (
             <a href={q.data.pdfUrl} target="_blank" rel="noreferrer">
