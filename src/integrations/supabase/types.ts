@@ -76,6 +76,162 @@ export type Database = {
           },
         ]
       }
+      drive_backup_folders: {
+        Row: {
+          created_at: string
+          drive_id: string
+          folder_key: string
+          parent_id: string
+        }
+        Insert: {
+          created_at?: string
+          drive_id: string
+          folder_key: string
+          parent_id: string
+        }
+        Update: {
+          created_at?: string
+          drive_id?: string
+          folder_key?: string
+          parent_id?: string
+        }
+        Relationships: []
+      }
+      drive_backup_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          drive_file_id: string | null
+          error: string | null
+          file_name: string
+          finished_at: string | null
+          id: string
+          kind: string
+          lease_until: string | null
+          next_attempt_at: string
+          source_path: string
+          status: string
+          submission_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          drive_file_id?: string | null
+          error?: string | null
+          file_name: string
+          finished_at?: string | null
+          id?: string
+          kind: string
+          lease_until?: string | null
+          next_attempt_at?: string
+          source_path: string
+          status?: string
+          submission_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          drive_file_id?: string | null
+          error?: string | null
+          file_name?: string
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          lease_until?: string | null
+          next_attempt_at?: string
+          source_path?: string
+          status?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_backup_jobs_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drive_backup_sales: {
+        Row: {
+          classification: string
+          confirmed_at: string
+          confirmed_by: string
+          sale_id: string
+        }
+        Insert: {
+          classification: string
+          confirmed_at?: string
+          confirmed_by: string
+          sale_id: string
+        }
+        Update: {
+          classification?: string
+          confirmed_at?: string
+          confirmed_by?: string
+          sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_backup_sales_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: true
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drive_backup_versions: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          source_path: string
+          submission_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id: string
+          source_path: string
+          submission_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          source_path?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_backup_versions_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drive_backup_worker: {
+        Row: {
+          lease_until: string | null
+          owner: string | null
+          singleton: boolean
+        }
+        Insert: {
+          lease_until?: string | null
+          owner?: string | null
+          singleton?: boolean
+        }
+        Update: {
+          lease_until?: string | null
+          owner?: string | null
+          singleton?: boolean
+        }
+        Relationships: []
+      }
       email_log: {
         Row: {
           cc_addresses: string[]
@@ -512,6 +668,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      drive_backup_claim: { Args: { p_owner: string }; Returns: boolean }
+      drive_backup_claim_job: {
+        Args: { p_owner: string }
+        Returns: {
+          attempts: number
+          created_at: string
+          drive_file_id: string | null
+          error: string | null
+          file_name: string
+          finished_at: string | null
+          id: string
+          kind: string
+          lease_until: string | null
+          next_attempt_at: string
+          source_path: string
+          status: string
+          submission_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "drive_backup_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
