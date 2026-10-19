@@ -338,7 +338,21 @@ export const getSubmission = createServerFn({ method: "GET" })
       (submission.data ?? {}) as Record<string, unknown>,
     );
     const origin = await s.appOrigin();
+    // Uploaded files: short-lived signed links, only issued after the access check above.
+    const fileUrls: Record<string, string> = {};
+    const subData = (submission.data ?? {}) as Record<string, unknown>;
+    const paths = Object.values(subData)
+      .flatMap((v) => (Array.isArray(v) ? v : []))
+      .filter((x): x is { path: string } => !!x && typeof x === "object" && typeof (x as { path?: unknown }).path === "string")
+      .map((x) => x.path)
+      .filter((p) => p.startsWith(`submissions/${submission.id}/files/`));
+    await Promise.all(
+      paths.map(async (p) => {
+        fileUrls[p] = await s.signedPdfUrl(p, 60 * 60);
+      }),
+    );
     return {
+      fileUrls,
       statement: statement ?? null,
       directorLink: dToken?.token ? `${origin}/sign/${dToken.token}` : "",
       submission,
@@ -583,7 +597,7 @@ export const resendEmails = createServerFn({ method: "POST" })
     const s = await server();
     if (data.kind === "review") await s.sendReviewRequiredEmail(data.submissionId);
     if (data.kind === "offsite") await s.sendOffsiteCustomerEmail(data.submissionId);
-    if (data.kind === "construction") await s.sendConstructionEmail(data.submissionId);
+    if (data.kind === "construction") throw new Error("The Operations sign-off step has been removed – Sadie approves this form directly.");
     if (data.kind === "director") await s.sendDirectorWitnessEmail(data.submissionId);
     if (data.kind === "completion") {
       const sub = await assertAccess(data.submissionId, context.userId);

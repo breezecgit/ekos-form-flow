@@ -16,7 +16,8 @@ export function formatMoney(raw: unknown): string {
   if (/^tbc$/i.test(s)) return "TBC";
   const n = parseMoney(s);
   if (n === null) return s;
-  return "£" + n.toLocaleString("en-GB", { maximumFractionDigits: 2 });
+  const abs = Math.abs(n).toLocaleString("en-GB", { maximumFractionDigits: 2 });
+  return (n < 0 ? "-£" : "£") + abs;
 }
 
 /** dd/mm/yyyy for display and PDF. */

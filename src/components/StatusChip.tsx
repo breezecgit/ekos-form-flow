@@ -45,13 +45,6 @@ export function chipStatus(sub?: {
     return "Awaiting customer signature";
   }
   if (
-    sub.form_type === "new_home_order" &&
-    !sub.construction_signed_at &&
-    (sub.status === "In Review" || sub.status === "In Review (Offsite)")
-  ) {
-    return "Awaiting construction sign-off";
-  }
-  if (
     sub.form_type === "written_statement" &&
     sub.customer_signed_at &&
     (sub.status === "In Review" || sub.status === "In Review (Offsite)")

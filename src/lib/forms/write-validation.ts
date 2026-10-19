@@ -31,7 +31,7 @@ function checkValue(f: FieldDef, value: unknown) {
     return;
   }
   if (value.length > 100_000) invalid(f);
-  if (f.type === "money" && (!/^-?(?:\d+(?:,\d{3})*)(?:\.\d{1,2})?$/.test(value.replace(/^£\s*/, "")) || !Number.isFinite(Number(value.replace(/^£\s*/, "").replace(/,/g, ""))))) invalid(f);
+  if (f.type === "money" && !/^tbc$/i.test(value.trim()) && (!/^-?(?:\d+(?:,\d{3})*)(?:\.\d{1,2})?$/.test(value.replace(/^£\s*/, "")) || !Number.isFinite(Number(value.replace(/^£\s*/, "").replace(/,/g, ""))))) invalid(f);
   if (f.type === "email" && !z.string().trim().email().max(255).safeParse(value).success) invalid(f);
   if (f.type === "date") {
     if (f.allowTbc && value === "TBC") return;

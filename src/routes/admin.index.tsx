@@ -276,9 +276,6 @@ function timeline(sale: { id: string; created_at: string }, all: TSub[]) {
       case "Awaiting customer signature":
         summary = `${title} is waiting for the customer to sign.`;
         break;
-      case "Awaiting construction sign-off":
-        summary = `${title} is waiting for construction sign-off.`;
-        break;
       case "Awaiting Director & Witness signatures":
         summary = `${title} is waiting for Director & Witness signatures.`;
         break;
