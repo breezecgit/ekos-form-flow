@@ -583,7 +583,7 @@ export const resendEmails = createServerFn({ method: "POST" })
     const s = await server();
     if (data.kind === "review") await s.sendReviewRequiredEmail(data.submissionId);
     if (data.kind === "offsite") await s.sendOffsiteCustomerEmail(data.submissionId);
-    if (data.kind === "construction") await s.sendConstructionEmail(data.submissionId);
+    if (data.kind === "construction") throw new Error("The Operations sign-off step has been removed – Sadie approves this form directly.");
     if (data.kind === "director") await s.sendDirectorWitnessEmail(data.submissionId);
     if (data.kind === "completion") {
       const sub = await assertAccess(data.submissionId, context.userId);
