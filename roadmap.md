@@ -1,18 +1,20 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Additional Drive backups — Emma, 19 October 2026
-- [ ] Emma's 18:21 approval: apply backup-only proposal, implement supported automatic wake/retry, create/test/delete `_TEST – delete`, list current sales for review without backfill, then enable only confirmed-new-live sales. Breeze connection chosen; no publishing.
+- [x] Emma's 18:21 approval: backup-only proposal applied transactionally as 0014_drive_backup_journal (migration tool owns transaction). Hosted five-table RLS/service-role-only grants and three RPC execute boundaries verified. 156 regression tests pass; Breeze connection retained; no publishing.
+- [ ] Synthetic `_TEST – delete` folder/PDF/attachment test and cleanup — BLOCKED: Google connector write tool requires editor approval unavailable in this session. Folder creation did not run; no test copies/fixtures created. Backups remain OFF as test did not pass.
+- [x] Listed all 68 current sales for Emma in CSV, grouped by tentative appearance; no live allowlist or backfill executed. EKOS-00054 “dsd” explicitly uncertain, not verified live.
 - [x] Approved plan; provider and generated-app read-only checks confirm Breeze’s connected account can edit/add files in the chosen folder. No credentials needed and no copies made.
 - [x] Gated preview snapshots/journal processor, proposed upload/PDF triggers, Director status/retry/backfill controls and authenticated callback implemented. 156 unit/mocked tests pass; isolated fictional SQL rehearsal passes permission, enqueue, live/test and worker-exclusivity checks. Build OK.
-- [ ] Complete automatic wake/retry scheduling and actual isolated Google transfer/concurrency testing — needs schedule approval plus approved empty synthetic-test folder; durable deadlines/callback exist but automatic retries are not operational.
-- [ ] Review/apply exact separate database proposal and enable new backup gate — needs fresh preflight and explicit approval; no migration applied.
+- [ ] Complete automatic wake/retry scheduling and actual isolated Google transfer/concurrency testing — approved in principle; blocked until supported enqueue-trigger authentication and runtime arm/disarm mechanism is established. Structured schedule tools create static jobs, not runtime queue lifecycle; do not replace with permanent sweeper or hand-authored managed HTTP SQL. No schedule created; no claim of automatic retry operation.
+- [ ] Enable new backup gate for confirmed-new-live sales only — waits on actual synthetic test and complete automatic processing; no setting enabled.
 - [ ] Backfill confirmed live sales excluding tests — needs Emma's reviewed live-order allowlist; unknown sales and EKOS-00074 remain excluded.
 
 ## Urgent published PDF storage failure — 19 October 2026
 - [x] Reproduce the provider rejection without modifying EKOS-00074: customer-name en dash produces StorageApiError 400 Invalid key; ASCII equivalent succeeds.
 - [x] Separate generated PDF storage key from readable filename; preserve upload restrictions and add provider-error logging.
 - [x] All 134 unit/mocked tests pass, including each of five forms' review/director PDF storage. Actual preview UI: EKOS-00075 seven-step New Home Order with two PNGs and on-site signature submitted, PDF read back, automatic review email accepted only to approved test recipients; Director approval retained stored merged PDF and sent test completion email. Deleted only new EKOS-00075 and its files. Inbox receipt and other four full UI workflows not tested in this turn.
-- [ ] Publish/live retest — requires explicit approval; EKOS-00074 must remain untouched.
+- [x] Emma reports PDF fix now published and verified live (19 October 18:21). No additional PDF/live re-submission performed this turn; EKOS-00074 untouched.
 
 ## Parallel readiness request — 18 October 2026
 - [x] Rehearse exact Section 5 and captured ACL/RLS/data reconstruction in disposable local PostgreSQL; provider snapshot recovery remains unverified, shared migration paused.
