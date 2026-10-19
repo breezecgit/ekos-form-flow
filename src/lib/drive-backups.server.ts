@@ -128,6 +128,13 @@ export async function processBackupBatch() {
       if (sub.error) throw sub.error;
       const sale = await db.from("sales").select("*").eq("id", sub.data.sale_id).single();
       if (sale.error) throw sale.error;
+      // Uploads can arrive before the first draft has recorded park/customer.
+      // Keep them queued rather than creating an Unknown Park/wrong sale folder.
+      if (!sale.data.park_name || !sale.data.customer_name) {
+        const defer = await db.from("drive_backup_jobs").update({ status: "pending", next_attempt_at: new Date(Date.now() + 60_000).toISOString(), lease_until: null }).eq("id", job.id);
+        if (defer.error) throw defer.error;
+        continue;
+      }
       const root = await saleDestination(db, sale.data.id);
       if (!root) throw new Error("Test sale or disabled destination excluded");
       if (root !== DRIVE_BACKUP_ROOT) {
