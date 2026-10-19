@@ -2,7 +2,8 @@
 
 ## Additional Drive backups — Emma, 19 October 2026
 - [x] Emma's 18:21 approval: backup-only proposal applied transactionally as 0014_drive_backup_journal (migration tool owns transaction). Hosted five-table RLS/service-role-only grants and three RPC execute boundaries verified. 156 regression tests pass; Breeze connection retained; no publishing.
-- [ ] Synthetic `_TEST – delete` folder/PDF/attachment test and cleanup — BLOCKED: Google connector write tool requires editor approval unavailable in this session. Folder creation did not run; no test copies/fixtures created. Backups remain OFF as test did not pass.
+- [x] 19 October 18:30 UTC: actual Drive transfer in approved `_TEST – delete` subtree passed: generated New Home Order PDF (31,058 bytes) and fictional PNG (1,949 bytes), park/order folders, byte-exact SHA-256 readback, replay without duplicates. Deleted test subtree; all five objects return 404. Used isolated in-memory database/storage and root-remapped worker copy, not a hosted form submission. 22 backup regression tests pass; no hosted records/settings changed or publishing.
+- [ ] Full hosted fictional submission/upload/enqueue/wake/retry test — not covered by isolated transfer; requires scoped test-destination support and automatic processing. Backups remain OFF.
 - [x] Listed all 68 current sales for Emma in CSV, grouped by tentative appearance; no live allowlist or backfill executed. EKOS-00054 “dsd” explicitly uncertain, not verified live.
 - [x] Approved plan; provider and generated-app read-only checks confirm Breeze’s connected account can edit/add files in the chosen folder. No credentials needed and no copies made.
 - [x] Gated preview snapshots/journal processor, proposed upload/PDF triggers, Director status/retry/backfill controls and authenticated callback implemented. 156 unit/mocked tests pass; isolated fictional SQL rehearsal passes permission, enqueue, live/test and worker-exclusivity checks. Build OK.
