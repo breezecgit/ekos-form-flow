@@ -1,5 +1,10 @@
 # EKOS Customer Sales Form — roadmap
 
+## Additional Drive backups — Emma, 19 October 2026
+- [ ] Review connected Drive access, durable nonblocking copy/retry design, reusable park/sale folders and versioning; present approval plan.
+- [ ] Implement gated preview backup queue, upload/PDF events, Director retry and isolated regression tests after plan approval.
+- [ ] Verify approved destination permissions; review exact database changes before applying, enable copying only with approval, and backfill confirmed live sales excluding all tests.
+
 ## Urgent published PDF storage failure — 19 October 2026
 - [x] Reproduce the provider rejection without modifying EKOS-00074: customer-name en dash produces StorageApiError 400 Invalid key; ASCII equivalent succeeds.
 - [x] Separate generated PDF storage key from readable filename; preserve upload restrictions and add provider-error logging.
