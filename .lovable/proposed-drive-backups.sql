@@ -76,6 +76,11 @@ BEGIN
   INSERT INTO public.drive_backup_jobs(submission_id,source_path,file_name,kind)
     VALUES(NEW.submission_id,src,label,typ) ON CONFLICT(source_path) DO NOTHING;
   RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  -- Backup queue failure must not roll back a legitimate attachment upload.
+  -- Version/file metadata remains recoverable by Director reconciliation.
+  RAISE WARNING 'Drive backup enqueue failed for submission %', NEW.submission_id;
+  RETURN NEW;
 END $$;
 REVOKE ALL ON FUNCTION public.drive_backup_enqueue() FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.drive_backup_enqueue() TO service_role;
@@ -106,8 +111,8 @@ BEGIN
  WHERE j.id=(SELECT q.id FROM public.drive_backup_jobs q
  JOIN public.form_submissions s ON s.id=q.submission_id
  JOIN public.drive_backup_sales bs ON bs.sale_id=s.sale_id AND bs.classification='live'
- WHERE (q.status IN ('pending','failed') AND q.next_attempt_at<=now()) OR
-       (q.status='running' AND q.lease_until<now())
+ WHERE ((q.status IN ('pending','failed') AND q.next_attempt_at<=now()) OR
+       (q.status='running' AND q.lease_until<now()))
  ORDER BY q.created_at FOR UPDATE OF q SKIP LOCKED LIMIT 1)
  RETURNING j.*;
 END $$;

@@ -33,6 +33,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
 }));
 vi.mock("@/lib/pdf/generate.server", () => ({ generateFormPdf: fixture.generate }));
 vi.mock("@/lib/statement.server", () => ({ templatesForSubmission: async () => null }));
+vi.mock("@/lib/drive-backups.server", () => ({ snapshotPdf: vi.fn() }));
 vi.mock("@/lib/automations.server", () => ({
   contactsFor: vi.fn(), emailFormName: vi.fn(), saveStageToDrive: vi.fn(), syncTrackerSheet: vi.fn(),
 }));

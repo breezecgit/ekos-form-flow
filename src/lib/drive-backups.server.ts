@@ -35,7 +35,7 @@ async function driveRequest(path: string, init: RequestInit = {}) {
   if (!key || !appKey) throw new Error("Drive connection unavailable");
   const h = new Headers(init.headers);
   h.set("Authorization", `Bearer ${appKey}`); h.set("X-Connection-Api-Key", key);
-  const r = await fetch(`https://connector-gateway.lovable.dev/google_drive/${path}`, { ...init, headers: h, signal: AbortSignal.timeout(20_000) });
+  const r = await fetch(`https://connector-gateway.lovable.dev/google_drive/${path}`, { ...init, headers: h, signal: AbortSignal.timeout(8_000) });
   if (!r.ok) {
     const detail = await r.text();
     console.error("Drive backup provider failure", { status: r.status, detail });
@@ -65,7 +65,7 @@ async function folder(db: ReturnType<typeof backupDb>, key: string, parent: stri
     row = saved.data;
   }
   if (!row || row.parent_id !== parent) throw new Error("Folder destination mismatch");
-  // GET distinguishes an already-created folder from a reserved ID after timeout.
+  // Stable app properties distinguish an existing folder from a reserved ID.
   const q = `appProperties has { key='ekosBackupKey' and value='${queryText(key)}' } and '${queryText(parent)}' in parents and trashed=false`;
   const found = await (await driveRequest(`drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true`)).json();
   if (found.files?.some((f: { id: string }) => f.id === row.drive_id)) return row.drive_id;

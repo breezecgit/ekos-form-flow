@@ -26,12 +26,12 @@ export const getDriveBackupStatus = createServerFn({ method: "GET" }).middleware
 export const retryDriveBackup = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => submissionInput.parse(d)).handler(async ({ data, context }) => {
     await director(context.userId);
-    const { backupDb, backupEnabled, processBackupBatch } = await import("./drive-backups.server");
+    const { backupDb, backupEnabled } = await import("./drive-backups.server");
     const db = backupDb();
     if (!(await backupEnabled(db))) throw new Error("Drive backups are not enabled.");
     const write = await db.from("drive_backup_jobs").update({ status: "pending", next_attempt_at: new Date().toISOString() }).eq("submission_id", data.submissionId).eq("status", "failed");
     if (write.error) throw new Error("The backup retry could not be queued.");
-    return processBackupBatch();
+    return { queued: true };
   });
 
 const ordersInput = z.object({ orderNumbers: z.array(z.string().regex(/^EKOS-\d{5}$/)).min(1).max(50) });
