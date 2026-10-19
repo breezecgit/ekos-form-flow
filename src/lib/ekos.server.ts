@@ -20,9 +20,10 @@ import type { FormValues, UploadedFile } from "@/lib/forms/types";
 import { isVisible } from "@/lib/forms/types";
 import { staffEmailLink } from "@/lib/email-links";
 
-/** Forms that need the Construction team to sign before Sadie reviews. */
-export function needsConstruction(formType: string): boolean {
-  return formType === "new_home_order";
+/** The Operations/Construction sign-off step has been removed: Sadie (Director) is the
+ *  only approver, so no form waits for a construction signature before review. */
+export function needsConstruction(_formType: string): boolean {
+  return false;
 }
 
 /** Written Statement: after the customer signs, Sadie + witness sign on a secure page. */
@@ -607,7 +608,6 @@ export async function sendAllTestEmails(userId: string, userEmail: string) {
     ["Sadie review + Director & Witness signing (Written Statement)", () => sendDirectorWitnessEmail(ws)],
     ["Customer ready to sign (off site)", () => sendOffsiteCustomerEmail(res)],
     ["Customer ready to sign – Written Statement", () => sendOffsiteCustomerEmail(ws)],
-    ["Construction final sign-off", () => sendConstructionEmail(nho)],
     ["Signature complete", () => sendSignatureCompleteEmail(res)],
     ["Completed", () => sendCompletionEmails(res, resPdf.bytes, resPdf.fileName)],
     ["Disapproved", () => sendDisapprovalEmail(res, "Sample note – email test only")],

@@ -68,7 +68,7 @@ function SubmissionDetail() {
   });
 
   const resend = useMutation({
-    mutationFn: (kind: "review" | "offsite" | "completion" | "construction" | "director") =>
+    mutationFn: (kind: "review" | "offsite" | "completion" | "director") =>
       resendFn({ data: { submissionId: id, kind } }),
     onSuccess: () => toast.success("Email sent."),
     onError: (e: Error) => toast.error(e.message),
@@ -153,23 +153,6 @@ function SubmissionDetail() {
           {s.status === "In Review (Offsite)" && !s.customer_signed_at && (
             <Button size="sm" variant="outline" onClick={() => resend.mutate("offsite")}>
               Resend customer signing email
-            </Button>
-          )}
-          {q.data.constructionLink && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                navigator.clipboard.writeText(q.data.constructionLink);
-                toast.success("Construction signing link copied.");
-              }}
-            >
-              Copy construction signing link
-            </Button>
-          )}
-          {s.form_type === "new_home_order" && (
-            <Button size="sm" variant="outline" onClick={() => resend.mutate("construction")}>
-              Resend construction email
             </Button>
           )}
           {s.form_type === "written_statement" && (
