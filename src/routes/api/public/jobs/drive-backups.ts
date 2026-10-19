@@ -10,6 +10,11 @@ export const Route = createFileRoute("/api/public/jobs/drive-backups")({
     if (!input.success) return Response.json({ error: "Invalid backup request" }, { status: 400 });
     try {
       const { processBackupBatch } = await import("@/lib/drive-backups.server");
+      const lifetime = request as Request & { waitUntil?: (promise: Promise<unknown>) => void };
+      if (lifetime.waitUntil) {
+        lifetime.waitUntil(processBackupBatch().catch(() => console.error("Scheduled Drive backup failed; journal retained")));
+        return Response.json({ accepted: true });
+      }
       return Response.json(await processBackupBatch());
     } catch {
       return Response.json({ error: "Backup processing unavailable" }, { status: 503 });
