@@ -1,5 +1,11 @@
 # EKOS Customer Sales Form — roadmap
 
+## Urgent published PDF storage failure — 19 October 2026
+- [x] Reproduce the provider rejection without modifying EKOS-00074: customer-name en dash produces StorageApiError 400 Invalid key; ASCII equivalent succeeds.
+- [x] Separate generated PDF storage key from readable filename; preserve upload restrictions and add provider-error logging.
+- [x] All 134 unit/mocked tests pass, including each of five forms' review/director PDF storage. Actual preview UI: EKOS-00075 seven-step New Home Order with two PNGs and on-site signature submitted, PDF read back, automatic review email accepted only to approved test recipients; Director approval retained stored merged PDF and sent test completion email. Deleted only new EKOS-00075 and its files. Inbox receipt and other four full UI workflows not tested in this turn.
+- [ ] Publish/live retest — requires explicit approval; EKOS-00074 must remain untouched.
+
 ## Parallel readiness request — 18 October 2026
 - [x] Rehearse exact Section 5 and captured ACL/RLS/data reconstruction in disposable local PostgreSQL; provider snapshot recovery remains unverified, shared migration paused.
 - [x] Implement safe preview email routing pinned ON/approved recipient allowlist, Settings disable rejection and checked writes, upload boundary validation, signing read guards and thrown-error Drive denial.
