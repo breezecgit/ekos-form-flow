@@ -1,6 +1,7 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Additional Drive backups — Emma, 19 October 2026
+- [ ] Emma's 18:21 approval: apply backup-only proposal, implement supported automatic wake/retry, create/test/delete `_TEST – delete`, list current sales for review without backfill, then enable only confirmed-new-live sales. Breeze connection chosen; no publishing.
 - [x] Approved plan; provider and generated-app read-only checks confirm Breeze’s connected account can edit/add files in the chosen folder. No credentials needed and no copies made.
 - [x] Gated preview snapshots/journal processor, proposed upload/PDF triggers, Director status/retry/backfill controls and authenticated callback implemented. 156 unit/mocked tests pass; isolated fictional SQL rehearsal passes permission, enqueue, live/test and worker-exclusivity checks. Build OK.
 - [ ] Complete automatic wake/retry scheduling and actual isolated Google transfer/concurrency testing — needs schedule approval plus approved empty synthetic-test folder; durable deadlines/callback exist but automatic retries are not operational.
