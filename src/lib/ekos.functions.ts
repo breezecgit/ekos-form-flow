@@ -345,7 +345,7 @@ export const getSubmission = createServerFn({ method: "GET" })
       .flatMap((v) => (Array.isArray(v) ? v : []))
       .filter((x): x is { path: string } => !!x && typeof x === "object" && typeof (x as { path?: unknown }).path === "string")
       .map((x) => x.path)
-      .filter((p) => p.startsWith(`${submission.id}/`) || p.includes(submission.id));
+      .filter((p) => p.startsWith(`submissions/${submission.id}/files/`));
     await Promise.all(
       paths.map(async (p) => {
         fileUrls[p] = await s.signedPdfUrl(p, 60 * 60);
