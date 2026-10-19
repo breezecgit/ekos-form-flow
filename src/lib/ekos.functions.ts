@@ -277,6 +277,8 @@ export const uploadFile = createServerFn({ method: "POST" })
       await db.storage.from("ekos-documents").remove([path]);
       throw new Error("The file uploaded but could not be attached to the form. Please retry or contact EKOS.");
     }
+    const { wakeDriveBackups } = await import("./drive-backups.server");
+    wakeDriveBackups();
     return { id, name: data.fileName, path, mime };
   });
 

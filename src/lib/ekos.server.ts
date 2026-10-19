@@ -190,8 +190,8 @@ export async function buildAndStorePdf(
     .eq("id", submissionId);
   if (pathError) throw new Error("The PDF was stored but could not be linked to the form. Please retry generation.");
 
-  const { snapshotPdf } = await import("./drive-backups.server");
-  await snapshotPdf(submissionId, bytes, fileName);
+  const { snapshotPdf, backgroundBackup } = await import("./drive-backups.server");
+  backgroundBackup(() => snapshotPdf(submissionId, bytes, fileName));
 
   return { bytes, path, fileName };
 }
