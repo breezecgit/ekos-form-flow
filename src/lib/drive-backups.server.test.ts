@@ -1,12 +1,15 @@
 import { beforeEach, expect, it, vi } from "vitest";
 const f = vi.hoisted(() => ({ enabled: false, root: "14Df5SRJ1B_EfowB22LfO82piSDl88zr_", upload: vi.fn(), insert: vi.fn() }));
 vi.mock("@supabase/supabase-js", () => ({ createClient: () => ({
-  from: () => {
-    const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: { value: { enabled: f.enabled, root_folder_id: f.root } } }), insert: f.insert };
+  rpc: async () => ({ data: false, error: null }),
+  from: (table: string) => {
+    const result = () => ({ data: table === "app_settings" ? { value: { enabled: f.enabled, root_folder_id: f.root } } : table === "form_submissions" ? { sale_id: "fictional-sale" } : table === "sales" ? { customer_name: "Jane Smith" } : { classification: "live" }, error: null });
+    const q = { select: () => q, eq: () => q, maybeSingle: async () => result(), single: async () => result(), insert: f.insert };
     return q;
   }, storage: { from: () => ({ upload: f.upload }) },
 }) }));
 import { snapshotPdf, processBackupBatch } from "./drive-backups.server";
+vi.mock("@tanstack/react-start/server", () => ({ getRequest: () => ({ waitUntil: vi.fn() }) }));
 beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("SUPABASE_URL", "http://localhost"); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fictional-test-key"); f.enabled = false; f.root = "14Df5SRJ1B_EfowB22LfO82piSDl88zr_"; });
 it("disabled Drive backup performs no staging upload or provider write", async () => {
   await snapshotPdf("test", new Uint8Array([37,80,68,70]), "form.pdf");
