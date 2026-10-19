@@ -1,9 +1,11 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Additional Drive backups — Emma, 19 October 2026
-- [ ] Review connected Drive access, durable nonblocking copy/retry design, reusable park/sale folders and versioning; present approval plan.
-- [ ] Implement gated preview backup queue, upload/PDF events, Director retry and isolated regression tests after plan approval.
-- [ ] Verify approved destination permissions; review exact database changes before applying, enable copying only with approval, and backfill confirmed live sales excluding all tests.
+- [x] Approved plan; provider and generated-app read-only checks confirm Breeze’s connected account can edit/add files in the chosen folder. No credentials needed and no copies made.
+- [x] Gated preview snapshots/journal processor, proposed upload/PDF triggers, Director status/retry/backfill controls and authenticated callback implemented. 156 unit/mocked tests pass; isolated fictional SQL rehearsal passes permission, enqueue, live/test and worker-exclusivity checks. Build OK.
+- [ ] Complete automatic wake/retry scheduling and actual isolated Google transfer/concurrency testing — needs schedule approval plus approved empty synthetic-test folder; durable deadlines/callback exist but automatic retries are not operational.
+- [ ] Review/apply exact separate database proposal and enable new backup gate — needs fresh preflight and explicit approval; no migration applied.
+- [ ] Backfill confirmed live sales excluding tests — needs Emma's reviewed live-order allowlist; unknown sales and EKOS-00074 remain excluded.
 
 ## Urgent published PDF storage failure — 19 October 2026
 - [x] Reproduce the provider rejection without modifying EKOS-00074: customer-name en dash produces StorageApiError 400 Invalid key; ASCII equivalent succeeds.

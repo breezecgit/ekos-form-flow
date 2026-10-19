@@ -19,6 +19,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as AdminSubmissionsIdRouteImport } from './routes/admin.submissions.$id'
 import { Route as FormsFormTypeSubmissionIdRouteImport } from './routes/forms.$formType.$submissionId'
+import { Route as ApiPublicJobsDriveBackupsRouteImport } from './routes/api/public/jobs/drive-backups'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -71,6 +72,12 @@ const FormsFormTypeSubmissionIdRoute =
     path: '/forms/$formType/$submissionId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicJobsDriveBackupsRoute =
+  ApiPublicJobsDriveBackupsRouteImport.update({
+    id: '/api/public/jobs/drive-backups',
+    path: '/api/public/jobs/drive-backups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/admin/submissions/$id': typeof AdminSubmissionsIdRoute
   '/forms/$formType/$submissionId': typeof FormsFormTypeSubmissionIdRoute
+  '/api/public/jobs/drive-backups': typeof ApiPublicJobsDriveBackupsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +102,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/admin/submissions/$id': typeof AdminSubmissionsIdRoute
   '/forms/$formType/$submissionId': typeof FormsFormTypeSubmissionIdRoute
+  '/api/public/jobs/drive-backups': typeof ApiPublicJobsDriveBackupsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/admin/submissions/$id': typeof AdminSubmissionsIdRoute
   '/forms/$formType/$submissionId': typeof FormsFormTypeSubmissionIdRoute
+  '/api/public/jobs/drive-backups': typeof ApiPublicJobsDriveBackupsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/submissions/$id'
     | '/forms/$formType/$submissionId'
+    | '/api/public/jobs/drive-backups'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/submissions/$id'
     | '/forms/$formType/$submissionId'
+    | '/api/public/jobs/drive-backups'
   id:
     | '__root__'
     | '/'
@@ -144,6 +156,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/submissions/$id'
     | '/forms/$formType/$submissionId'
+    | '/api/public/jobs/drive-backups'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -153,6 +166,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   SignTokenRoute: typeof SignTokenRoute
   FormsFormTypeSubmissionIdRoute: typeof FormsFormTypeSubmissionIdRoute
+  ApiPublicJobsDriveBackupsRoute: typeof ApiPublicJobsDriveBackupsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -227,6 +241,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormsFormTypeSubmissionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/drive-backups': {
+      id: '/api/public/jobs/drive-backups'
+      path: '/api/public/jobs/drive-backups'
+      fullPath: '/api/public/jobs/drive-backups'
+      preLoaderRoute: typeof ApiPublicJobsDriveBackupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -253,6 +274,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   SignTokenRoute: SignTokenRoute,
   FormsFormTypeSubmissionIdRoute: FormsFormTypeSubmissionIdRoute,
+  ApiPublicJobsDriveBackupsRoute: ApiPublicJobsDriveBackupsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
