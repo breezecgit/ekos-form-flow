@@ -159,18 +159,24 @@ export type Database = {
           confirmed_at: string
           confirmed_by: string
           sale_id: string
+          test_expires_at: string | null
+          test_folder_id: string | null
         }
         Insert: {
           classification: string
           confirmed_at?: string
           confirmed_by: string
           sale_id: string
+          test_expires_at?: string | null
+          test_folder_id?: string | null
         }
         Update: {
           classification?: string
           confirmed_at?: string
           confirmed_by?: string
           sale_id?: string
+          test_expires_at?: string | null
+          test_folder_id?: string | null
         }
         Relationships: [
           {

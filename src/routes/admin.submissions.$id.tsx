@@ -15,7 +15,7 @@ import type { FormValues } from "@/lib/forms/types";
 import { formatDate, formatMoney } from "@/lib/format";
 import { WordDownloadButton } from "@/components/WordDownload";
 import { DriveBackupStatus } from "@/components/DriveBackupStatus";
-import { DriveBackfillPanel } from "@/components/DriveBackfillPanel";
+import { DriveSaleClassification } from "@/components/DriveSaleClassification";
 
 export const Route = createFileRoute("/admin/submissions/$id")({
   head: () => ({
@@ -130,7 +130,7 @@ function SubmissionDetail() {
         </div>
 
         <DriveBackupStatus submissionId={s.id} />
-        <DriveBackfillPanel />
+        <DriveSaleClassification submissionId={s.id} />
         <div className="mt-4 flex flex-wrap gap-2">
           {q.data.pdfUrl && (
             <a href={q.data.pdfUrl} target="_blank" rel="noreferrer">
