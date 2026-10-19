@@ -338,7 +338,21 @@ export const getSubmission = createServerFn({ method: "GET" })
       (submission.data ?? {}) as Record<string, unknown>,
     );
     const origin = await s.appOrigin();
+    // Uploaded files: short-lived signed links, only issued after the access check above.
+    const fileUrls: Record<string, string> = {};
+    const subData = (submission.data ?? {}) as Record<string, unknown>;
+    const paths = Object.values(subData)
+      .flatMap((v) => (Array.isArray(v) ? v : []))
+      .filter((x): x is { path: string } => !!x && typeof x === "object" && typeof (x as { path?: unknown }).path === "string")
+      .map((x) => x.path)
+      .filter((p) => p.startsWith(`${submission.id}/`) || p.includes(submission.id));
+    await Promise.all(
+      paths.map(async (p) => {
+        fileUrls[p] = await s.signedPdfUrl(p, 60 * 60);
+      }),
+    );
     return {
+      fileUrls,
       statement: statement ?? null,
       directorLink: dToken?.token ? `${origin}/sign/${dToken.token}` : "",
       submission,

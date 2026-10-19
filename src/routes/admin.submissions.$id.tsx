@@ -227,7 +227,7 @@ function SubmissionDetail() {
               .map((f) => (
                 <div key={f.key} className="grid gap-1 py-2 sm:grid-cols-3">
                   <dt className="text-sm font-semibold">{f.label}</dt>
-                  <dd className="text-sm sm:col-span-2">{renderValue(f.type, values[f.key])}</dd>
+                  <dd className="text-sm sm:col-span-2">{renderValue(f.type, values[f.key], q.data.fileUrls ?? {})}</dd>
                 </div>
               ))}
           </dl>
@@ -254,7 +254,42 @@ function SubmissionDetail() {
   );
 }
 
-function renderValue(type: string, value: unknown) {
+type FileItem = { name?: string; path?: string; mime?: string };
+
+function renderFiles(value: unknown, urls: Record<string, string>) {
+  const list = (Array.isArray(value) ? value : []).filter(
+    (x): x is FileItem => !!x && typeof x === "object",
+  );
+  if (list.length === 0) return <span className="text-muted-foreground">No file uploaded</span>;
+  return (
+    <ul className="space-y-2">
+      {list.map((f, i) => {
+        const url = f.path ? urls[f.path] : "";
+        const name = f.name || "Attached file";
+        const isImage = /^image\/(jpe?g|png)$/i.test(f.mime ?? "") || /\.(jpe?g|png)$/i.test(name);
+        return (
+          <li key={f.path ?? i} className="flex items-center gap-3">
+            {url && isImage && (
+              <a href={url} target="_blank" rel="noreferrer">
+                <img src={url} alt={name} className="h-14 w-14 rounded border object-cover" />
+              </a>
+            )}
+            {url ? (
+              <a href={url} target="_blank" rel="noreferrer" className="text-primary underline">
+                {name}
+              </a>
+            ) : (
+              <span>{name} (link unavailable)</span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function renderValue(type: string, value: unknown, urls: Record<string, string>) {
+  if (type === "file") return renderFiles(value, urls);
   if (value === undefined || value === null || value === "") return "—";
   if (type === "signature" && typeof value === "string" && value.startsWith("data:image")) {
     return <img src={value} alt="Signature" className="h-16 w-auto" />;
@@ -262,6 +297,8 @@ function renderValue(type: string, value: unknown) {
   if (type === "money") return formatMoney(value);
   if (type === "date") return formatDate(value);
   if (type === "checkbox") return value ? "Yes" : "No";
-  if (Array.isArray(value)) return value.join(", ");
+  if (Array.isArray(value))
+    return value.map((x) => (x && typeof x === "object" ? String((x as FileItem).name ?? "") : String(x))).join(", ");
+  if (typeof value === "object") return "—";
   return String(value);
 }
