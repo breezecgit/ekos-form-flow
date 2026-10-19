@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { KNOWN_TEST_ORDERS } from "./drive-backup-rules";
+import { KNOWN_TEST_ORDERS, automaticTestSale } from "./drive-backup-rules";
 
 async function director(userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -11,6 +11,31 @@ async function director(userId: string) {
 }
 
 const submissionInput = z.object({ submissionId: z.string().uuid() });
+export const getDriveSaleClassification = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+  .inputValidator(d => submissionInput.parse(d)).handler(async ({ data, context }) => {
+    const db = await director(context.userId);
+    const sub = await db.from("form_submissions").select("sale_id").eq("id", data.submissionId).single();
+    if (sub.error) throw new Error("Submission not found");
+    const [sale, classification] = await Promise.all([
+      db.from("sales").select("customer_name").eq("id", sub.data.sale_id).single(),
+      db.from("drive_backup_sales").select("classification").eq("sale_id", sub.data.sale_id).maybeSingle(),
+    ]);
+    if (sale.error || classification.error) throw new Error("Sale backup classification unavailable");
+    return { isTest: classification.data?.classification !== "live", automatic: automaticTestSale(sale.data.customer_name ?? "") };
+  });
+
+export const setDriveSaleClassification = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator(d => submissionInput.extend({ isTest: z.boolean() }).parse(d)).handler(async ({ data, context }) => {
+    const db = await director(context.userId);
+    const sub = await db.from("form_submissions").select("sale_id").eq("id", data.submissionId).single();
+    if (sub.error) throw new Error("Submission not found");
+    const sale = await db.from("sales").select("customer_name").eq("id", sub.data.sale_id).single();
+    if (sale.error) throw new Error("Sale not found");
+    if (!data.isTest && automaticTestSale(sale.data.customer_name ?? "")) throw new Error("This customer name automatically excludes the sale from backups.");
+    const write = await db.from("drive_backup_sales").update({ classification: data.isTest ? "test" : "live", confirmed_by: context.userId, confirmed_at: new Date().toISOString() }).eq("sale_id", sub.data.sale_id).select("sale_id").single();
+    if (write.error) throw new Error("Sale classification could not be saved");
+    return { saved: true };
+  });
 export const getDriveBackupStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => submissionInput.parse(d)).handler(async ({ data, context }) => {
     await director(context.userId);
@@ -48,6 +73,8 @@ export const previewDriveBackfill = createServerFn({ method: "POST" }).middlewar
 export const enqueueDriveBackfill = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => ordersInput.extend({ confirmLiveSales: z.literal(true) }).parse(d)).handler(async ({ data, context }) => {
     await director(context.userId);
+    throw new Error("Backfill is disabled: Emma classified all existing sales as tests.");
+    /* No backfill may run during this release.
     if (data.orderNumbers.some(n => KNOWN_TEST_ORDERS.has(n))) throw new Error("Known test sales cannot be backfilled.");
     const { backupDb, backupEnabled } = await import("./drive-backups.server");
     const db = backupDb();
@@ -88,6 +115,7 @@ export const enqueueDriveBackfill = createServerFn({ method: "POST" }).middlewar
       }
     }
     return { queued };
+    */
   });
 
 export const runDriveBackupWorker = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])

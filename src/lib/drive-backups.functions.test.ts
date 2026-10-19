@@ -12,7 +12,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from:
   return q;
 } } }));
 vi.mock("./drive-backups.server", () => ({ backupDb: f.db, backupEnabled: f.enabled, processBackupBatch: f.worker, reconcileBackup: vi.fn() }));
-import { getDriveBackupStatus, retryDriveBackup, enqueueDriveBackfill, runDriveBackupWorker } from "./drive-backups.functions";
+import { getDriveBackupStatus, retryDriveBackup, enqueueDriveBackfill, runDriveBackupWorker, setDriveSaleClassification, getDriveSaleClassification } from "./drive-backups.functions";
 beforeEach(() => { vi.clearAllMocks(); f.director = false; f.enabled.mockResolvedValue(false); });
 const data = { submissionId: "00000000-0000-4000-8000-000000000074" };
 it.each([getDriveBackupStatus, retryDriveBackup])("rep cannot read backup details or queue a retry", async fn => {
@@ -23,8 +23,14 @@ it("rep cannot run the backup processor", async () => {
 });
 it("Director cannot backfill known test sale EKOS-00074", async () => {
   f.director = true;
-  await expect(enqueueDriveBackfill({ data: { orderNumbers: ["EKOS-00074"], confirmLiveSales: true } })).rejects.toThrow("test sales");
+  await expect(enqueueDriveBackfill({ data: { orderNumbers: ["EKOS-00074"], confirmLiveSales: true } })).rejects.toThrow("existing sales as tests");
   expect(f.db).not.toHaveBeenCalled();
+});
+it("rep cannot change sale classification", async () => {
+  await expect(setDriveSaleClassification({ data: { ...data, isTest: false } })).rejects.toThrow("Director access");
+});
+it("rep cannot read sale backup classification", async () => {
+  await expect(getDriveSaleClassification({ data })).rejects.toThrow("Director access");
 });
 it("Director cannot start copying while the new Drive gate is OFF", async () => {
   f.director = true;
