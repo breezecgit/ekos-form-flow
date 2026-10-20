@@ -23,6 +23,7 @@ export interface SendEmailInput {
   attachments?: EmailAttachment[];
   template: string;
   submissionId?: string | null;
+  idempotencyKey?: string;
 }
 
 function toBase64(bytes: Uint8Array): string {
@@ -137,6 +138,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
           "Content-Type": "application/json",
           Authorization: `Bearer ${lovableKey}`,
           "X-Connection-Api-Key": resendKey,
+          ...(input.idempotencyKey ? { "Idempotency-Key": input.idempotencyKey } : {}),
         },
         body: JSON.stringify({
           from,

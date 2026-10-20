@@ -26,3 +26,4 @@
 - Upload validation lives in a shared client-safe module and checks form field identity, decoded bounds and file header before storage writes; metadata validation alone cannot establish file content.
 - Settings mutations share a checked-write boundary so partial save failures are visible and never reported as all-success.
 - Signing side effects move to an idempotent job journal keyed by link+job (prepared in signing-transaction.server.ts); activate only with the approved consume_signing_token RPC, because a missing RPC would break signing.
+- Completion builds the final signed PDF once and emails it before optional integrations; bounded email retries reuse a document-specific provider idempotency key and surface exhausted failures rather than claiming delivery.

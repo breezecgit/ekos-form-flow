@@ -39,6 +39,11 @@ describe("central email test routing (mock provider, no emails)", () => {
     expect((await sendEmail({ to: ["fictional@example.invalid"], subject: "Fictional", html: "", template: "fixture" })).ok).toBe(false);
     expect(fixture.logs[0]?.["status"]).toBe("failed");
   });
+  it("passes the completion retry key to the provider request", async () => {
+    const network = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    await sendEmail({ to: ["emma.frew@breezeconnection.co.uk"], subject: "Fictional", html: "", template: "completion", idempotencyKey: "completion-fictional-document" });
+    expect(new Headers(network.mock.calls[0]?.[1]?.headers).get("Idempotency-Key")).toBe("completion-fictional-document");
+  });
 });
 import { testModeRecipients } from "./email.server";
 describe("test-mode customer inbox", () => {
