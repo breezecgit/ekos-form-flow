@@ -65,18 +65,18 @@ describe("completed PDF email", () => {
     } finally { log.mockRestore(); }
   });
   it("retries an email failure with the same document idempotency key", async () => {
-    vi.useFakeTimers();
+    vi.useRealTimers();
     fixture.send.mockResolvedValueOnce({ ok: false }).mockResolvedValueOnce({ ok: true });
     const sending = sendCompletionEmails(id, new Uint8Array([1, 2]), "fictional.pdf");
-    await vi.runAllTimersAsync(); await sending;
+    await sending;
     expect(fixture.send).toHaveBeenCalledTimes(2);
     expect(fixture.send.mock.calls[0]?.[0].idempotencyKey).toEqual(fixture.send.mock.calls[1]?.[0].idempotencyKey);
     vi.useRealTimers();
   });
   it("never claims success after three failed completion sends", async () => {
-    vi.useFakeTimers(); fixture.send.mockResolvedValue({ ok: false });
+    vi.useRealTimers(); fixture.send.mockResolvedValue({ ok: false });
     const result = expect(sendCompletionEmails(id, new Uint8Array([1]), "fictional.pdf")).rejects.toThrow("completion email failed");
-    await vi.runAllTimersAsync(); await result;
+    await result;
     expect(fixture.send).toHaveBeenCalledTimes(3);
     vi.useRealTimers();
   });

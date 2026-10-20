@@ -70,7 +70,7 @@ vi.mock("@/lib/ekos.server", () => ({
 
 import { deleteSale, getMyPermissions, getSubmission, listSales, saveDraft, uploadFile, setStatus, submitForm } from "./ekos.functions";
 import { getForm, FORM_ORDER } from "./forms/registry";
-vi.mock("@/lib/forms/write-validation", () => ({ validateFormWrite: (def: unknown, values: Record<string, unknown>) => { if (values.created_by) throw new Error("Unexpected"); } }));
+import { isInput, isVisible } from "./forms/types";
 
 beforeEach(() => {
   fixture.userId = "ben-test";
@@ -97,7 +97,12 @@ describe("Director completion trigger", () => {
   });
   it("a Director submitting Completed sends completion, not another review", async () => {
     fixture.director = true; fixture.submission.status = "Draft";
-    await submitForm({ data: { submissionId: fixture.submission.id, values: { status: "Completed" } } });
+    const values: Record<string, unknown> = { status: "Completed" };
+    for (const field of getForm("reservation").steps.flatMap((step) => step.fields)) {
+      if (!isInput(field) || field.key === "status" || !isVisible(field, values, { mode: "rep", isDirector: true })) continue;
+      values[field.key] = field.type === "checkbox" ? true : field.type === "date" ? "2026-10-20" : field.type === "money" ? "100" : field.type === "email" ? "emma.frew@breezeconnection.co.uk" : field.type === "signature" ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aXioAAAAASUVORK5CYII=" : field.type === "multiselect" ? [field.options?.[0]?.value ?? "None"] : field.options?.[0]?.value ?? "Fictional Test";
+    }
+    await submitForm({ data: { submissionId: fixture.submission.id, values } });
     expect(fixture.complete).toHaveBeenCalledWith(fixture.submission.id);
     expect(fixture.review).not.toHaveBeenCalled();
   });
