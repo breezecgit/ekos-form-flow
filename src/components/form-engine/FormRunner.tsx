@@ -6,7 +6,7 @@ import { SUBSUB_HEADINGS, isRequired, isVisible, labelRepeatsSection } from "@/l
 import { validateAll, validateFields, type Errors } from "@/lib/forms/validate";
 import { todayISO } from "@/lib/format";
 import { toast } from "sonner";
-import { HOME_COST_MODE, hasHomeCost, prepareHomeCost } from "@/lib/forms/home-cost";
+import { HOME_COST_MODE, hasHomeCost, prepareHomeCostDraft } from "@/lib/forms/home-cost";
 
 interface Props {
   def: FormDef;
@@ -60,7 +60,7 @@ export function FormRunner({
   const onlyCustomerSignature = Boolean(onlyGroup);
 
   const [values, setValues] = useState<FormValues>(() => {
-    const v = withDefaults(def, fillFromPark(def, prepareHomeCost(def.type, initialValues), parks, false));
+    const v = withDefaults(def, fillFromPark(def, prepareHomeCostDraft(def, initialValues), parks, false));
     // Fill any empty auto-calculated boxes on load (keeps saved/overwritten values).
     const cf = def.steps.flatMap((s) => s.fields).filter((f) => f.compute);
     for (let pass = 0; pass < 2; pass++)

@@ -6,7 +6,7 @@ import { validateFormWrite } from "@/lib/forms/write-validation";
 import { getForm } from "@/lib/forms/registry";
 import { validateUpload } from "@/lib/forms/upload-validation";
 import { withoutRetiredTopup } from "@/lib/forms/retired-topup";
-import { prepareHomeCost, hasHomeCost } from "@/lib/forms/home-cost";
+import { prepareHomeCost, prepareHomeCostDraft, hasHomeCost } from "@/lib/forms/home-cost";
 
 const idInput = z.object({ submissionId: z.string().uuid() });
 
@@ -320,7 +320,7 @@ export const getSubmission = createServerFn({ method: "GET" })
           .eq("sale_id", submission.sale_id).eq("form_type", "reservation").maybeSingle();
         pristinePrefill = (reservation?.data as Record<string, unknown> | undefined)?.["total_cost"];
       }
-      submission.data = prepareHomeCost(submission.form_type, submission.data as Record<string, unknown>, pristinePrefill) as never;
+      submission.data = prepareHomeCostDraft(getForm(submission.form_type), submission.data as Record<string, unknown>, pristinePrefill) as never;
     }
     const { data: linkRow } = await db.from("app_settings").select("value").eq("key", "links").maybeSingle();
     const welcomePackUrl =
