@@ -5,6 +5,7 @@ import { assertCustomerEmail, assertEditable, canResend, parseSubmitStatus } fro
 import { validateFormWrite } from "@/lib/forms/write-validation";
 import { getForm } from "@/lib/forms/registry";
 import { validateUpload } from "@/lib/forms/upload-validation";
+import { withoutRetiredTopup } from "@/lib/forms/retired-topup";
 
 const idInput = z.object({ submissionId: z.string().uuid() });
 
@@ -309,6 +310,7 @@ export const getSubmission = createServerFn({ method: "GET" })
         }
       }
     }
+    submission.data = withoutRetiredTopup(submission.form_type, (submission.data ?? {}) as Record<string, unknown>) as never;
     const { data: linkRow } = await db.from("app_settings").select("value").eq("key", "links").maybeSingle();
     const welcomePackUrl =
       String(((linkRow?.value ?? {}) as Record<string, unknown>)["welcome_pack_url"] ?? "") ||
@@ -384,7 +386,7 @@ export const saveDraft = createServerFn({ method: "POST" })
     const submission = await assertAccess(data.submissionId, context.userId);
     assertEditable(submission.status, await isDirector(context.userId));
     const db = await admin();
-    data.values = await lockPark(submission, data.values);
+    data.values = withoutRetiredTopup(submission.form_type, await lockPark(submission, data.values));
     validateFormWrite(getForm(submission.form_type), data.values, { mode: "rep", isDirector: await isDirector(context.userId) }, "draft", (submission.data ?? {}) as Record<string, unknown>);
     await expectRows(db
       .from("form_submissions")
@@ -469,7 +471,7 @@ export const submitForm = createServerFn({ method: "POST" })
       data.values["customer_email"] = assertCustomerEmail(data.values["customer_email"]);
     }
     const status = requested;
-    data.values = await lockPark(submission, data.values);
+    data.values = withoutRetiredTopup(submission.form_type, await lockPark(submission, data.values));
     validateFormWrite(getForm(submission.form_type), data.values, { mode: "rep", isDirector: director }, "submit", (submission.data ?? {}) as Record<string, unknown>);
     if (isWS) {
       const { getStatementTemplate } = await import("@/lib/statement.server");

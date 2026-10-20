@@ -27,3 +27,4 @@
 - Settings mutations share a checked-write boundary so partial save failures are visible and never reported as all-success.
 - Signing side effects move to an idempotent job journal keyed by link+job (prepared in signing-transaction.server.ts); activate only with the approved consume_signing_token RPC, because a missing RPC would break signing.
 - Completion builds the final signed PDF once and emails it before optional integrations; bounded email retries reuse a document-specific provider idempotency key and surface exhausted failures rather than claiming delivery.
+- Retired form answers use a shared client-safe normalization boundary on reads, writes and PDF rendering so legacy drafts cannot preserve obsolete deductions or fail strict field validation.
