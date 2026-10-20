@@ -1,5 +1,11 @@
 # EKOS Customer Sales Form — roadmap
 
+## Sadie's 20 October NHO testing
+- [ ] Investigate today's published NHO approval/email history read-only; fix shared completion delivery failures in preview.
+- [ ] Require new-home address for every NHO and Unit Sale sales route; preserve TBC.
+- [ ] Report current QMP Customer Topup visibility/calculation without changing it.
+- [ ] Verify completion/address changes on a new fictional sale, delete that fixture, keep test mode ON; do not publish.
+
 ## Additional Drive backups — Emma, 19 October 2026
 - [x] Emma's 18:21 approval: backup-only proposal applied transactionally as 0014_drive_backup_journal (migration tool owns transaction). Hosted five-table RLS/service-role-only grants and three RPC execute boundaries verified. 156 regression tests pass; Breeze connection retained; no publishing.
 - [x] 19 October 18:30 UTC: actual Drive transfer in approved `_TEST – delete` subtree passed: generated New Home Order PDF (31,058 bytes) and fictional PNG (1,949 bytes), park/order folders, byte-exact SHA-256 readback, replay without duplicates. Deleted test subtree; all five objects return 404. Used isolated in-memory database/storage and root-remapped worker copy, not a hosted form submission. 22 backup regression tests pass; no hosted records/settings changed or publishing.
