@@ -56,7 +56,7 @@ describe("NHO balance and customer payment (Sadie's figures)", () => {
       const balance = form.steps.flatMap((step) => step.fields).find((field) => field.key === "balance_on_completion");
       expect(balance?.compute?.({ sales_route: "QMP Assisted Move", cost_total: "285,845", cost_deposit: "5,000", customer_topup: "9,999" })).toBe("280,845");
     });
-  });
+  }
   it("£274,845 − £250,000 = £24,845", () => {
     expect(computeCustomerPayment({ balance_on_completion: "274,845", proceeds: "250,000" })).toBe("24,845");
   });
