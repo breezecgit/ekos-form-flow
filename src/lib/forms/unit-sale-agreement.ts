@@ -62,6 +62,7 @@ export const unitSaleAgreementForm: FormDef = {
         fieldFromReservation("pitch_number"),
         { key: "new_home_address", label: "Full Address for Your New Home", type: "text" },
         fieldFromReservation("home_size"),
+        fieldFromReservation("list_price"),
         { key: "serial_number", label: "Serial Number", type: "text" },
         fieldFromReservation("monthly_pitch_fee"),
         fieldFromReservation("pitch_fee_review_date"),

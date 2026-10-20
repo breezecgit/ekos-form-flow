@@ -40,3 +40,10 @@ describe("central email test routing (mock provider, no emails)", () => {
     expect(fixture.logs[0]?.["status"]).toBe("failed");
   });
 });
+import { testModeRecipients } from "./email.server";
+describe("test-mode customer inbox", () => {
+  it("delivers to Sadie's personal test inbox case-insensitively, strips others", () => {
+    expect(testModeRecipients(["emma.frew@breezeconnection.co.uk"], ["Sadie.Deveraux@Hotmail.co.uk", "real@customer.com"]))
+      .toEqual(["emma.frew@breezeconnection.co.uk", "Sadie.Deveraux@Hotmail.co.uk"]);
+  });
+});
