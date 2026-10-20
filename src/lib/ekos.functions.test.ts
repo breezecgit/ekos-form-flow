@@ -20,6 +20,8 @@ const fixture = vi.hoisted(() => ({
   grant: false,
   writeError: null as null | { message: string },
   zeroRows: false,
+  complete: vi.fn(),
+  review: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-start", () => ({
@@ -58,9 +60,17 @@ vi.mock("@/lib/ekos.server", () => ({
   addAudit: fixture.audit,
   appOrigin: async () => "https://forms.ekosgroup.co.uk",
   sendResumeLinkEmail: fixture.resumeEmail,
+  needsDirectorWitness: (type: string) => type === "written_statement",
+  runCompletion: fixture.complete,
+  buildAndStorePdf: async () => ({ bytes: new Uint8Array([37, 80, 68, 70]) }),
+  publishInReview: vi.fn(),
+  needsConstruction: () => false,
+  sendReviewRequiredEmail: fixture.review,
 }));
 
-import { deleteSale, getMyPermissions, getSubmission, listSales, saveDraft, uploadFile } from "./ekos.functions";
+import { deleteSale, getMyPermissions, getSubmission, listSales, saveDraft, uploadFile, setStatus, submitForm } from "./ekos.functions";
+import { getForm, FORM_ORDER } from "./forms/registry";
+vi.mock("@/lib/forms/write-validation", () => ({ validateFormWrite: (def: unknown, values: Record<string, unknown>) => { if (values.created_by) throw new Error("Unexpected"); } }));
 
 beforeEach(() => {
   fixture.userId = "ben-test";
@@ -68,6 +78,8 @@ beforeEach(() => {
   fixture.submission.created_by = "ben-test";
   fixture.submission.status = "Completed";
   fixture.submission.is_draft = false;
+  fixture.submission.form_type = "reservation";
+  fixture.complete.mockResolvedValue({ driveId: null });
   fixture.writes.length = 0;
   fixture.filters.length = 0;
   fixture.email = "ben-test@example.invalid";
@@ -75,6 +87,20 @@ beforeEach(() => {
   fixture.writeError = null;
   fixture.zeroRows = false;
   vi.clearAllMocks();
+});
+
+describe("Director completion trigger", () => {
+  it.each(FORM_ORDER.filter((type) => type !== "written_statement"))("%s approval invokes completion", async (form_type) => {
+    fixture.director = true; fixture.submission.form_type = form_type; fixture.submission.status = "In Review";
+    await setStatus({ data: { submissionId: fixture.submission.id, status: "Completed" } });
+    expect(fixture.complete).toHaveBeenCalledWith(fixture.submission.id);
+  });
+  it("a Director submitting Completed sends completion, not another review", async () => {
+    fixture.director = true; fixture.submission.status = "Draft";
+    await submitForm({ data: { submissionId: fixture.submission.id, values: { status: "Completed" } } });
+    expect(fixture.complete).toHaveBeenCalledWith(fixture.submission.id);
+    expect(fixture.review).not.toHaveBeenCalled();
+  });
 });
 
 describe("deletion authority and failed saves", () => {
