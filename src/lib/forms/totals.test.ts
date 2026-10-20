@@ -35,15 +35,28 @@ describe("NHO / Unit Sale Total Cost", () => {
 import { computeBalanceOnCompletion, computeCustomerPayment, newHomeOrderForm } from "./new-home-order";
 import { formatMoney } from "@/lib/format";
 import { needsConstruction } from "@/lib/ekos.server";
+import { unitSaleAgreementForm } from "./unit-sale-agreement";
 
 describe("NHO balance and customer payment (Sadie's figures)", () => {
   const spring = { sales_route: "Spring Managed Sale", cost_total: "285,845", cost_deposit: "5,000", estate_agent_fees: "5000", legal_fee_contribution: "1000", customer_topup: "9999" };
   it("Spring: £285,845 − £5,000 − £5,000 − £1,000 = £274,845 (hidden top up ignored)", () => {
     expect(computeBalanceOnCompletion(spring)).toBe("274,845");
   });
-  it("QMP subtracts top up only; TBC counts as 0", () => {
-    expect(computeBalanceOnCompletion({ sales_route: "QMP Assisted Move", cost_total: "100,000", cost_deposit: "TBC", customer_topup: "2,000", estate_agent_fees: "5000" })).toBe("98,000");
+  it("QMP subtracts deposit only, ignoring saved Topup and Spring fees", () => {
+    expect(computeBalanceOnCompletion({ sales_route: "QMP Assisted Move", cost_total: "100,000", cost_deposit: "5,000", customer_topup: "2,000", estate_agent_fees: "5000", legal_fee_contribution: "1000" })).toBe("95,000");
   });
+  it("QMP treats a TBC deposit as zero, still ignoring saved Topup", () => {
+    expect(computeBalanceOnCompletion({ sales_route: "QMP Assisted Move", cost_total: "100,000", cost_deposit: "TBC", customer_topup: "2,000" })).toBe("100,000");
+  });
+  for (const form of [newHomeOrderForm, unitSaleAgreementForm]) {
+    it(`${form.title}: Topup is not an active field on any route`, () => {
+      expect(form.steps.flatMap((step) => step.fields).some((field) => field.key === "customer_topup")).toBe(false);
+    });
+    it(`${form.title}: QMP balance ignores legacy Topup`, () => {
+      const balance = form.steps.flatMap((step) => step.fields).find((field) => field.key === "balance_on_completion");
+      expect(balance?.compute?.({ sales_route: "QMP Assisted Move", cost_total: "285,845", cost_deposit: "5,000", customer_topup: "9,999" })).toBe("280,845");
+    });
+  }
   it("£274,845 − £250,000 = £24,845", () => {
     expect(computeCustomerPayment({ balance_on_completion: "274,845", proceeds: "250,000" })).toBe("24,845");
   });

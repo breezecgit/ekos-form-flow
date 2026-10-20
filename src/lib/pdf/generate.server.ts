@@ -12,6 +12,7 @@ import { formatDate, formatMoney } from "@/lib/format";
 import type { ContentBlock, FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
 import { isVisible, labelRepeatsSection } from "@/lib/forms/types";
 import { STATEMENT_V1, classifyStatementLine } from "@/lib/forms/written-statement-text";
+import { withoutRetiredTopup } from "@/lib/forms/retired-topup";
 
 const BRAND = rgb(0.027, 0.212, 0.18); // #07362E
 const GOLD = rgb(0.757, 0.561, 0.298); // #C18F4C
@@ -337,7 +338,8 @@ function signatureMeta(key: string, values: FormValues) {
 }
 
 export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Array> {
-  const { def, values, ctx, orderNumber, park, customerName, parkLinks } = input;
+  const { def, ctx, orderNumber, park, customerName, parkLinks } = input;
+  const values = withoutRetiredTopup(def.type, input.values);
   const w = new Writer();
   await w.init(def.title, `${orderNumber}  |  ${park}`);
 
