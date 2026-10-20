@@ -48,13 +48,12 @@ export function computeCostTotal(v: FormValues): string {
 const num = (v: FormValues, key: string) => parseMoney(v[key]) ?? 0;
 const fmt = (n: number) => n.toLocaleString("en-GB", { maximumFractionDigits: 2 });
 
-/** Balance on completion = Total Cost − Deposit − (route-applicable) Estate Agent Fees,
- *  Legal Fee Contribution and Customer Top Up. Hidden, blank or TBC counts as 0. */
+/** Balance on completion = Total Cost − Deposit − (Spring only) Estate Agent Fees
+ *  and Legal Fee Contribution. Legacy Topup values are ignored. Blank or TBC counts as 0. */
 export function computeBalanceOnCompletion(v: FormValues): string {
   const r = route(v);
   let n = num(v, "cost_total") - num(v, "cost_deposit");
   if (r === "Spring Managed Sale") n -= num(v, "estate_agent_fees") + num(v, "legal_fee_contribution");
-  if (r === "QMP Assisted Move") n -= num(v, "customer_topup");
   return fmt(n);
 }
 
@@ -285,12 +284,6 @@ export const newHomeOrderForm: FormDef = {
           compute: computeCostTotal,
         },
         { key: "cost_deposit", label: "Deposit Amount", type: "money", compute: copyMoney("deposit_amount") },
-        {
-          key: "customer_topup",
-          label: "Customer Topup",
-          type: "money",
-          showIf: (v) => route(v) === "QMP Assisted Move",
-        },
         {
           key: "estate_agent_fees",
           label: "Estate Agent Fees",
