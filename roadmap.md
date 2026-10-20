@@ -1,5 +1,9 @@
 # EKOS Customer Sales Form — roadmap
 
+## Automatic incentive discounts — 20 October
+- [x] Calculate NHO/Unit Sale home cost from local List Price and selected discounts; no discounted Reservation-total prefill. Persist auto/manual home-cost mode. Repair pristine matching old prefills and automatic dependent totals on draft open; historical saved answers without override provenance remain unchanged rather than risk overwriting staff amounts.
+- [x] Fictional hosted EKOS-00085: Reservation £300,000 / £10,000 discount gives £290,000 in both later forms (not £280,000). Direct UI changes to £15,000 give £285,000 cost/total, £280,000 QMP balance with £5,000 deposit, -£20,000 payment with £300,000 proceeds. Approval answers and actual PDFs read back; override/clear checked. Removed sale/three forms/six app files, audit recorded. Test-classified, email test mode ON; no publishing.
+
 ## Confirmed Topup removal — 20 October
 - [x] Remove Topup from shared NHO/Unit Sale fields and ignore saved Topup in balance calculations; retain Spring deductions and Balance − Proceeds. Shared read/write/PDF normalization repairs legacy QMP deductions without blocking strict draft validation; new manual overrides stay editable. 204 automated tests pass; build OK.
 - [x] Preview fictional EKOS-00083 (QMP) and EKOS-00084 (Spring), both NHO and Unit Sale: live recalculation, approval Answers and four actual PDFs verified without Topup. £285,845 cost/£5,000 deposit gives QMP £280,845, Spring £274,845 with £5,000 agent/£1,000 legal fees. £300,000 proceeds gives -£19,155/-£25,155. All 38 PDF pages rendered/inspected. Removed two sales/four forms/25 app files, with audit entry; both test-classified. Email test mode ON, nothing published; existing stored PDFs not regenerated.

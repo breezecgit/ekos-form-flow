@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { allFields, isInput, type FieldDef, type FormDef, type FormValues, type RenderContext } from "./types";
 import { validateAll, validateFields } from "./validate";
+import { HOME_COST_MODE, hasHomeCost } from "./home-cost";
 
 // Transport limits, not business limits; uploads use their separate bounded endpoint.
 export const MAX_FORM_BYTES = 8_000_000;
@@ -53,6 +54,10 @@ export function validateFormWrite(def: FormDef, values: FormValues, ctx: RenderC
   checkPayloadSize(values);
   const fields = new Map(allFields(def).filter(isInput).map((f) => [f.key, f]));
   for (const [key, value] of Object.entries(values)) {
+    if (key === HOME_COST_MODE && hasHomeCost(def.type)) {
+      if (value !== "auto" && value !== "manual") throw new Error("Invalid home cost calculation mode.");
+      continue;
+    }
     if (["order_number", "statement_version"].includes(key)) {
       if (value !== existing[key]) throw new Error("Protected form details cannot be changed.");
       continue;

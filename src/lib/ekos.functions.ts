@@ -6,6 +6,7 @@ import { validateFormWrite } from "@/lib/forms/write-validation";
 import { getForm } from "@/lib/forms/registry";
 import { validateUpload } from "@/lib/forms/upload-validation";
 import { withoutRetiredTopup } from "@/lib/forms/retired-topup";
+import { prepareHomeCost, prepareHomeCostDraft, hasHomeCost } from "@/lib/forms/home-cost";
 
 const idInput = z.object({ submissionId: z.string().uuid() });
 
@@ -185,8 +186,6 @@ async function buildPrefill(
   for (const row of [...ordered, ...(reservation ? [reservation] : [])]) {
     for (const [k, v] of Object.entries((row.data ?? {}) as Record<string, unknown>)) if (!isBlank(v)) merged[k] = v;
   }
-  const resData = (reservation?.data ?? {}) as Record<string, unknown>;
-  if (resData["total_cost"] !== undefined && merged["cost_new_home"] === undefined) merged["cost_new_home"] = resData["total_cost"];
 
   const out: Record<string, unknown> = {};
   for (const f of def.steps.flatMap((s) => s.fields)) {
@@ -221,7 +220,7 @@ async function buildPrefill(
     if (sale.park_name) out["park_name_confirm"] = sale.park_name;
     if (!out["party_customer_name"] && out["customer_name"]) out["party_customer_name"] = out["customer_name"];
   }
-  return out;
+  return prepareHomeCost(formType, out);
 }
 
 /** Later forms never change the park chosen on the Reservation Form. */
@@ -311,6 +310,18 @@ export const getSubmission = createServerFn({ method: "GET" })
       }
     }
     submission.data = withoutRetiredTopup(submission.form_type, (submission.data ?? {}) as Record<string, unknown>) as never;
+    if (submission.is_draft && submission.status !== "Completed" && hasHomeCost(submission.form_type)) {
+      // No saved-answer history means the stored value is still the original prefill.
+      const { data: saved, error: historyError } = await db.from("audit_log").select("id")
+        .eq("submission_id", submission.id).in("action", ["Draft saved", "Form submitted"]).limit(1);
+      let pristinePrefill: unknown;
+      if (!historyError && Array.isArray(saved) && saved.length === 0) {
+        const { data: reservation } = await db.from("form_submissions").select("data")
+          .eq("sale_id", submission.sale_id).eq("form_type", "reservation").maybeSingle();
+        pristinePrefill = (reservation?.data as Record<string, unknown> | undefined)?.["total_cost"];
+      }
+      submission.data = prepareHomeCostDraft(getForm(submission.form_type), submission.data as Record<string, unknown>, pristinePrefill) as never;
+    }
     const { data: linkRow } = await db.from("app_settings").select("value").eq("key", "links").maybeSingle();
     const welcomePackUrl =
       String(((linkRow?.value ?? {}) as Record<string, unknown>)["welcome_pack_url"] ?? "") ||
@@ -386,7 +397,7 @@ export const saveDraft = createServerFn({ method: "POST" })
     const submission = await assertAccess(data.submissionId, context.userId);
     assertEditable(submission.status, await isDirector(context.userId));
     const db = await admin();
-    data.values = withoutRetiredTopup(submission.form_type, await lockPark(submission, data.values));
+    data.values = prepareHomeCost(submission.form_type, withoutRetiredTopup(submission.form_type, await lockPark(submission, data.values)));
     validateFormWrite(getForm(submission.form_type), data.values, { mode: "rep", isDirector: await isDirector(context.userId) }, "draft", (submission.data ?? {}) as Record<string, unknown>);
     await expectRows(db
       .from("form_submissions")
@@ -471,7 +482,7 @@ export const submitForm = createServerFn({ method: "POST" })
       data.values["customer_email"] = assertCustomerEmail(data.values["customer_email"]);
     }
     const status = requested;
-    data.values = withoutRetiredTopup(submission.form_type, await lockPark(submission, data.values));
+    data.values = prepareHomeCost(submission.form_type, withoutRetiredTopup(submission.form_type, await lockPark(submission, data.values)));
     validateFormWrite(getForm(submission.form_type), data.values, { mode: "rep", isDirector: director }, "submit", (submission.data ?? {}) as Record<string, unknown>);
     if (isWS) {
       const { getStatementTemplate } = await import("@/lib/statement.server");

@@ -6,6 +6,7 @@ import { SUBSUB_HEADINGS, isRequired, isVisible, labelRepeatsSection } from "@/l
 import { validateAll, validateFields, type Errors } from "@/lib/forms/validate";
 import { todayISO } from "@/lib/format";
 import { toast } from "sonner";
+import { HOME_COST_MODE, hasHomeCost, prepareHomeCostDraft } from "@/lib/forms/home-cost";
 
 interface Props {
   def: FormDef;
@@ -59,7 +60,7 @@ export function FormRunner({
   const onlyCustomerSignature = Boolean(onlyGroup);
 
   const [values, setValues] = useState<FormValues>(() => {
-    const v = withDefaults(def, fillFromPark(def, initialValues, parks, false));
+    const v = withDefaults(def, fillFromPark(def, prepareHomeCostDraft(def, initialValues), parks, false));
     // Fill any empty auto-calculated boxes on load (keeps saved/overwritten values).
     const cf = def.steps.flatMap((s) => s.fields).filter((f) => f.compute);
     for (let pass = 0; pass < 2; pass++)
@@ -86,7 +87,8 @@ export function FormRunner({
     }
     return out;
   });
-  const [touchedKeys, setTouchedKeys] = useState<Set<string>>(new Set());
+  const [touchedKeys, setTouchedKeys] = useState<Set<string>>(() =>
+    values[HOME_COST_MODE] === "manual" ? new Set(["cost_new_home"]) : new Set());
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
@@ -108,6 +110,9 @@ export function FormRunner({
     }
     setValues((prev) => {
       let next: FormValues = { ...prev, [key]: value };
+      if (key === "cost_new_home" && hasHomeCost(def.type)) {
+        next[HOME_COST_MODE] = String(value ?? "").trim() === "" ? "auto" : "manual";
+      }
       // Choosing a park autofills its details (rep can still overwrite).
       if (key === "park_name" || key === "park_name_confirm") {
         next = fillFromPark(def, next, parks, true, String(value ?? ""));
@@ -117,7 +122,7 @@ export function FormRunner({
         for (const f of computeFields) {
           if (overridden.has(f.key)) continue;
           if (f.key === key && String(value ?? "").trim() !== "") continue;
-          next[f.key] = f.compute!(next);
+          if (f.compute) next[f.key] = f.compute(next);
         }
       }
       return next;
