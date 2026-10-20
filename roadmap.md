@@ -1,10 +1,11 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Sadie's 20 October NHO testing
-- [ ] Investigate today's published NHO approval/email history read-only; fix shared completion delivery failures in preview.
-- [ ] Require new-home address for every NHO and Unit Sale sales route; preserve TBC.
-- [ ] Report current QMP Customer Topup visibility/calculation without changing it.
-- [ ] Verify completion/address changes on a new fictional sale, delete that fixture, keep test mode ON; do not publish.
+- [x] Read-only published history: EKOS-00077 Completed at 09:28 UTC but PDF still from 09:26 and no completion email; EKOS-00080 completion email accepted at 10:20 UTC to Emma/Sadie only. Original runtime exception is outside available log retention; exact underlying exception unverified.
+- [x] Shared preview completion builds final signed PDF once, emails before optional integrations, retries reported send failures with document idempotency key and exposes exhausted failures; direct Completed submissions also invoke completion.
+- [x] Require new-home address for every NHO and Unit Sale sales route; preserve TBC. Twelve route/validation tests pass; QMP browser and actual NHO PDF/approval readback verified.
+- [x] Customer Topup unchanged: only QMP displays/deducts it in both forms. Hiding alone would still deduct saved values; a separate formula decision is required.
+- [x] Fictional EKOS-00082 NHO upload/submission/Director approval, signed PDF readback and accepted test-only completion email verified; Unit Sale address carries TBC. Removed fictional sale/forms and six app files; no Drive/Sheets copies. Nothing published; inbox receipt unverified.
 
 ## Additional Drive backups — Emma, 19 October 2026
 - [x] Emma's 18:21 approval: backup-only proposal applied transactionally as 0014_drive_backup_journal (migration tool owns transaction). Hosted five-table RLS/service-role-only grants and three RPC execute boundaries verified. 156 regression tests pass; Breeze connection retained; no publishing.

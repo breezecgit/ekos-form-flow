@@ -66,7 +66,12 @@ function SubmissionDetail() {
           : "Disapproved – the sales rep has been emailed.",
       );
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      // Approval may already be saved even if its PDF/email failed.
+      qc.invalidateQueries({ queryKey: ["submission", id] });
+      qc.invalidateQueries({ queryKey: ["sales"] });
+      toast.error(e.message);
+    },
   });
 
   const resend = useMutation({
