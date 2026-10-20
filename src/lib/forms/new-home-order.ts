@@ -115,6 +115,7 @@ export const newHomeOrderForm: FormDef = {
           showIf: (v) => route(v) === "Spring Managed Sale",
         },
         fieldFromReservation("home_size"),
+        fieldFromReservation("list_price"),
         fieldFromReservation("monthly_pitch_fee"),
         fieldFromReservation("pitch_fee_review_date"),
         {

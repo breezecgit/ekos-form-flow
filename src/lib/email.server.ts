@@ -53,6 +53,13 @@ function clean(list: string[] | undefined): string[] {
  * recorded in the email log (with recipients, CC and body) so it is always testable.
  */
 export const DEFAULT_TEST_RECIPIENT = "emma.frew@breezeconnection.co.uk, sadie@ekosgroup.co.uk";
+/** Approved test inboxes that may receive mail addressed to them directly (e.g. as the test customer). */
+export const APPROVED_TEST_INBOXES = [...DEFAULT_TEST_RECIPIENT.split(/,\s*/), "sadie.deveraux@hotmail.co.uk"];
+/** Test mode: approved recipients plus any intended To address that is itself an approved test inbox. */
+export function testModeRecipients(base: string[], intendedTo: string[]): string[] {
+  const allowed = new Set(APPROVED_TEST_INBOXES.map((e) => e.toLowerCase()));
+  return clean([...base, ...intendedTo.filter((e) => allowed.has(e.trim().toLowerCase()))]);
+}
 export function parseRecipients(raw: string): string[] {
   return clean(raw.split(/[,;\s]+/));
 }
@@ -83,7 +90,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
   const testMode = await getEmailTestMode();
   // Sender is always sales@ekosgroup.co.uk, in test mode and production.
   const from = input.from ?? FROM_CUSTOMER;
-  const to = testMode.enabled ? testMode.recipients : intendedTo;
+  const to = testMode.enabled ? testModeRecipients(testMode.recipients, intendedTo) : intendedTo;
   const cc = testMode.enabled ? [] : intendedCc;
   const subject = testMode.enabled
     ? `[TEST → To: ${intendedTo.join(", ") || "(none)"}; CC: ${intendedCc.join(", ") || "(none)"}] ${input.subject}`
