@@ -1,4 +1,5 @@
 import { parseMoney } from "@/lib/format";
+import { computeHomeCost } from "./home-cost";
 import type { FormDef, FormValues, OptionDef } from "./types";
 import {
   MOVE_IN_BLOCKS,
@@ -254,7 +255,7 @@ export const newHomeOrderForm: FormDef = {
       id: "step-4",
       heading: "Approving Costs for my Home to go into Build",
       fields: [
-        { key: "cost_new_home", label: "Cost of my New Home from EKOS (before customisation or extras)", type: "money" },
+        { key: "cost_new_home", label: "Cost of my New Home from EKOS (before customisation or extras)", type: "money", compute: computeHomeCost },
         { key: "cost_decking", label: "Decking Cost", type: "money", compute: copyMoney("decking_cost") },
         { key: "cost_omar_extras", label: "Omar Extras", type: "money", compute: copyMoney("omar_extras") },
         {
