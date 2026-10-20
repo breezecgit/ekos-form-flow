@@ -492,6 +492,18 @@ export const submitForm = createServerFn({ method: "POST" })
     await syncSale(submission.sale_id, data.values, submission.form_type);
 
     const s = await server();
+    if (status === "Completed") {
+      await s.addAudit({
+        submissionId: data.submissionId,
+        actorId: context.userId,
+        actorLabel: String(context.claims["email"] ?? ""),
+        action: "Form submitted",
+        fromStatus: submission.status,
+        toStatus: status,
+      });
+      await s.runCompletion(data.submissionId);
+      return { status };
+    }
     const built = await s.buildAndStorePdf(data.submissionId);
     // Drive copy, audit and the next email are independent once the PDF exists – run together.
     const sendNext = () =>

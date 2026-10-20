@@ -407,7 +407,9 @@ export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8
       ${p("If you have any questions, don't hesitate to contact us – we're here to help.")}
       <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#d2a065;">Welcome to the EKOS Homes family!</p>`,
   });
-  await sendEmail({
+  const digest = await crypto.subtle.digest("SHA-256", new Uint8Array(pdfBytes));
+  const version = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  const input = {
     from: FROM_CUSTOMER,
     to: [c.email],
     cc: [c.contacts.repEmail, c.contacts.parkInbox, c.contacts.sadie, c.contacts.sales],
@@ -416,7 +418,15 @@ export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8
     attachments: [{ filename: fileName, bytes: pdfBytes }],
     template: "completion",
     submissionId,
-  });
+    idempotencyKey: `completion-${submissionId}-${version}`,
+  };
+  // Retry the same completed document, not the approval or PDF/Drive work.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const result = await sendEmail(input);
+    if (result.ok) return;
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+  }
+  throw new Error("The form is Completed and its PDF is saved, but the completion email failed. Use Resend completion email to retry; check the email log.");
 }
 
 export async function sendDisapprovalEmail(submissionId: string, note: string) {
@@ -486,43 +496,23 @@ export async function syncSheetForSubmission(submissionId: string) {
 /** Completion: merged PDF (form + customer + construction + Sadie), emails, Drive, tracker sheet. */
 export async function runCompletion(submissionId: string, opts: { storedSignature?: boolean } = {}) {
   const { submission } = await loadSubmission(submissionId);
-  const isWS = opts.storedSignature === false;
+  const isWS = opts.storedSignature === false || needsDirectorWitness(submission.form_type);
   let driveId: string | null = null;
-  let merged: { bytes: Uint8Array; fileName: string };
-
-  if (isWS) {
-    // Director + witness signed on the page: the statement itself is the fully signed record.
-    merged = await buildAndStorePdf(submissionId);
-    await saveStageToDrive({
-      saleId: submission.sale_id,
-      submissionId,
-      formType: submission.form_type,
-      suffix: "Sadie Signature & Witness - Completed",
-      bytes: merged.bytes,
-      latest: false,
-    });
-  } else {
-    const plain = await buildAndStorePdf(submissionId);
-    await saveStageToDrive({
-      saleId: submission.sale_id,
-      submissionId,
-      formType: submission.form_type,
-      suffix: "Completed",
-      bytes: plain.bytes,
-      latest: false,
-    });
-    merged = await buildAndStorePdf(submissionId, { includeDirectorSignature: true });
-  }
-  driveId = await saveStageToDrive({
+  // Build the final signed copy once and send it before optional integrations.
+  const merged = await buildAndStorePdf(submissionId, { includeDirectorSignature: !isWS });
+  await sendCompletionEmails(submissionId, merged.bytes, merged.fileName);
+  try {
+    driveId = await saveStageToDrive({
     saleId: submission.sale_id,
     submissionId,
     formType: submission.form_type,
-    suffix: "Completed - Merged",
+    suffix: isWS ? "Sadie Signature & Witness - Completed" : "Completed - Merged",
     bytes: merged.bytes,
-  });
-
-  await sendCompletionEmails(submissionId, merged.bytes, merged.fileName);
-  await syncTrackerSheet(submission.sale_id);
+    });
+    await syncTrackerSheet(submission.sale_id);
+  } catch {
+    console.error("Completion integration failed after email was sent", { submissionId });
+  }
   return { driveId, fileName: merged.fileName };
 }
 

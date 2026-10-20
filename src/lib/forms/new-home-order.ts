@@ -112,7 +112,7 @@ export const newHomeOrderForm: FormDef = {
           key: "new_home_address",
           label: "Full Address for Your New Home",
           type: "text",
-          showIf: (v) => route(v) === "Spring Managed Sale",
+          required: true,
         },
         fieldFromReservation("home_size"),
         fieldFromReservation("list_price"),
