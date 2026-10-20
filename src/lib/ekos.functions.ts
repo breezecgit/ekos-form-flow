@@ -313,7 +313,7 @@ export const getSubmission = createServerFn({ method: "GET" })
     if (submission.is_draft && submission.status !== "Completed" && hasHomeCost(submission.form_type)) {
       // No saved-answer history means the stored value is still the original prefill.
       const { data: saved, error: historyError } = await db.from("audit_log").select("id")
-        .eq("submission_id", submission.id).eq("action", "Draft saved").limit(1);
+        .eq("submission_id", submission.id).in("action", ["Draft saved", "Form submitted"]).limit(1);
       let pristinePrefill: unknown;
       if (!historyError && Array.isArray(saved) && saved.length === 0) {
         const { data: reservation } = await db.from("form_submissions").select("data")

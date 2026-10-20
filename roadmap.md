@@ -1,8 +1,8 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Automatic incentive discounts — 20 October
-- [ ] Calculate NHO/Unit Sale home cost from local List Price and selected discounts, remove discounted Reservation-total prefill, preserve durable manual overrides and safely repair identifiable old drafts.
-- [ ] Test concrete discount changes, downstream totals, approval/PDF and fictional hosted sale; delete only that fixture. Keep email test mode ON; do not publish.
+- [x] Calculate NHO/Unit Sale home cost from local List Price and selected discounts; no discounted Reservation-total prefill. Persist auto/manual home-cost mode. Repair pristine matching old prefills and automatic dependent totals on draft open; historical saved answers without override provenance remain unchanged rather than risk overwriting staff amounts.
+- [x] Fictional hosted EKOS-00085: Reservation £300,000 / £10,000 discount gives £290,000 in both later forms (not £280,000). Direct UI changes to £15,000 give £285,000 cost/total, £280,000 QMP balance with £5,000 deposit, -£20,000 payment with £300,000 proceeds. Approval answers and actual PDFs read back; override/clear checked. Removed sale/three forms/six app files, audit recorded. Test-classified, email test mode ON; no publishing.
 
 ## Confirmed Topup removal — 20 October
 - [x] Remove Topup from shared NHO/Unit Sale fields and ignore saved Topup in balance calculations; retain Spring deductions and Balance − Proceeds. Shared read/write/PDF normalization repairs legacy QMP deductions without blocking strict draft validation; new manual overrides stay editable. 204 automated tests pass; build OK.

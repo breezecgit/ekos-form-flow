@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeHomeCost, HOME_COST_MODE, prepareHomeCost } from "./home-cost";
+import { computeHomeCost, HOME_COST_MODE, prepareHomeCost, prepareHomeCostDraft } from "./home-cost";
 import { newHomeOrderForm, computeCostTotal, computeBalanceOnCompletion, computeCustomerPayment } from "./new-home-order";
 import { unitSaleAgreementForm } from "./unit-sale-agreement";
 import { validateFormWrite } from "./write-validation";
@@ -41,6 +41,11 @@ for (const form of [newHomeOrderForm, unitSaleAgreementForm]) {
       const values = prepareHomeCost(form.type, source);
       validateFormWrite(form, values, { mode: "rep", isDirector: false }, "draft");
       expect(prepareHomeCost(form.type, { ...values, discount_home: "15,000" })["cost_new_home"]).toBe("285,000");
+    });
+    it("repairs dependent automatic draft totals but preserves manual totals", () => {
+      const old = { ...source, discount_home: "15,000", cost_new_home: "290,000", cost_total: "290,000", cost_deposit: "5,000", balance_on_completion: "285,000", proceeds: "300,000", customer_payment_required: "-15,000" };
+      expect(prepareHomeCostDraft(form, old, "290,000")).toMatchObject({ cost_new_home: "285,000", cost_total: "285,000", balance_on_completion: "280,000", customer_payment_required: "-20,000" });
+      expect(prepareHomeCostDraft(form, { ...old, cost_total: "275,000" }, "290,000")["cost_total"]).toBe("275,000");
     });
   });
 }
