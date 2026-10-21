@@ -95,7 +95,8 @@ function AmendPage() {
             ? `Amendment ${res.number} saved – the customer has been emailed a link to sign it.`
             : me.data?.isDirector ? `Amendment ${res.number} saved and waiting for your approval.` : `Amendment ${res.number} saved – Sadie has been emailed to approve it.`,
         );
-        router.navigate({ to: "/admin/submissions/$id", params: { id: submissionId } });
+        if (me.data?.isDirector) router.navigate({ to: "/admin/submissions/$id", params: { id: submissionId } });
+        else router.navigate({ to: "/forms/$formType/$submissionId", params: { formType: s.form_type, submissionId } });
       }}
     />,
   );
