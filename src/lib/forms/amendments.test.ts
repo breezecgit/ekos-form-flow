@@ -112,3 +112,25 @@ describe("amendment option-cost recalculation", () => {
     expect(after["cost_total"]).toBe("290,300");
   });
 });
+
+describe("amend screen override handling", () => {
+  const withShed = settle({ ...signed, shed_basic: "Required", decking_base_extension: "Not Required" });
+  const v: FormValues = { ...withShed, cost_shed: "2,100", cost_decking_base: "2,000" };
+  v["cost_total"] = "294,100"; v["balance_on_completion"] = "289,100"; v["customer_payment_required"] = "289,100";
+
+  it("typed-over costs start as overrides", async () => {
+    const { initialAmendOverrides } = await import("./amendments");
+    const o = initialAmendOverrides(newHomeOrderForm, v);
+    expect(o.has("cost_shed")).toBe(true);
+    expect(o.has("cost_decking_base")).toBe(true);
+    expect(o.has("cost_total")).toBe(false);
+  });
+
+  it("changing the shed releases only the shed override", async () => {
+    const { initialAmendOverrides, releaseOverridesOnSelectionChange } = await import("./amendments");
+    const o = initialAmendOverrides(newHomeOrderForm, v);
+    releaseOverridesOnSelectionChange(newHomeOrderForm, v, { ...v, shed_basic: "Not Required" }, o, "shed_basic");
+    expect(o.has("cost_shed")).toBe(false);
+    expect(o.has("cost_decking_base")).toBe(true);
+  });
+});
