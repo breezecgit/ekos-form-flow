@@ -73,9 +73,10 @@ export function AmendmentsPanel({ submissionId, status, originalPdfUrl }: { subm
             </ul>
             <div className="mt-2 flex flex-wrap gap-2">
               {a.pdfUrl && <a href={a.pdfUrl} target="_blank" rel="noreferrer"><Button size="sm" variant="outline">Amendment {a.number} PDF</Button></a>}
-              {a.status === "Awaiting approval" && <Button size="sm" variant="brand" disabled={act.isPending} onClick={() => act.mutate({ kind: "approve", id: a.id })}>Approve & sign amendment</Button>}
-              {a.status === "Awaiting customer signature" && <Button size="sm" variant="outline" disabled={act.isPending} onClick={() => act.mutate({ kind: "resend", id: a.id })}>Resend amendment email</Button>}
-              {(a.status === "Awaiting customer signature" || a.status === "Awaiting approval") && (
+              {a.status === "Awaiting approval" && !q.data?.canApprove && <span className="self-center text-muted-foreground">Waiting for the Director to approve.</span>}
+              {a.status === "Awaiting approval" && q.data?.canApprove && <Button size="sm" variant="brand" disabled={act.isPending} onClick={() => act.mutate({ kind: "approve", id: a.id })}>Approve & sign amendment</Button>}
+              {a.status === "Awaiting customer signature" && a.canManage && <Button size="sm" variant="outline" disabled={act.isPending} onClick={() => act.mutate({ kind: "resend", id: a.id })}>Resend amendment email</Button>}
+              {a.canManage && (a.status === "Awaiting customer signature" || a.status === "Awaiting approval") && (
                 <Button size="sm" variant="outline" disabled={act.isPending} onClick={() => act.mutate({ kind: "cancel", id: a.id })}>Cancel amendment</Button>
               )}
             </div>

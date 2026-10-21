@@ -11,6 +11,7 @@ import { getBootstrap, getSubmission, saveDraft, submitForm } from "@/lib/ekos.f
 import { FORM_TITLES, getForm, hasForm } from "@/lib/forms/registry";
 import type { FormValues } from "@/lib/forms/types";
 import { canOpenFormEditor } from "@/lib/security-rules";
+import { AmendmentsPanel } from "@/components/AmendmentsPanel";
 
 export const Route = createFileRoute("/forms/$formType/$submissionId")({
   head: () => ({
@@ -136,6 +137,11 @@ function FormPage() {
                   View the PDF
                 </a>
               </p>
+            )}
+            {submission.status === "Completed" && (
+              <div className="text-left">
+                <AmendmentsPanel submissionId={submissionId} status={submission.status} originalPdfUrl="" />
+              </div>
             )}
             {sub.data.offsiteLink && (
               <p className="mt-2 break-all text-xs text-muted-foreground">
