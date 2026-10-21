@@ -69,7 +69,7 @@ export function validateFormWrite(def: FormDef, values: FormValues, ctx: RenderC
     const f = fields.get(key);
     if (!f) throw new Error("Unexpected form details were supplied.");
     if (!ctx.isDirector && f.options?.some((option) => option.directorOnly && option.value === value) && value !== existing[key]) throw new Error("Only the Director can select that option.");
-    checkValue(f, value);
+    checkValue(f, value, existing[key]);
   }
   if (stage === "submit" && Object.keys(validateAll(def, values, ctx)).length) throw new Error("Please complete every required box before submitting.");
 }
@@ -85,7 +85,7 @@ export function validateSigningWrite(def: FormDef, values: FormValues, existing:
     const f = byKey.get(key);
     if (f) {
       if (f.showIf && !f.showIf({ ...existing, ...values }, ctx)) throw new Error("Only the visible signing details can be changed through this link.");
-      checkValue(f, value); patch[key] = value; continue;
+      checkValue(f, value, existing[key]); patch[key] = value; continue;
     }
     if (!["order_number", "customer_name", "customer_email", "park_name", "status"].includes(key) || value !== echo[key]) throw new Error("Only the signing details can be changed through this link.");
   }
