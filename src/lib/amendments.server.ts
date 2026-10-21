@@ -74,7 +74,7 @@ async function audit(submissionId: string, actorId: string | null, actorLabel: s
 }
 
 /** Director starts an amendment of a Completed form. Original data and signed PDF are not touched. */
-export async function startAmendment(input: { submissionId: string; userId: string; actorLabel: string; values: FormValues; reason: string; isDirector?: boolean }) {
+export async function startAmendment(input: { submissionId: string; userId: string; actorLabel: string; values: FormValues; reason: string; isDirector?: boolean; carriedOver?: boolean }) {
   const reason = input.reason.trim();
   if (reason.length < 3) throw new Error("Please give a reason for the amendment.");
   const { submission } = await loadSale(input.submissionId);
@@ -82,7 +82,9 @@ export async function startAmendment(input: { submissionId: string; userId: stri
   const def = getForm(submission.form_type);
   const before = withoutRetiredTopup(submission.form_type, (submission.data ?? {}) as FormValues);
   const edited = prepareHomeCost(submission.form_type, withoutRetiredTopup(submission.form_type, input.values));
-  validateFormWrite(def, edited, { mode: "rep", isDirector: input.isDirector ?? true }, "submit", before);
+  // Carried-over amendments change only figures the approved NHO already validated; a signed form
+  // missing a box made required later must not block them, so only value types are checked.
+  validateFormWrite(def, edited, { mode: "rep", isDirector: input.isDirector ?? true }, input.carriedOver ? "draft" : "submit", before);
   const { after, changes } = prepareAmendment(def, before, edited);
 
   const d = db();
@@ -328,7 +330,7 @@ export async function syncUsaFromNhoAmendment(input: { saleId: string; amendment
     } else {
       const row = await startAmendment({
         submissionId: usa.id, userId: input.userId, actorLabel: input.actorLabel, values: plan.values,
-        reason: `Updated from New Home Order Amendment ${n}`, isDirector: true,
+        reason: `Updated from New Home Order Amendment ${n}`, isDirector: true, carriedOver: true,
       });
       await audit(usa.id, input.userId, input.actorLabel, `Unit Sale Agreement Amendment ${row.amendment_number} created from New Home Order Amendment ${n}`);
     }
