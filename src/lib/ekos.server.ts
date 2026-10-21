@@ -255,7 +255,7 @@ export function newToken(): string {
 
 export async function getOrCreateSigningToken(
   submissionId: string,
-  kind: "customer_offsite" | "construction" | "director" = "customer_offsite",
+  kind: "customer_offsite" | "construction" | "director" | "amendment" = "customer_offsite",
 ): Promise<string> {
   const { data, error } = await supabaseAdmin
     .from("signing_tokens")
@@ -452,6 +452,63 @@ export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8
     if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
   }
   throw new Error("The form is Completed and its PDF is saved, but the completion email failed. Use Resend completion email to retry; check the email log.");
+}
+
+/** Amendment "ready to sign" – same recipients as the off-site signing email; link opens only the amendment page. */
+export async function sendAmendmentCustomerEmail(submissionId: string, amendmentNumber: number) {
+  const c = await emailContext(submissionId);
+  const token = await getOrCreateSigningToken(submissionId, "amendment");
+  const f = esc(c.formName);
+  const html = emailShell({
+    heading: `Amendment ${amendmentNumber} to ${yourForm(f)}`,
+    bodyHtml: `
+      ${goldBox(`A change has been made to your signed ${f}. Please review and sign the amendment.`)}
+      ${p("You only need to check the changes listed on the amendment page – everything else stays exactly as you originally signed it.")}
+      ${outlineButton("Review and sign amendment", `${c.origin}/amendment/${token}`)}
+      ${p("If you have any questions, don't hesitate to contact us – we're here to help.")}`,
+  });
+  const result = await sendEmail({
+    from: FROM_CUSTOMER,
+    to: [c.email],
+    cc: [c.contacts.sadie, c.contacts.sales, c.contacts.repEmail, c.contacts.parkInbox],
+    subject: `Amendment ${amendmentNumber} to ${yourForm(c.formName)} – please sign`,
+    html,
+    template: "amendment_ready_to_sign",
+    submissionId,
+  });
+  if (!result.ok) throw new Error("The amendment was saved but the customer email failed. Use Resend amendment email to retry; check the email log.");
+}
+
+/** Completed amendment – same recipients as the completion email, sent before optional integrations. */
+export async function sendAmendmentCompletionEmail(submissionId: string, amendmentNumber: number, pdfBytes: Uint8Array, fileName: string) {
+  const c = await emailContext(submissionId);
+  const subject = `Amendment ${amendmentNumber} to ${yourForm(c.formName)} is complete`;
+  const html = emailShell({
+    heading: esc(subject),
+    bodyHtml: `
+      ${goldBox(`Amendment ${amendmentNumber} to your ${esc(c.formName)} has been approved by EKOS Group.`)}
+      ${p("Your signed amendment is attached for your records. All other details remain as per your original signed form.")}
+      ${p("If you have any questions, don't hesitate to contact us – we're here to help.")}`,
+  });
+  const digest = await crypto.subtle.digest("SHA-256", new Uint8Array(pdfBytes));
+  const version = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  const input = {
+    from: FROM_CUSTOMER,
+    to: [c.email],
+    cc: [c.contacts.repEmail, c.contacts.parkInbox, c.contacts.sadie, c.contacts.sales],
+    subject,
+    html,
+    attachments: [{ filename: fileName, bytes: pdfBytes }],
+    template: "amendment_completion",
+    submissionId,
+    idempotencyKey: `amendment-${submissionId}-${amendmentNumber}-${version}`,
+  };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const result = await sendEmail(input);
+    if (result.ok) return;
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+  }
+  throw new Error("The amendment is approved and its PDF is saved, but the email failed. Use Resend amendment email to retry; check the email log.");
 }
 
 export async function sendDisapprovalEmail(submissionId: string, note: string) {

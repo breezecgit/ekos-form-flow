@@ -469,7 +469,7 @@ export const downloadDraftPdf = createServerFn({ method: "POST" })
     return { fileName, base64: btoa(bin) };
   });
 
-async function syncSale(saleId: string, values: Record<string, unknown>, formType: string) {
+export async function syncSale(saleId: string, values: Record<string, unknown>, formType: string) {
   const db = await admin();
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   const park = String(values["park_name"] || values["park_name_confirm"] || "");
