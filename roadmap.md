@@ -139,3 +139,5 @@
 ## Form amendments after completion — 21 October
 - [x] Change-list logic, amend screen, customer amendment page, approval PDF/email/Drive, Amendments section, audit entries, tests
 - [ ] BLOCKED on Emma's approval: apply `.lovable/proposed-form-amendments.sql` (new table) — then hosted fictional end-to-end test
+
+- [x] Remove Chris Harris from Settings sales people list and verify gone (approved by Emma)
