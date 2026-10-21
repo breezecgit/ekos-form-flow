@@ -433,6 +433,42 @@ export const saveDraft = createServerFn({ method: "POST" })
     return { resumeLink };
   });
 
+/** Director-only unsigned draft PDF: saves on-screen values (status unchanged), then builds it on the fly. */
+export const downloadDraftPdf = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ submissionId: z.string().uuid(), values: z.record(z.string(), z.unknown()).optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    if (!(await isDirector(context.userId))) throw new Error("Director access is required.");
+    const submission = await assertAccess(data.submissionId, context.userId);
+    const db = await admin();
+    if (data.values) {
+      const values = prepareHomeCost(submission.form_type, withoutRetiredTopup(submission.form_type, await lockPark(submission, data.values)));
+      validateFormWrite(getForm(submission.form_type), values, { mode: "rep", isDirector: true }, "draft", (submission.data ?? {}) as Record<string, unknown>);
+      await expectRows(db
+        .from("form_submissions")
+        .update({ data: values as never, updated_at: new Date().toISOString() })
+        .eq("id", data.submissionId)
+        .eq("status", submission.status)
+        .select("id"), "The form could not be saved – it may have changed elsewhere. Please reload and retry.");
+      await syncSale(submission.sale_id, values, submission.form_type);
+    }
+    const s = await server();
+    const { bytes, fileName } = await s.buildDraftPdf(data.submissionId);
+    const { data: profile } = await db.from("profiles").select("full_name, email").eq("id", context.userId).maybeSingle();
+    const who = profile?.full_name || profile?.email || String(context.claims["email"] ?? "");
+    await s.addAudit({
+      submissionId: data.submissionId,
+      actorId: context.userId,
+      actorLabel: String(context.claims["email"] ?? who),
+      action: `Draft PDF downloaded by ${who}`,
+    });
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return { fileName, base64: btoa(bin) };
+  });
+
 async function syncSale(saleId: string, values: Record<string, unknown>, formType: string) {
   const db = await admin();
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
