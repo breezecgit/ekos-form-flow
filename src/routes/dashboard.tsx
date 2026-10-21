@@ -140,6 +140,7 @@ type SubRow = {
   submitted_at?: string | null;
   updated_at?: string;
   total_cost?: string | null;
+  amendment_open?: boolean;
 };
 
 const REVIEW_STATES = new Set([
@@ -322,7 +323,7 @@ function Overview({
                     <div className="text-sm">
                       <span className="font-semibold text-brand">{sale?.order_number}</span>{" "}
                       · {FORM_TITLES[s.form_type]} · {sale?.customer_name || "—"} · {sale?.park_name || "—"}{" "}
-                      <StatusChip status={chipStatus(s)} />
+                      <StatusChip status={chipStatus(s)} amending={Boolean(s.amendment_open)} />
                     </div>
                     <Button asChild size="sm" variant="gold">
                       <Link to="/admin/submissions/$id" params={{ id: s.id }}>Review</Link>

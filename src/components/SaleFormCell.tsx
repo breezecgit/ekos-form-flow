@@ -19,7 +19,7 @@ export function SaleFormCell({
 }: {
   saleId: string;
   formType: string;
-  sub?: (NonNullable<Sub> & { id: string }) | undefined;
+  sub?: (NonNullable<Sub> & { id: string; amendment_open?: boolean }) | undefined;
   children?: ReactNode;
 }) {
   const router = useRouter();
@@ -43,7 +43,7 @@ export function SaleFormCell({
       <div className="p-3">
       <p className="text-xs font-semibold">{FORM_TITLES[formType]}</p>
       <div className="mt-2">
-        <StatusChip status={chipStatus(sub)} />
+        <StatusChip status={chipStatus(sub)} amending={Boolean(sub?.amendment_open)} />
       </div>
       <Button
         size="sm"

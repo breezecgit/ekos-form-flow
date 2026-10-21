@@ -19,14 +19,23 @@ export function statusLabel(status: string): string {
   return LABELS[status] ?? status;
 }
 
-export function StatusChip({ status }: { status: string }) {
-  return (
+export function StatusChip({ status, amending = false }: { status: string; amending?: boolean }) {
+  const chip = (
     <span
       className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
         STYLES[status] ?? "bg-muted text-muted-foreground"
       }`}
     >
       {LABELS[status] ?? status}
+    </span>
+  );
+  if (!amending) return chip;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1">
+      {chip}
+      <span className="inline-block rounded-full border border-gold px-2 py-0.5 text-[11px] font-medium text-gold">
+        Amendment in progress
+      </span>
     </span>
   );
 }
