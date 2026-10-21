@@ -114,6 +114,7 @@
 ## Later messages
 - [x] Form 5: Your Written Statement (customer → Sadie + witness, Word export) — done
 - EKOS Customer Order Form Amendments
+- [ ] Field-level encryption of sensitive customer data — plan prepared (EKOS-Field-Level-Encryption-Plan-21-October-2026.md), awaiting Emma's approval; sequence after Migration C + backup ACL/RLS evidence
 
 ## Done (automations)
 - Live EKOS automations rebuilt in-app: lookup tables, 5 branded emails, Drive per-customer folders + stage PDFs, Google tracker sheet sync (off by default), email log preview
