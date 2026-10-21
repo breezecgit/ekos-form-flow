@@ -31,7 +31,7 @@ describe("amendment change list", () => {
   });
 
   it("adding decking cost lists the decking answer plus knock-on Total Cost and Balance", () => {
-    const { after, changes } = prepareAmendment(newHomeOrderForm, signed, { ...signed, decking_cost: "4,000" });
+    const { after, changes } = prepareAmendment(newHomeOrderForm, signed, { ...signed, include_decking: "Yes", decking_cost: "4,000" });
     expect(after["cost_total"]).toBe("294,000");
     expect(after["balance_on_completion"]).toBe("289,000");
     const byKey = Object.fromEntries(changes.map((c) => [c.key, c]));
