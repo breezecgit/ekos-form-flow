@@ -44,7 +44,7 @@ describe("amendment change list", () => {
     const { changes } = prepareAmendment(newHomeOrderForm, signed, { ...signed, include_decking: "Yes", decking_cost: "4,000" });
     const deckingRows = changes.filter((c) => c.label === "Decking Cost");
     expect(deckingRows).toHaveLength(1);
-    expect(deckingRows[0].key).toBe("decking_cost");
+    expect(deckingRows[0]?.key).toBe("decking_cost");
     expect(changes.some((c) => c.key === "cost_decking")).toBe(false);
   });
 
