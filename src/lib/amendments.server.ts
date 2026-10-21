@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getForm, FORM_TITLES } from "@/lib/forms/registry";
-import { AMENDMENT_STATUS, OPEN_AMENDMENT_STATUSES, prepareAmendment, type AmendmentChange } from "@/lib/forms/amendments";
+import { AMENDMENT_STATUS, OPEN_AMENDMENT_STATUSES, buildChangeList, prepareAmendment, type AmendmentChange } from "@/lib/forms/amendments";
 import { withoutRetiredTopup } from "@/lib/forms/retired-topup";
 import { prepareHomeCost } from "@/lib/forms/home-cost";
 import { validateFormWrite } from "@/lib/forms/write-validation";
@@ -137,7 +137,7 @@ export async function cancelAmendment(amendmentId: string, userId: string, actor
     .eq("id", amendmentId).eq("status", a.status).select("id"), "The amendment could not be cancelled.") as unknown[];
   if (!updated?.length) throw new Error("The amendment changed elsewhere. Please reload.");
   await retireTokens(a.submission_id);
-  await audit(a.submission_id, userId, actorLabel, `Amendment ${a.amendment_number} cancelled`, note || null || undefined);
+  await audit(a.submission_id, userId, actorLabel, `Amendment ${a.amendment_number} cancelled`, note || undefined);
 }
 
 class AmendmentTokenError extends Error {}
@@ -197,8 +197,6 @@ export async function signAmendment(token: string, signature: string, name: stri
   const { error } = await d.from("signing_tokens").update({ used_at: now }).eq("token", token);
   if (error) console.error("Amendment token could not be closed after signing", { submissionId: amendment.submission_id });
   await audit(amendment.submission_id, null, `Customer: ${name.trim()}`, `Amendment ${amendment.amendment_number} signed by customer`);
-  const { sendReviewRequiredEmail } = await import("@/lib/ekos.server");
-  void sendReviewRequiredEmail; // Sadie sees it on the tracker; no extra email is introduced.
 }
 
 /** Director approval: builds amendment-{n}.pdf, updates current answers, emails, then optional Drive backup. */
@@ -207,6 +205,10 @@ export async function approveAmendment(amendmentId: string, userId: string, acto
   if (a.status !== AMENDMENT_STATUS.awaitingApproval) throw new Error("This amendment is not waiting for approval.");
   const { submission, sale } = await loadSale(a.submission_id);
   if (submission.status !== "Completed") throw new Error("The form is no longer Completed. Please reload.");
+  const current = withoutRetiredTopup(submission.form_type, (submission.data ?? {}) as FormValues);
+  if (buildChangeList(getForm(submission.form_type), a.values_before, current).length) {
+    throw new Error("The signed form was edited after this amendment started. Cancel this amendment and start a new one.");
+  }
   const s = await import("@/lib/ekos.server");
   const settings = await s.getSettingsMap();
   const ds = settings["director_signature"] ?? {};
