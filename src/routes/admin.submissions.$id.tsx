@@ -17,6 +17,7 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { WordDownloadButton } from "@/components/WordDownload";
 import { DriveBackupStatus } from "@/components/DriveBackupStatus";
 import { DriveSaleClassification } from "@/components/DriveSaleClassification";
+import { AmendmentsPanel } from "@/components/AmendmentsPanel";
 
 export const Route = createFileRoute("/admin/submissions/$id")({
   head: () => ({
@@ -137,6 +138,7 @@ function SubmissionDetail() {
 
         <DriveBackupStatus submissionId={s.id} />
         <DriveSaleClassification submissionId={s.id} />
+        <AmendmentsPanel submissionId={s.id} status={s.status} originalPdfUrl={q.data.pdfUrl ?? ""} />
         <div className="mt-4 flex flex-wrap gap-2">
           {s.status !== "Completed" && !s.customer_signed_at && (
             <DraftPdfButton
