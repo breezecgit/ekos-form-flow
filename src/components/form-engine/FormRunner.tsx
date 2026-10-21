@@ -7,6 +7,7 @@ import { validateAll, validateFields, type Errors } from "@/lib/forms/validate";
 import { todayISO } from "@/lib/format";
 import { toast } from "sonner";
 import { DraftPdfButton } from "@/components/DraftPdfButton";
+import { initialAmendOverrides, releaseOverridesOnSelectionChange } from "@/lib/forms/amendments";
 import { HOME_COST_MODE, hasHomeCost, prepareHomeCostDraft } from "@/lib/forms/home-cost";
 
 interface Props {
@@ -24,6 +25,8 @@ interface Props {
   onSaveDraft?: (values: FormValues) => Promise<void>;
   onSubmit: (values: FormValues) => Promise<void>;
   headerExtra?: React.ReactNode;
+  /** Amend mode: typed-over calculated boxes stay put unless their selection changes. */
+  amendMode?: boolean;
 }
 
 export function FormRunner({
@@ -39,6 +42,7 @@ export function FormRunner({
   onSaveDraft,
   onSubmit,
   headerExtra,
+  amendMode = false,
 }: Props) {
   const steps = useMemo(() => {
     if (!onlyGroup) {
@@ -88,8 +92,11 @@ export function FormRunner({
     }
     return out;
   });
-  const [touchedKeys, setTouchedKeys] = useState<Set<string>>(() =>
-    values[HOME_COST_MODE] === "manual" ? new Set(["cost_new_home"]) : new Set());
+  const [touchedKeys, setTouchedKeys] = useState<Set<string>>(() => {
+    const out = amendMode ? initialAmendOverrides(def, values) : new Set<string>();
+    if (values[HOME_COST_MODE] === "manual") out.add("cost_new_home");
+    return out;
+  });
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
@@ -107,8 +114,9 @@ export function FormRunner({
     if (isComputed) {
       if (String(value ?? "").trim() === "") overridden.delete(key);
       else overridden.add(key);
-      setTouchedKeys(overridden);
     }
+    if (amendMode) releaseOverridesOnSelectionChange(def, values, { ...values, [key]: value }, overridden, key);
+    if (isComputed || amendMode) setTouchedKeys(overridden);
     setValues((prev) => {
       let next: FormValues = { ...prev, [key]: value };
       if (key === "cost_new_home" && hasHomeCost(def.type)) {

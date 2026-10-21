@@ -79,3 +79,58 @@ describe("amendment change list", () => {
     expect(changes).toEqual([expect.objectContaining({ key: "customer_name", previous: "A Fictional", next: "B Fictional" })]);
   });
 });
+
+describe("amendment option-cost recalculation", () => {
+  // Signed with both sheds Required but a typed-over Shed cost of £2,500.
+  const withShed = settle({ ...signed, shed_basic: "Required", shed_connected: "Required" });
+  const overridden: FormValues = { ...withShed, cost_shed: "2,500" };
+  overridden["cost_total"] = "292,500";
+  overridden["balance_on_completion"] = "287,500";
+  overridden["customer_payment_required"] = "287,500";
+
+  it("changed selection recalculates a previously overridden cost and its totals", () => {
+    const edited = { ...overridden, shed_basic: "Not Required", shed_connected: "Not Required" };
+    const { after, changes } = prepareAmendment(newHomeOrderForm, overridden, edited);
+    expect(after["cost_shed"]).toBe("0");
+    expect(after["cost_total"]).toBe("290,000");
+    expect(after["balance_on_completion"]).toBe("285,000");
+    expect(after["customer_payment_required"]).toBe("285,000");
+    const keys = changes.map((c) => c.key);
+    for (const k of ["cost_shed", "cost_total", "balance_on_completion", "customer_payment_required"]) expect(keys).toContain(k);
+  });
+
+  it("unchanged selection keeps the manual override", () => {
+    const edited = { ...overridden, deposit_amount: "6,000" };
+    const after = applyKnockOnTotals(newHomeOrderForm, overridden, edited);
+    expect(after["cost_shed"]).toBe("2,500");
+  });
+
+  it("keeps Sadie's own figure typed over the recalculated cost", () => {
+    const edited = { ...overridden, shed_basic: "Not Required", shed_connected: "Not Required", cost_shed: "300" };
+    const after = applyKnockOnTotals(newHomeOrderForm, overridden, edited);
+    expect(after["cost_shed"]).toBe("300");
+    expect(after["cost_total"]).toBe("290,300");
+  });
+});
+
+describe("amend screen override handling", () => {
+  const withShed = settle({ ...signed, shed_basic: "Required", decking_base_extension: "Not Required" });
+  const v: FormValues = { ...withShed, cost_shed: "2,100", cost_decking_base: "2,000" };
+  v["cost_total"] = "294,100"; v["balance_on_completion"] = "289,100"; v["customer_payment_required"] = "289,100";
+
+  it("typed-over costs start as overrides", async () => {
+    const { initialAmendOverrides } = await import("./amendments");
+    const o = initialAmendOverrides(newHomeOrderForm, v);
+    expect(o.has("cost_shed")).toBe(true);
+    expect(o.has("cost_decking_base")).toBe(true);
+    expect(o.has("cost_total")).toBe(false);
+  });
+
+  it("changing the shed releases only the shed override", async () => {
+    const { initialAmendOverrides, releaseOverridesOnSelectionChange } = await import("./amendments");
+    const o = initialAmendOverrides(newHomeOrderForm, v);
+    releaseOverridesOnSelectionChange(newHomeOrderForm, v, { ...v, shed_basic: "Not Required" }, o, "shed_basic");
+    expect(o.has("cost_shed")).toBe(false);
+    expect(o.has("cost_decking_base")).toBe(true);
+  });
+});

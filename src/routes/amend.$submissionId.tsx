@@ -75,6 +75,7 @@ function AmendPage() {
       parks={sub.data.parks as unknown as Array<Record<string, unknown>>}
       orderNumber={s.order_number}
       submitLabel={s.form_type === "identification" ? "Save amendment for approval" : "Save amendment & send to customer"}
+      amendMode
       headerExtra={
         <div className="mx-auto mt-6 max-w-3xl space-y-2 rounded-lg border border-gold/50 bg-muted/40 p-4 text-sm">
           <p>
