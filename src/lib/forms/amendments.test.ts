@@ -81,20 +81,20 @@ describe("amendment change list", () => {
 });
 
 describe("amendment option-cost recalculation", () => {
-  // Signed with both sheds Required but a typed-over Shed cost of £2,100.
+  // Signed with both sheds Required but a typed-over Shed cost of £2,500.
   const withShed = settle({ ...signed, shed_basic: "Required", shed_connected: "Required" });
   const overridden: FormValues = { ...withShed, cost_shed: "2,500" };
-  overridden["cost_total"] = "297,500";
-  overridden["balance_on_completion"] = "292,500";
-  overridden["customer_payment_required"] = "292,500";
+  overridden["cost_total"] = "292,500";
+  overridden["balance_on_completion"] = "287,500";
+  overridden["customer_payment_required"] = "287,500";
 
   it("changed selection recalculates a previously overridden cost and its totals", () => {
     const edited = { ...overridden, shed_basic: "Not Required", shed_connected: "Not Required" };
     const { after, changes } = prepareAmendment(newHomeOrderForm, overridden, edited);
     expect(after["cost_shed"]).toBe("0");
-    expect(after["cost_total"]).toBe("295,000");
-    expect(after["balance_on_completion"]).toBe("290,000");
-    expect(after["customer_payment_required"]).toBe("290,000");
+    expect(after["cost_total"]).toBe("290,000");
+    expect(after["balance_on_completion"]).toBe("285,000");
+    expect(after["customer_payment_required"]).toBe("285,000");
     const keys = changes.map((c) => c.key);
     for (const k of ["cost_shed", "cost_total", "balance_on_completion", "customer_payment_required"]) expect(keys).toContain(k);
   });
@@ -109,6 +109,6 @@ describe("amendment option-cost recalculation", () => {
     const edited = { ...overridden, shed_basic: "Not Required", shed_connected: "Not Required", cost_shed: "300" };
     const after = applyKnockOnTotals(newHomeOrderForm, overridden, edited);
     expect(after["cost_shed"]).toBe("300");
-    expect(after["cost_total"]).toBe("295,300");
+    expect(after["cost_total"]).toBe("290,300");
   });
 });
