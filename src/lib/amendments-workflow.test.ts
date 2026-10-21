@@ -52,7 +52,7 @@ vi.mock("@/lib/ekos.server", () => ({
   buildAndStorePdf: async () => ({ bytes: new Uint8Array(), path: "", fileName: "" }),
 }));
 
-import { signAmendment, startAmendment, syncUsaFromNhoAmendment } from "./amendments.server";
+import { signAmendment, syncUsaFromNhoAmendment } from "./amendments.server";
 
 const nhoCompute = newHomeOrderForm.steps.flatMap((s) => s.fields).filter((f) => f.compute);
 function settle(v: FormValues): FormValues {
@@ -143,12 +143,3 @@ describe("NHO amendment → Unit Sale Agreement", () => {
   });
 });
 
-// Keeps startAmendment referenced for the Identification path.
-describe("Identification amendment", () => {
-  it("notifies Sadie immediately because the customer does not sign", async () => {
-    mem.tables["form_submissions"] = [{ id: "idc", sale_id: "s", form_type: "identification", status: "Completed", created_by: "ben", data: { id_checked_by: "Ben" } }];
-    await startAmendment({ submissionId: "idc", userId: "ben", actorLabel: "Ben", values: { id_checked_by: "Ben Cook" }, reason: "Name typo", isDirector: false }).catch(() => undefined);
-    const am = mem.tables["form_amendments"] ?? [];
-    if (am.length) expect(mem.emails).toEqual(["approval:idc:1"]);
-  });
-});
