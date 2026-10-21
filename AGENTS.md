@@ -29,3 +29,4 @@
 - Completion builds the final signed PDF once and emails it before optional integrations; bounded email retries reuse a document-specific provider idempotency key and surface exhausted failures rather than claiming delivery.
 - Retired form answers use a shared client-safe normalization boundary on reads, writes and PDF rendering so legacy drafts cannot preserve obsolete deductions or fail strict field validation.
 - Home-cost computation reuses Reservation discount logic; NHO/Unit Sale persist auto/manual provenance in answers, and unmarked saved values are preserved unless pristine prefill is established, because historical saves lack field-level override provenance.
+- Amendments of Completed forms live in a separate form_amendments record (change list, before/after snapshots, own token kind "amendment" and amendment-{n}.pdf key); submission data changes only on approval and form.pdf is never overwritten, so the original signed record stays intact.
