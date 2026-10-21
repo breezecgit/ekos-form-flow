@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { amendmentPermissions } from "@/lib/forms/amendments";
 
 async function requireDirector(userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -14,19 +15,47 @@ async function actor(userId: string, claims: Record<string, unknown>) {
   return data?.full_name || data?.email || String(claims["email"] ?? "");
 }
 
+async function isDirector(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", userId).eq("role", "director").maybeSingle();
+  return Boolean(data);
+}
+
+/** Same access pattern as other form actions: the form's rep or the Director. */
+async function amendAccess(submissionId: string, userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("form_submissions").select("created_by").eq("id", submissionId).maybeSingle();
+  if (!data) throw new Error("Submission not found");
+  const director = await isDirector(userId);
+  const perms = amendmentPermissions({ isDirector: director, userId, submissionOwner: data.created_by });
+  if (!perms.canStart) throw new Error("You do not have access to this submission");
+  return { director, owner: data.created_by as string | null };
+}
+
+async function manageAccess(amendmentId: string, userId: string) {
+  const s = await import("@/lib/amendments.server");
+  const a = await s.getAmendmentOwner(amendmentId);
+  const { director, owner } = await amendAccess(a.submission_id, userId);
+  if (!amendmentPermissions({ isDirector: director, userId, submissionOwner: owner, amendmentOwner: a.created_by }).canManage) {
+    throw new Error("Only the person who started this amendment or the Director can do that.");
+  }
+}
+
 const amendmentId = z.object({ amendmentId: z.string().uuid() });
 
 export const listFormAmendments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ submissionId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireDirector(context.userId);
+    const { director, owner } = await amendAccess(data.submissionId, context.userId);
     const s = await import("@/lib/amendments.server");
     const { signedPdfUrl } = await import("@/lib/ekos.server");
     try {
       const rows = await s.listAmendments(data.submissionId);
       return {
         available: true,
+        canStart: true,
+        canApprove: director,
         amendments: await Promise.all(rows.map(async (a) => ({
           id: a.id,
           number: a.amendment_number,
@@ -36,11 +65,12 @@ export const listFormAmendments = createServerFn({ method: "GET" })
           changes: a.changes,
           customerSignedAt: a.customer_signed_at,
           approvedAt: a.approved_at,
+          canManage: amendmentPermissions({ isDirector: director, userId: context.userId, submissionOwner: owner, amendmentOwner: a.created_by }).canManage,
           pdfUrl: a.pdf_path ? await signedPdfUrl(a.pdf_path, 60 * 60) : "",
         }))),
       };
     } catch (e) {
-      if (e instanceof Error && e.message.startsWith("Amendments are not switched on")) return { available: false, amendments: [] };
+      if (e instanceof Error && e.message.startsWith("Amendments are not switched on")) return { available: false, canStart: false, canApprove: false, amendments: [] };
       throw e;
     }
   });
@@ -53,9 +83,9 @@ export const startFormAmendment = createServerFn({ method: "POST" })
     values: z.record(z.string(), z.unknown()),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireDirector(context.userId);
+    const { director } = await amendAccess(data.submissionId, context.userId);
     const s = await import("@/lib/amendments.server");
-    const row = await s.startAmendment({ ...data, userId: context.userId, actorLabel: await actor(context.userId, context.claims) });
+    const row = await s.startAmendment({ ...data, userId: context.userId, actorLabel: await actor(context.userId, context.claims), isDirector: director });
     return { number: row.amendment_number, status: row.status };
   });
 
@@ -63,7 +93,7 @@ export const cancelFormAmendment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => amendmentId.extend({ note: z.string().max(1000).default("") }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireDirector(context.userId);
+    await manageAccess(data.amendmentId, context.userId);
     const s = await import("@/lib/amendments.server");
     await s.cancelAmendment(data.amendmentId, context.userId, await actor(context.userId, context.claims), data.note);
     return { ok: true };
@@ -73,7 +103,7 @@ export const resendFormAmendmentEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => amendmentId.parse(d))
   .handler(async ({ data, context }) => {
-    await requireDirector(context.userId);
+    await manageAccess(data.amendmentId, context.userId);
     const s = await import("@/lib/amendments.server");
     await s.resendAmendmentEmail(data.amendmentId, context.userId, await actor(context.userId, context.claims));
     return { ok: true };

@@ -284,7 +284,8 @@ export async function approveAmendment(amendmentId: string, userId: string, acto
   const { snapshotPdf, backgroundBackup } = await import("@/lib/drive-backups.server");
   backgroundBackup(() => snapshotPdf(a.submission_id, bytes, fileName));
   if (submission.form_type === "new_home_order") {
-    await syncUsaFromNhoAmendment({ saleId: submission.sale_id, amendmentNumber: a.amendment_number, before: a.values_before, after: a.values_after, userId, actorLabel });
+    await syncUsaFromNhoAmendment({ saleId: submission.sale_id, amendmentNumber: a.amendment_number, before: a.values_before, after: a.values_after, userId, actorLabel })
+      .catch((e) => console.error("Unit Sale Agreement sync failed", { saleId: submission.sale_id, message: e instanceof Error ? e.message : "" }));
   }
   return { saleId: submission.sale_id, formType: submission.form_type, values: a.values_after };
 }
