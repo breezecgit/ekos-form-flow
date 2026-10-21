@@ -133,18 +133,32 @@ export function FieldInput({
         </div>
       );
       break;
-    case "select":
+    case "select": {
+      const options = field.options ?? [];
+      const current = String(value ?? "");
+      // A saved value that is no longer offered (e.g. a retired sales person)
+      // must still display; it just cannot be newly selected.
+      const retired = current !== "" && !options.some((o) => o.value === current);
       control = (
         <Select
-          value={String(value ?? "")}
+          value={current}
           disabled={disabled ?? false}
           onValueChange={(v) => set(v)}
         >
           <SelectTrigger id={field.key} className="ekos-input h-auto w-full">
-            <SelectValue placeholder={field.placeholder ?? "Please select"} />
+            {retired ? (
+              <SelectValue>{current}</SelectValue>
+            ) : (
+              <SelectValue placeholder={field.placeholder ?? "Please select"} />
+            )}
           </SelectTrigger>
           <SelectContent>
-            {(field.options ?? []).map((o) => (
+            {retired && (
+              <SelectItem value={current} disabled>
+                {current} (no longer available)
+              </SelectItem>
+            )}
+            {options.map((o) => (
               <SelectItem
                 key={o.value}
                 value={o.value}
@@ -158,6 +172,7 @@ export function FieldInput({
         </Select>
       );
       break;
+    }
     case "multiselect": {
       const selected: string[] = Array.isArray(value) ? (value as string[]) : [];
       control = (

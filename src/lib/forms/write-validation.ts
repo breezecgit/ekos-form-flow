@@ -12,7 +12,7 @@ function invalid(f: FieldDef): never {
   throw new Error(`Please check ${f.label ?? "the form answer"}.`);
 }
 
-function checkValue(f: FieldDef, value: unknown) {
+function checkValue(f: FieldDef, value: unknown, existingValue?: unknown) {
   if (value === undefined || value === null || value === "") return;
   if (f.type === "checkbox") { if (typeof value !== "boolean") invalid(f); return; }
   if (f.type === "file") {
@@ -40,7 +40,9 @@ function checkValue(f: FieldDef, value: unknown) {
     const date = new Date(`${value}T00:00:00Z`);
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) invalid(f);
   }
-  if ((f.type === "radio" || f.type === "select") && !(f.options ?? []).some((o) => o.value === value)) invalid(f);
+  // A value that is no longer offered (e.g. a retired sales person) is still
+  // valid while it stays unchanged from the previously saved answer.
+  if ((f.type === "radio" || f.type === "select") && !(f.options ?? []).some((o) => o.value === value) && value !== existingValue) invalid(f);
 }
 
 export function checkPayloadSize(values: FormValues) {
@@ -67,7 +69,7 @@ export function validateFormWrite(def: FormDef, values: FormValues, ctx: RenderC
     const f = fields.get(key);
     if (!f) throw new Error("Unexpected form details were supplied.");
     if (!ctx.isDirector && f.options?.some((option) => option.directorOnly && option.value === value) && value !== existing[key]) throw new Error("Only the Director can select that option.");
-    checkValue(f, value);
+    checkValue(f, value, existing[key]);
   }
   if (stage === "submit" && Object.keys(validateAll(def, values, ctx)).length) throw new Error("Please complete every required box before submitting.");
 }
@@ -83,7 +85,7 @@ export function validateSigningWrite(def: FormDef, values: FormValues, existing:
     const f = byKey.get(key);
     if (f) {
       if (f.showIf && !f.showIf({ ...existing, ...values }, ctx)) throw new Error("Only the visible signing details can be changed through this link.");
-      checkValue(f, value); patch[key] = value; continue;
+      checkValue(f, value, existing[key]); patch[key] = value; continue;
     }
     if (!["order_number", "customer_name", "customer_email", "park_name", "status"].includes(key) || value !== echo[key]) throw new Error("Only the signing details can be changed through this link.");
   }
