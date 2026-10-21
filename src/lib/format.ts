@@ -66,3 +66,10 @@ export function driveFileName(
 function safePart(v: string): string {
   return (v || "").replace(/[\\/:*?"<>|]/g, "-").trim() || "Unknown";
 }
+
+/** "DRAFT - {Form} - {Customer} - {date}.pdf" with file-name-unsafe characters removed. */
+export function draftPdfFileName(formTitle: string, customerName: string, dateISO: string): string {
+  const safe = (t: string) =>
+    t.replace(/[\u2013\u2014]/g, "-").replace(/&/g, "and").replace(/[^A-Za-z0-9 ._()'-]/g, "").replace(/\s+/g, " ").trim();
+  return `DRAFT - ${safe(formTitle)} - ${safe(customerName) || "Customer"} - ${dateISO}.pdf`;
+}

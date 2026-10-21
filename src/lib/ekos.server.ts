@@ -196,6 +196,31 @@ export async function buildAndStorePdf(
   return { bytes, path, fileName };
 }
 
+/** Unsigned draft PDF built on the fly: never stored, emailed or backed up; no uploads embedded. */
+export async function buildDraftPdf(submissionId: string): Promise<{ bytes: Uint8Array; fileName: string }> {
+  const { submission, sale } = await loadSubmission(submissionId);
+  const def = getForm(submission.form_type);
+  const values = (submission.data ?? {}) as FormValues;
+  const parkName = String(values["park_name"] ?? sale?.park_name ?? "");
+  const customerName = String(values["customer_name"] ?? sale?.customer_name ?? "");
+  const park = await getPark(parkName);
+  const settings = await getSettingsMap();
+  const { templatesForSubmission } = await import("@/lib/statement.server");
+  const tpl = await templatesForSubmission(submission.form_type, values);
+  const bytes = await generateFormPdf({
+    def,
+    values,
+    ctx: { mode: "director", isDirector: true, ...(tpl ? { templates: tpl.sections } : {}) },
+    orderNumber: submission.order_number,
+    park: parkName,
+    customerName,
+    parkLinks: parkLinksFrom(park, settings),
+    draft: true,
+  });
+  const { draftPdfFileName } = await import("@/lib/format");
+  return { bytes, fileName: draftPdfFileName(def.title, customerName, todayISO()) };
+}
+
 export async function signedPdfUrl(path: string, seconds = 60 * 60 * 24 * 60) {
   const { data } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(path, seconds);
   return data?.signedUrl ?? "";
