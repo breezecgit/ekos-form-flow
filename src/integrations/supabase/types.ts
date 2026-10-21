@@ -300,6 +300,80 @@ export type Database = {
           },
         ]
       }
+      form_amendments: {
+        Row: {
+          amendment_number: number
+          approved_at: string | null
+          approved_by: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          changes: Json
+          created_at: string
+          created_by: string
+          customer_signature: string | null
+          customer_signed_at: string | null
+          customer_signed_name: string | null
+          id: string
+          pdf_path: string | null
+          reason: string
+          status: string
+          submission_id: string
+          values_after: Json
+          values_before: Json
+        }
+        Insert: {
+          amendment_number: number
+          approved_at?: string | null
+          approved_by?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          changes?: Json
+          created_at?: string
+          created_by: string
+          customer_signature?: string | null
+          customer_signed_at?: string | null
+          customer_signed_name?: string | null
+          id?: string
+          pdf_path?: string | null
+          reason: string
+          status?: string
+          submission_id: string
+          values_after: Json
+          values_before: Json
+        }
+        Update: {
+          amendment_number?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          changes?: Json
+          created_at?: string
+          created_by?: string
+          customer_signature?: string | null
+          customer_signed_at?: string | null
+          customer_signed_name?: string | null
+          id?: string
+          pdf_path?: string | null
+          reason?: string
+          status?: string
+          submission_id?: string
+          values_after?: Json
+          values_before?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_amendments_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_submissions: {
         Row: {
           construction_signed_at: string | null
