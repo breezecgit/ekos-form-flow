@@ -6,6 +6,7 @@ import { prepareHomeCost } from "@/lib/forms/home-cost";
 import { validateFormWrite } from "@/lib/forms/write-validation";
 import { pdfFileName, todayISO } from "@/lib/format";
 import type { FormValues } from "@/lib/forms/types";
+import { planUsaUpdate } from "@/lib/forms/nho-to-usa";
 
 /** Untyped service-role client: form_amendments is not in generated types until its migration is applied. */
 function db(): SupabaseClient {
@@ -73,7 +74,7 @@ async function audit(submissionId: string, actorId: string | null, actorLabel: s
 }
 
 /** Director starts an amendment of a Completed form. Original data and signed PDF are not touched. */
-export async function startAmendment(input: { submissionId: string; userId: string; actorLabel: string; values: FormValues; reason: string }) {
+export async function startAmendment(input: { submissionId: string; userId: string; actorLabel: string; values: FormValues; reason: string; isDirector?: boolean; carriedOver?: boolean }) {
   const reason = input.reason.trim();
   if (reason.length < 3) throw new Error("Please give a reason for the amendment.");
   const { submission } = await loadSale(input.submissionId);
@@ -81,7 +82,9 @@ export async function startAmendment(input: { submissionId: string; userId: stri
   const def = getForm(submission.form_type);
   const before = withoutRetiredTopup(submission.form_type, (submission.data ?? {}) as FormValues);
   const edited = prepareHomeCost(submission.form_type, withoutRetiredTopup(submission.form_type, input.values));
-  validateFormWrite(def, edited, { mode: "rep", isDirector: true }, "submit", before);
+  // Carried-over amendments change only figures the approved NHO already validated; a signed form
+  // missing a box made required later must not block them, so only value types are checked.
+  validateFormWrite(def, edited, { mode: "rep", isDirector: input.isDirector ?? true }, input.carriedOver ? "draft" : "submit", before);
   const { after, changes } = prepareAmendment(def, before, edited);
 
   const d = db();
@@ -105,6 +108,8 @@ export async function startAmendment(input: { submissionId: string; userId: stri
     const { sendAmendmentCustomerEmail } = await import("@/lib/ekos.server");
     await sendAmendmentCustomerEmail(input.submissionId, number);
     await audit(input.submissionId, input.userId, input.actorLabel, `Amendment ${number} sent to customer for signature`);
+  } else {
+    await notifyDirector(input.submissionId, number);
   }
   return row;
 }
@@ -115,6 +120,22 @@ export async function resendAmendmentEmail(amendmentId: string, userId: string, 
   const { sendAmendmentCustomerEmail } = await import("@/lib/ekos.server");
   await sendAmendmentCustomerEmail(a.submission_id, a.amendment_number);
   await audit(a.submission_id, userId, actorLabel, `Amendment ${a.amendment_number} sent to customer for signature`, "Resent");
+}
+
+/** Never blocks the amendment: a failed notification is logged in the email log and sale history. */
+async function notifyDirector(submissionId: string, number: number) {
+  try {
+    const { sendAmendmentApprovalEmail } = await import("@/lib/ekos.server");
+    await sendAmendmentApprovalEmail(submissionId, number);
+  } catch (e) {
+    console.error("Amendment approval notification failed", { submissionId, number, message: e instanceof Error ? e.message : "" });
+    await audit(submissionId, null, "System", `Amendment ${number} approval email to Director failed`).catch(() => undefined);
+  }
+}
+
+export async function getAmendmentOwner(id: string): Promise<{ created_by: string; submission_id: string }> {
+  const a = await getAmendment(id);
+  return { created_by: a.created_by, submission_id: a.submission_id };
 }
 
 async function getAmendment(id: string): Promise<AmendmentRow> {
@@ -197,6 +218,7 @@ export async function signAmendment(token: string, signature: string, name: stri
   const { error } = await d.from("signing_tokens").update({ used_at: now }).eq("token", token);
   if (error) console.error("Amendment token could not be closed after signing", { submissionId: amendment.submission_id });
   await audit(amendment.submission_id, null, `Customer: ${name.trim()}`, `Amendment ${amendment.amendment_number} signed by customer`);
+  await notifyDirector(amendment.submission_id, amendment.amendment_number);
 }
 
 /** Director approval: builds amendment-{n}.pdf, updates current answers, emails, then optional Drive backup. */
@@ -263,5 +285,59 @@ export async function approveAmendment(amendmentId: string, userId: string, acto
   await s.sendAmendmentCompletionEmail(a.submission_id, a.amendment_number, bytes, fileName);
   const { snapshotPdf, backgroundBackup } = await import("@/lib/drive-backups.server");
   backgroundBackup(() => snapshotPdf(a.submission_id, bytes, fileName));
+  if (submission.form_type === "new_home_order") {
+    await syncUsaFromNhoAmendment({ saleId: submission.sale_id, amendmentNumber: a.amendment_number, before: a.values_before, after: a.values_after, userId, actorLabel })
+      .catch((e) => console.error("Unit Sale Agreement sync failed", { saleId: submission.sale_id, message: e instanceof Error ? e.message : "" }));
+  }
   return { saleId: submission.sale_id, formType: submission.form_type, values: a.values_after };
+}
+
+/**
+ * After an NHO amendment is approved: update an unsigned Unit Sale Agreement (fresh signing link if one
+ * was sent) or open a USA amendment when it is already Completed. Never fails the NHO approval.
+ */
+export async function syncUsaFromNhoAmendment(input: { saleId: string; amendmentNumber: number; before: FormValues; after: FormValues; userId: string; actorLabel: string }) {
+  const n = input.amendmentNumber;
+  const d = db();
+  const rows = (check(await d.from("form_submissions").select("id,status,is_draft,customer_signed_at,data")
+    .eq("sale_id", input.saleId).eq("form_type", "unit_sale_agreement").limit(1), "The Unit Sale Agreement could not be loaded.") ?? []) as
+    { id: string; status: string; is_draft: boolean; customer_signed_at: string | null; data: FormValues }[];
+  const usa = rows[0] ?? null;
+  const usaDef = getForm("unit_sale_agreement");
+  const plan = planUsaUpdate(usaDef, usa ? { ...usa, data: withoutRetiredTopup("unit_sale_agreement", usa.data ?? {}) } : null, input.before, input.after);
+  if (!usa || plan.action === "none") {
+    if (usa && plan.action === "none" && plan.why === "awaiting-approval") {
+      await audit(usa.id, input.userId, input.actorLabel, `Unit Sale Agreement not updated from New Home Order Amendment ${n}`,
+        "The customer has already signed it and it is waiting for approval – review the figures before approving.");
+    }
+    return plan;
+  }
+  try {
+    if (plan.action === "update") {
+      const wrote = check(await d.from("form_submissions").update({ data: plan.values, updated_at: new Date().toISOString() })
+        .eq("id", usa.id).eq("status", usa.status).select("id"), "The Unit Sale Agreement could not be updated.") as unknown[];
+      if (!wrote?.length) throw new Error("The Unit Sale Agreement changed elsewhere.");
+      await audit(usa.id, input.userId, input.actorLabel, `Unit Sale Agreement updated from New Home Order Amendment ${n}`);
+      if (plan.resendSigningLink) {
+        const { error } = await d.from("signing_tokens").update({ used_at: new Date().toISOString() })
+          .eq("submission_id", usa.id).eq("kind", "customer_offsite").is("used_at", null);
+        if (error) throw new Error("The old Unit Sale Agreement signing link could not be closed.");
+        const s = await import("@/lib/ekos.server");
+        await s.buildAndStorePdf(usa.id);
+        await s.sendOffsiteCustomerEmail(usa.id);
+        await audit(usa.id, input.userId, input.actorLabel, "Fresh signing link sent to customer", `Previous link cancelled after New Home Order Amendment ${n}`);
+      }
+    } else {
+      const row = await startAmendment({
+        submissionId: usa.id, userId: input.userId, actorLabel: input.actorLabel, values: plan.values,
+        reason: `Updated from New Home Order Amendment ${n}`, isDirector: true, carriedOver: true,
+      });
+      await audit(usa.id, input.userId, input.actorLabel, `Unit Sale Agreement Amendment ${row.amendment_number} created from New Home Order Amendment ${n}`);
+    }
+  } catch (e) {
+    console.error("Unit Sale Agreement sync failed", { saleId: input.saleId, n, message: e instanceof Error ? e.message : "" });
+    await audit(usa.id, input.userId, input.actorLabel, `Unit Sale Agreement could not be updated from New Home Order Amendment ${n}`,
+      e instanceof Error ? e.message : "Please update it manually.").catch(() => undefined);
+  }
+  return plan;
 }

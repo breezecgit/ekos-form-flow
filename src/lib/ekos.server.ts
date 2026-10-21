@@ -479,6 +479,29 @@ export async function sendAmendmentCustomerEmail(submissionId: string, amendment
   if (!result.ok) throw new Error("The amendment was saved but the customer email failed. Use Resend amendment email to retry; check the email log.");
 }
 
+/** Amendment ready for Sadie's approval – same recipient and style as the normal review email. */
+export async function sendAmendmentApprovalEmail(submissionId: string, amendmentNumber: number) {
+  const c = await emailContext(submissionId);
+  const link = staffEmailLink(c.origin, `/admin/submissions/${submissionId}`);
+  const html = emailShell({
+    heading: `Amendment ${amendmentNumber} ready for approval`,
+    bodyHtml: `
+      ${p(`Amendment ${amendmentNumber} to the ${esc(c.formName)} for order ${esc(c.submission.order_number)} is ready for your approval.`)}
+      ${c.table}
+      ${button("Review the amendment", link)}
+      ${outlineButton("Log in to the website", link)}`,
+  });
+  const result = await sendEmail({
+    from: FROM_INTERNAL,
+    to: [c.contacts.sadie],
+    subject: `Amendment ${amendmentNumber} - Review Required (${c.submission.order_number})`,
+    html,
+    template: "amendment_review_required",
+    submissionId,
+  });
+  if (!result.ok) throw new Error("The amendment approval notification email failed; check the email log.");
+}
+
 /** Completed amendment – same recipients as the completion email, sent before optional integrations. */
 export async function sendAmendmentCompletionEmail(submissionId: string, amendmentNumber: number, pdfBytes: Uint8Array, fileName: string) {
   const c = await emailContext(submissionId);

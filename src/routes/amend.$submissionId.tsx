@@ -16,9 +16,9 @@ export const Route = createFileRoute("/amend/$submissionId")({
   head: () => ({
     meta: [
       { title: "Amend a completed form | EKOS Customer Sales Form" },
-      { name: "description", content: "Director-only amendment of a completed EKOS Group sales form." },
+      { name: "description", content: "Amend a completed EKOS Group sales form for customer signature and Director approval." },
       { property: "og:title", content: "Amend a completed form | EKOS Customer Sales Form" },
-      { property: "og:description", content: "Director-only amendment of a completed EKOS Group sales form." },
+      { property: "og:description", content: "Amend a completed EKOS Group sales form for customer signature and Director approval." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -52,7 +52,6 @@ function AmendPage() {
   );
   if (sub.isError) return shell(<p className="text-center text-muted-foreground" role="alert">This form couldn’t be opened.</p>);
   if (!sub.data || !me.data) return shell(<p className="text-center text-muted-foreground">Loading…</p>);
-  if (!me.data.isDirector) return shell(<p className="text-center text-muted-foreground" role="alert">Only the Director can amend completed forms.</p>);
   const s = sub.data.submission;
   if (s.status !== "Completed") return shell(<p className="text-center text-muted-foreground" role="alert">Only Completed forms can be amended.</p>);
 
@@ -64,7 +63,7 @@ function AmendPage() {
     <FormRunner
       def={def}
       title={`Amend: ${def.title}`}
-      ctx={{ mode: "rep", isDirector: true, submissionId, ...(sub.data.statement ? { templates: sub.data.statement.sections } : {}) }}
+      ctx={{ mode: "rep", isDirector: me.data.isDirector, submissionId, ...(sub.data.statement ? { templates: sub.data.statement.sections } : {}) }}
       initialValues={values}
       parkLinks={{
         brochure_url: park?.brochure_url ?? "",
@@ -94,9 +93,10 @@ function AmendPage() {
         toast.success(
           res.status === "Awaiting customer signature"
             ? `Amendment ${res.number} saved – the customer has been emailed a link to sign it.`
-            : `Amendment ${res.number} saved and waiting for your approval.`,
+            : me.data?.isDirector ? `Amendment ${res.number} saved and waiting for your approval.` : `Amendment ${res.number} saved – Sadie has been emailed to approve it.`,
         );
-        router.navigate({ to: "/admin/submissions/$id", params: { id: submissionId } });
+        if (me.data?.isDirector) router.navigate({ to: "/admin/submissions/$id", params: { id: submissionId } });
+        else router.navigate({ to: "/forms/$formType/$submissionId", params: { formType: s.form_type, submissionId } });
       }}
     />,
   );
