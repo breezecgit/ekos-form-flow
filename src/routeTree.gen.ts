@@ -16,6 +16,8 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminEmailsRouteImport } from './routes/admin.emails'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AmendSubmissionIdRouteImport } from './routes/amend.$submissionId'
+import { Route as AmendmentTokenRouteImport } from './routes/amendment.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as AdminSubmissionsIdRouteImport } from './routes/admin.submissions.$id'
 import { Route as FormsFormTypeSubmissionIdRouteImport } from './routes/forms.$formType.$submissionId'
@@ -56,6 +58,16 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AmendSubmissionIdRoute = AmendSubmissionIdRouteImport.update({
+  id: '/amend/$submissionId',
+  path: '/amend/$submissionId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AmendmentTokenRoute = AmendmentTokenRouteImport.update({
+  id: '/amendment/$token',
+  path: '/amendment/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignTokenRoute = SignTokenRouteImport.update({
   id: '/sign/$token',
   path: '/sign/$token',
@@ -86,6 +98,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/amend/$submissionId': typeof AmendSubmissionIdRoute
+  '/amendment/$token': typeof AmendmentTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/submissions/$id': typeof AdminSubmissionsIdRoute
@@ -98,6 +112,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/amend/$submissionId': typeof AmendSubmissionIdRoute
+  '/amendment/$token': typeof AmendmentTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/admin': typeof AdminIndexRoute
   '/admin/submissions/$id': typeof AdminSubmissionsIdRoute
@@ -112,6 +128,8 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/amend/$submissionId': typeof AmendSubmissionIdRoute
+  '/amendment/$token': typeof AmendmentTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/submissions/$id': typeof AdminSubmissionsIdRoute
@@ -127,6 +145,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/admin/emails'
     | '/admin/settings'
+    | '/amend/$submissionId'
+    | '/amendment/$token'
     | '/sign/$token'
     | '/admin/'
     | '/admin/submissions/$id'
@@ -139,6 +159,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/admin/emails'
     | '/admin/settings'
+    | '/amend/$submissionId'
+    | '/amendment/$token'
     | '/sign/$token'
     | '/admin'
     | '/admin/submissions/$id'
@@ -152,6 +174,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/admin/emails'
     | '/admin/settings'
+    | '/amend/$submissionId'
+    | '/amendment/$token'
     | '/sign/$token'
     | '/admin/'
     | '/admin/submissions/$id'
@@ -164,6 +188,8 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
+  AmendSubmissionIdRoute: typeof AmendSubmissionIdRoute
+  AmendmentTokenRoute: typeof AmendmentTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   FormsFormTypeSubmissionIdRoute: typeof FormsFormTypeSubmissionIdRoute
   ApiPublicJobsDriveBackupsRoute: typeof ApiPublicJobsDriveBackupsRoute
@@ -220,6 +246,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/amend/$submissionId': {
+      id: '/amend/$submissionId'
+      path: '/amend/$submissionId'
+      fullPath: '/amend/$submissionId'
+      preLoaderRoute: typeof AmendSubmissionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/amendment/$token': {
+      id: '/amendment/$token'
+      path: '/amendment/$token'
+      fullPath: '/amendment/$token'
+      preLoaderRoute: typeof AmendmentTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign/$token': {
       id: '/sign/$token'
       path: '/sign/$token'
@@ -272,6 +312,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
+  AmendSubmissionIdRoute: AmendSubmissionIdRoute,
+  AmendmentTokenRoute: AmendmentTokenRoute,
   SignTokenRoute: SignTokenRoute,
   FormsFormTypeSubmissionIdRoute: FormsFormTypeSubmissionIdRoute,
   ApiPublicJobsDriveBackupsRoute: ApiPublicJobsDriveBackupsRoute,
