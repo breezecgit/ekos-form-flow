@@ -20,7 +20,6 @@ export const SALES_PEOPLE = [
   "Sadie Deveraux",
   "Melanie Davidson",
   "Jenna Fowler",
-  "Chris Harris",
   "Claire McCulloch",
   "Jackie Hilditch",
   "Bryan Marquis",
