@@ -6,6 +6,7 @@ import { SUBSUB_HEADINGS, isRequired, isVisible, labelRepeatsSection } from "@/l
 import { validateAll, validateFields, type Errors } from "@/lib/forms/validate";
 import { todayISO } from "@/lib/format";
 import { toast } from "sonner";
+import { DraftPdfButton } from "@/components/DraftPdfButton";
 import { HOME_COST_MODE, hasHomeCost, prepareHomeCostDraft } from "@/lib/forms/home-cost";
 
 interface Props {
@@ -233,7 +234,14 @@ export function FormRunner({
 
       <div className="mt-10 space-y-4">
         {onSaveDraft && (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3">
+            {ctx.isDirector && ctx.submissionId && (
+              <DraftPdfButton
+                submissionId={ctx.submissionId}
+                getValues={() => values}
+                className="ekos-btn rounded-[7px] px-5 py-2 disabled:opacity-50"
+              />
+            )}
             <button
               type="button"
               disabled={busy}
