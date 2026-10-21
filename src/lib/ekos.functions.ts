@@ -88,7 +88,19 @@ export const listSales = createServerFn({ method: "GET" })
           .select("id, sale_id, form_type, status, is_draft, customer_signed_at, construction_signed_at, updated_at, created_at, submitted_at, total_cost:data->>total_cost")
           .in("sale_id", ids)
       : { data: [] as never[] };
-    return { sales: sales ?? [], submissions: subs ?? [], isDirector: director };
+    // Open amendments are display-only: flag the form, never move the sale.
+    const subIds = (subs ?? []).map((s) => s.id);
+    const openIds = new Set<string>();
+    if (subIds.length) {
+      const { data: open } = await db
+        .from("form_amendments")
+        .select("submission_id")
+        .in("submission_id", subIds)
+        .in("status", [...OPEN_AMENDMENT_STATUSES]);
+      for (const a of open ?? []) openIds.add(a.submission_id);
+    }
+    const submissions = (subs ?? []).map((s) => ({ ...s, amendment_open: openIds.has(s.id) }));
+    return { sales: sales ?? [], submissions, isDirector: director };
   });
 
 /** Starts a new sale with a draft of the chosen first form (Reservation by default). */

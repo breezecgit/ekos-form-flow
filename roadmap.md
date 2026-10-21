@@ -141,3 +141,4 @@
 - [ ] BLOCKED on Emma's approval: apply `.lovable/proposed-form-amendments.sql` (new table) — then hosted fictional end-to-end test
 
 - [x] Remove Chris Harris from Settings sales people list and verify gone (approved by Emma)
+- [x] Amendment in progress tag on tracker/dashboard status (approved)
