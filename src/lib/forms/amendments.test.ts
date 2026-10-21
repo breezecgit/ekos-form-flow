@@ -40,6 +40,14 @@ describe("amendment change list", () => {
     expect(byKey["balance_on_completion"]).toMatchObject({ previous: "£285,000", next: "£289,000" });
   });
 
+  it("skips the computed totals-step Decking Cost row when it mirrors the extras-step answer", () => {
+    const { changes } = prepareAmendment(newHomeOrderForm, signed, { ...signed, include_decking: "Yes", decking_cost: "4,000" });
+    const deckingRows = changes.filter((c) => c.label === "Decking Cost");
+    expect(deckingRows).toHaveLength(1);
+    expect(deckingRows[0]?.key).toBe("decking_cost");
+    expect(changes.some((c) => c.key === "cost_decking")).toBe(false);
+  });
+
   it("changing the discount recalculates Cost of my New Home through to the balance", () => {
     const { changes } = prepareAmendment(newHomeOrderForm, signed, { ...signed, discount_home: "15,000" });
     const keys = changes.map((c) => c.key);
