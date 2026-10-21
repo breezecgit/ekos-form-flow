@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { OPEN_AMENDMENT_STATUSES } from "@/lib/amendment-tag";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCustomerEmail, assertEditable, canResend, parseSubmitStatus } from "@/lib/security-rules";
 import { validateFormWrite } from "@/lib/forms/write-validation";
