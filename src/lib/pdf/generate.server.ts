@@ -4,6 +4,7 @@ import {
   PDFPage,
   PDFString,
   StandardFonts,
+  degrees,
   rgb,
 } from "pdf-lib";
 import { CHOICE_IMAGES_JPG_BASE64 } from "./choice-images";
@@ -50,7 +51,11 @@ export interface GeneratePdfInput {
   parkLinks: Record<string, string>;
   attachments?: PdfAttachment[];
   directorSignature?: DirectorSignature;
+  /** Unsigned draft copy: watermark every page, no signatures, no uploaded files. */
+  draft?: boolean;
 }
+
+export const DRAFT_STAMP = "DRAFT – NOT SIGNED";
 
 /** Staff workflow status never belongs in a customer-facing PDF. */
 export function omitPdfField(key: string, completed: boolean): boolean {
@@ -404,6 +409,11 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       return;
     }
     if (f.type === "signature") {
+      if (input.draft) {
+        w.text(f.label ?? "Signature", { size: 10, font: w.bold, color: BRAND, gap: 2 });
+        w.text("Not yet signed", { color: MUTED, gap: 8 });
+        return;
+      }
       const dataUrl = String(values[f.key] ?? "");
       const meta = signatureMeta(f.key, values);
       if (dataUrl) {
@@ -442,6 +452,10 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
         /* fall through to text only */
       }
     }
+    if (input.draft && f.type === "file") {
+      w.text("Uploaded documents are not included in the draft PDF.", { size: 11, color: MUTED, gap: 8 });
+      return;
+    }
     w.text(fieldValueText(f, values, grouped), { size: 11, gap: 8 });
   };
 
@@ -457,7 +471,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       for (const f of fields) await renderField(f);
       w.rule();
     }
-    await drawAttachments(w, input.attachments ?? []);
+    if (!input.draft) await drawAttachments(w, input.attachments ?? []);
   } else {
     const all = def.steps
       .flatMap((s) => s.fields)
@@ -471,7 +485,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       if (f.type === "static" || f.type === "signature" || f.pdfSection) continue;
       await renderField(f);
     }
-    await drawAttachments(w, input.attachments ?? []);
+    if (!input.draft) await drawAttachments(w, input.attachments ?? []);
     // (c) every signature
     w.newPage();
     w.text("Signatures", { size: 15, font: w.bold, color: BRAND, gap: 8 });
@@ -488,7 +502,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   }
 
   // --- EKOS authorised signatory block -----------------------------------
-  if (input.directorSignature) {
+  if (input.directorSignature && !input.draft) {
     const ds = input.directorSignature;
     w.newPage();
     w.text("EKOS Group – Authorised Signatory", {
@@ -529,5 +543,19 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
 
   // Safety net: drop any trailing page that only has the running header.
   if (w.fresh && w.doc.getPageCount() > 1) w.doc.removePage(w.doc.getPageCount() - 1);
+  if (input.draft) {
+    const red = rgb(0.75, 0.1, 0.1);
+    for (const page of w.doc.getPages()) {
+      const size = 54;
+      const tw = w.bold.widthOfTextAtSize(DRAFT_STAMP, size);
+      page.drawText(DRAFT_STAMP, {
+        x: PAGE_W / 2 - (tw / 2) * Math.cos(Math.PI / 4) + 12,
+        y: PAGE_H / 2 - (tw / 2) * Math.sin(Math.PI / 4),
+        size, font: w.bold, color: red, opacity: 0.18, rotate: degrees(45),
+      });
+      const hw = w.bold.widthOfTextAtSize(DRAFT_STAMP, 11);
+      page.drawText(DRAFT_STAMP, { x: PAGE_W - MARGIN - hw, y: PAGE_H - 22, size: 11, font: w.bold, color: red });
+    }
+  }
   return await w.doc.save();
 }

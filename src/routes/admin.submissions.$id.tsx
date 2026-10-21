@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { DraftPdfButton } from "@/components/DraftPdfButton";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -137,6 +138,12 @@ function SubmissionDetail() {
         <DriveBackupStatus submissionId={s.id} />
         <DriveSaleClassification submissionId={s.id} />
         <div className="mt-4 flex flex-wrap gap-2">
+          {s.status !== "Completed" && !s.customer_signed_at && (
+            <DraftPdfButton
+              submissionId={s.id}
+              className="inline-flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent disabled:opacity-50"
+            />
+          )}
           {q.data.pdfUrl && (
             <a href={q.data.pdfUrl} target="_blank" rel="noreferrer">
               <Button variant="brand" size="sm">
