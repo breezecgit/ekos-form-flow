@@ -366,7 +366,6 @@ export async function sendOffsiteCustomerEmail(submissionId: string) {
   await sendEmail({
     from: FROM_CUSTOMER,
     to: [c.email],
-    cc: [c.contacts.sadie, c.contacts.sales, c.contacts.repEmail, c.contacts.parkInbox],
     subject: `${yourForm(c.formName)} is ready`,
     html,
     attachments: await pdfAttachment(c.submission.pdf_path),
@@ -454,7 +453,7 @@ export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8
   throw new Error("The form is Completed and its PDF is saved, but the completion email failed. Use Resend completion email to retry; check the email log.");
 }
 
-/** Amendment "ready to sign" – same recipients as the off-site signing email; link opens only the amendment page. */
+/** Amendment "ready to sign" – customer only, no CC; link opens only the amendment page. */
 export async function sendAmendmentCustomerEmail(submissionId: string, amendmentNumber: number) {
   const c = await emailContext(submissionId);
   const token = await getOrCreateSigningToken(submissionId, "amendment");
@@ -470,7 +469,6 @@ export async function sendAmendmentCustomerEmail(submissionId: string, amendment
   const result = await sendEmail({
     from: FROM_CUSTOMER,
     to: [c.email],
-    cc: [c.contacts.sadie, c.contacts.sales, c.contacts.repEmail, c.contacts.parkInbox],
     subject: `Amendment ${amendmentNumber} to ${yourForm(c.formName)} – please sign`,
     html,
     template: "amendment_ready_to_sign",

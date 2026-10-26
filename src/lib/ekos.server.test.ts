@@ -17,13 +17,17 @@ vi.mock("@/integrations/supabase/client.server", () => ({
       const query = {
         select: () => query,
         eq: () => query,
+        is: () => query,
+        gt: () => query,
+        order: () => query,
+        limit: () => query,
         update: (patch: unknown) => { updated = true; fixture.update(patch); return query; },
         maybeSingle: async () => ({ data: table === "form_submissions" ? {
           id: "00000000-0000-4000-8000-000000000074", sale_id: "fictional-sale",
           form_type: fixture.formType, order_number: "EKOS-FICTIONAL", data: {
             park_name: "Carlton Manor", customer_name: "Fictional – O’Connor / 测试", customer_email: "emma.frew@breezeconnection.co.uk",
           },
-        } : null }),
+        } : table === "signing_tokens" ? { token: "fictional-signing-token" } : null }),
         then: (resolve: (result: unknown) => unknown) => Promise.resolve({
           data: table === "app_settings" ? [] : [], error: updated ? null : null,
         }).then(resolve),
@@ -41,14 +45,61 @@ vi.mock("@/lib/automations.server", () => ({
 }));
 vi.mock("@/lib/email.server", async (original) => ({ ...await original<typeof import("@/lib/email.server")>(), sendEmail: fixture.send }));
 
-import { buildAndStorePdf, runCompletion, sendCompletionEmails } from "./ekos.server";
+import { buildAndStorePdf, runCompletion, sendCompletionEmails, sendOffsiteCustomerEmail, sendAmendmentCustomerEmail, sendReviewRequiredEmail, sendAmendmentApprovalEmail, sendSignatureCompleteEmail } from "./ekos.server";
 const id = "00000000-0000-4000-8000-000000000074";
 beforeEach(() => {
   vi.clearAllMocks();
+  fixture.formType = "new_home_order";
   fixture.upload.mockResolvedValue({ error: null });
   fixture.generate.mockResolvedValue(new Uint8Array([37, 80, 68, 70]));
   fixture.send.mockResolvedValue({ ok: true });
   fixture.drive.mockResolvedValue(null);
+});
+
+describe("customer signing emails (mock delivery, no real emails)", () => {
+  it.each(FORM_ORDER.filter((type) => type !== "identification"))("%s signing and amendment links go only to the customer with no CC, including repeat sends", async (formType) => {
+    fixture.formType = formType;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await sendOffsiteCustomerEmail(id);
+      expect(fixture.send).toHaveBeenLastCalledWith(expect.objectContaining({
+        template: "offsite_ready_to_sign",
+        to: ["emma.frew@breezeconnection.co.uk"],
+        html: expect.stringContaining('href="https://forms.ekosgroup.co.uk/sign/fictional-signing-token"'),
+      }));
+      expect(fixture.send.mock.lastCall?.[0].cc ?? []).toEqual([]);
+      await sendAmendmentCustomerEmail(id, 2);
+      expect(fixture.send).toHaveBeenLastCalledWith(expect.objectContaining({
+        template: "amendment_ready_to_sign",
+        to: ["emma.frew@breezeconnection.co.uk"],
+        html: expect.stringContaining('href="https://forms.ekosgroup.co.uk/amendment/fictional-signing-token"'),
+      }));
+      expect(fixture.send.mock.lastCall?.[0].cc ?? []).toEqual([]);
+    }
+    expect(fixture.send).toHaveBeenCalledTimes(4);
+  });
+
+  it("keeps Director review and rep/park signature notifications separate from customer links", async () => {
+    await sendReviewRequiredEmail(id);
+    await sendAmendmentApprovalEmail(id, 2);
+    await sendSignatureCompleteEmail(id);
+    expect(fixture.send.mock.calls.map(([email]) => ({ template: email.template, to: email.to }))).toEqual([
+      { template: "review_required", to: ["sadie@ekosgroup.co.uk"] },
+      { template: "amendment_review_required", to: ["sadie@ekosgroup.co.uk"] },
+      { template: "signature_complete", to: ["rep@example.invalid", "park@example.invalid"] },
+    ]);
+    for (const [email] of fixture.send.mock.calls) {
+      expect(email.html).not.toMatch(/href="[^\"]*\/(?:sign|amendment)\//);
+    }
+  });
+
+  it("preserves completion CCs", async () => {
+    await sendCompletionEmails(id, new Uint8Array([1]), "fictional.pdf");
+    expect(fixture.send).toHaveBeenCalledWith(expect.objectContaining({
+      template: "completion",
+      to: ["emma.frew@breezeconnection.co.uk"],
+      cc: ["rep@example.invalid", "park@example.invalid", "sadie@ekosgroup.co.uk", "sales@ekosgroup.co.uk"],
+    }));
+  });
 });
 
 describe("completed PDF email", () => {
