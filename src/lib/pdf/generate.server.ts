@@ -377,6 +377,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
 
   const renderField = async (f: FieldDef) => {
     if (f.sectionLabel) {
+      if (orderedSignatures && f.type === "signature") w.ensure(165);
       w.y -= 4;
       w.text(f.sectionLabel, { size: 12.5, font: w.bold, color: BRAND, gap: 4 });
     }
