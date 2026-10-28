@@ -19,6 +19,7 @@ import { contactsFor, emailFormName, saveStageToDrive, syncTrackerSheet } from "
 import type { FormValues, UploadedFile } from "@/lib/forms/types";
 import { isVisible } from "@/lib/forms/types";
 import { staffEmailLink } from "@/lib/email-links";
+import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
 
 /** The Operations/Construction sign-off step has been removed: Sadie (Director) is the
  *  only approver, so no form waits for a construction signature before review. */
@@ -83,6 +84,7 @@ export async function loadSubmission(submissionId: string) {
     .eq("id", submissionId)
     .maybeSingle();
   if (error || !submission) throw new Error("Submission not found");
+  submission.data = withoutRetiredAnswers(submission.form_type, (submission.data ?? {}) as FormValues) as never;
   const { data: sale } = await supabaseAdmin
     .from("sales")
     .select("*")

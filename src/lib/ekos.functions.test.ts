@@ -109,6 +109,16 @@ describe("Director completion trigger", () => {
 });
 
 describe("deletion authority and failed saves", () => {
+  it("saves legacy Written Statement answers without the retired acceptance keys", async () => {
+    fixture.submission.form_type = "written_statement";
+    fixture.submission.status = "Draft";
+    await saveDraft({ data: { submissionId: fixture.submission.id, values: {
+      customer_name: "Written Statement Test", accept_terms: true, accept_extras: true,
+    }, emailLink: false } });
+    expect(fixture.writes.find((write) => write.table === "form_submissions")?.patch.data)
+      .toEqual({ customer_name: "Written Statement Test" });
+    expect(fixture.audit).toHaveBeenCalledOnce();
+  });
   it("a rep claiming Sadie's email and holding a grant still cannot delete", async () => {
     fixture.email = "sadie@ekosgroup.co.uk"; fixture.grant = true;
     await expect(deleteSale({ data: { saleId: fixture.submission.id, confirmOrderNumber: "EKOS-FICTIONAL" } })).rejects.toThrow("permission");
