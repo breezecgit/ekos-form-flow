@@ -27,6 +27,25 @@ it("exports a legacy Written Statement to Word without acceptance boxes, retaini
   } finally { vi.unstubAllGlobals(); }
 });
 
+it("replaces the entire unsigned EKOS block with one line in review Word exports", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("No logo in isolated test")));
+  try {
+    const blob = await buildWrittenStatementDocx({ orderNumber: "EKOS-TEST", values: {
+      ...statementSignatures(false), director_signature: "", witness_signature: "",
+      director_name: "Hidden Director Default", witness_address: "Hidden EKOS Witness Address",
+    } });
+    const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+    const document = zip.file("word/document.xml");
+    if (!document) throw new Error("Missing Word document");
+    const xml = await document.async("string");
+    expect(xml.match(/To be signed by EKOS Group/g)).toHaveLength(1);
+    expect(xml).not.toContain("Signed (Director)");
+    expect(xml).not.toContain("Hidden Director Default");
+    expect(xml).not.toContain("Hidden EKOS Witness Address");
+    expect(xml).toContain("Witness to Occupier One");
+  } finally { vi.unstubAllGlobals(); }
+});
+
 it("keeps Word clauses and answers inline, hides step-4 details and embeds each occupier witness image", async () => {
   vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("No logo in isolated test")));
   try {

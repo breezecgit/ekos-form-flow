@@ -60,7 +60,7 @@ Site owner’s interest
 Pitch fee
 7. The pitch fee will be payable from: 28/10/2026
 The pitch fee will be payable monthly.
-The pitch fee is: £250.00
+The pitch fee is: £250
 The following services are included in the pitch fee: Sewage
 Review of pitch fee
 8. The pitch fee will be reviewed on the following date each year: 1 January
