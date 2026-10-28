@@ -1,7 +1,7 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Written Statement approved wording v2 — 28 October
-- [ ] Apply only listed Part 2 labels/Annex spacing; retire Parties customer field; immutable template v2 with v1 preserved; unsigned EKOS placeholder; verify embedded pitch plans and full extracted-PDF wording. No emails or publishing.
+- [x] Only enumerated Part 2/Annex changes applied; legacy Parties name stripped. Inserted immutable hosted template v2; v1 hashes unchanged and v2 hashes match local fixture. Existing pins preserved on resubmission; missing pins fail rather than switch wording. Unsigned EKOS block replaced in PDF/Word; actual PDF/image pitch plans embedded after signatures, unreadable plans fail generation. Permanent full extracted-PDF wording/Part 2 sequence test passes against fixed approved fixture. All 303 tests pass, preview clean. No emails, sale/PDF updates or publishing.
 
 ## Written Statement order and occupier witnesses — 28 October
 - [x] Legal wording untouched; PDF/Word follow online field order with one final Signatures section, pitch plans after signatures (Word embeds images and links PDF plans). Each occupier's witness required on-site/offsite; specified step-4 metadata hidden in exports only. All 296 tests pass, preview clean; fictional local PDF pages visually inspected. No emails, hosted record/PDF changes or publishing; EKOS-00087 untouched.
