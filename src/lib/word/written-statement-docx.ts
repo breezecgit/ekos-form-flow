@@ -161,7 +161,7 @@ export async function buildWrittenStatementDocx(opts: {
           new Paragraph({
             spacing: { before: 120, after: 120 },
             children: [
-              new TextRun({ text: `${f.label} `, bold: true, color: GREEN, font: FONT, size: 20 }),
+              new TextRun({ text: `${f.label} – `, bold: true, color: GREEN, font: FONT, size: 20 }),
               new TextRun({ text: `${Array.isArray(values[f.key]) ? (values[f.key] as { name: string }[]).map((file) => file.name).join(", ") : ""} (attached at the end of this document)`, italics: true, font: FONT, size: 20 }),
             ],
           }),

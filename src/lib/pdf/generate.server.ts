@@ -63,7 +63,7 @@ export function omitPdfField(key: string, completed: boolean): boolean {
     (completed && ["authorised_signatory_note", "construction_note"].includes(key));
 }
 
-async function drawAttachments(w: Writer, attachments: PdfAttachment[]) {
+async function drawAttachments(w: Writer, attachments: PdfAttachment[], requireEmbedded = false) {
   for (const att of attachments) {
     if (att.mimeType === "application/pdf") {
       try {
@@ -73,6 +73,7 @@ async function drawAttachments(w: Writer, attachments: PdfAttachment[]) {
         w.text(`Attached document: ${att.label ?? att.fileName}`, { size: 12, font: w.bold, color: BRAND });
         for (const p of pages) w.doc.addPage(p);
       } catch {
+        if (requireEmbedded) throw new Error("The pitch plan could not be embedded. Please check the file before generating the Written Statement.");
         w.text(`Attached document (could not be embedded): ${att.fileName}`, { color: MUTED });
       }
     } else {
@@ -87,6 +88,7 @@ async function drawAttachments(w: Writer, attachments: PdfAttachment[]) {
         w.fresh = false;
         w.y -= ih + 12;
       } catch {
+        if (requireEmbedded) throw new Error("The pitch plan could not be embedded. Please check the file before generating the Written Statement.");
         w.text(`Attached file: ${att.fileName}`, { color: MUTED });
       }
     }
@@ -431,6 +433,11 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       w.text(`${ticked ? "[X]" : "[ ]"}  ${f.label ?? ""}`, { size: 10, gap: 6 });
       return;
     }
+    if (orderedSignatures && f.key === "pitch_plan" && !input.draft) {
+      const files = Array.isArray(values[f.key]) ? values[f.key] as { name: string }[] : [];
+      w.text(`${f.label} – ${files.map((file) => file.name).join(", ") || "-"} (attached at the end of this document)`, { size: 11, gap: 8 });
+      return;
+    }
     w.ensure(28);
     if (!labelRepeatsSection(f, "pdf")) {
       w.text(`${f.pdfLabel ?? f.label ?? f.key}`, { size: 10, font: w.bold, color: BRAND });
@@ -457,11 +464,6 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     }
     if (input.draft && f.type === "file") {
       w.text("Uploaded documents are not included in the draft PDF.", { size: 11, color: MUTED, gap: 8 });
-      return;
-    }
-    if (orderedSignatures && f.key === "pitch_plan") {
-      const files = Array.isArray(values[f.key]) ? values[f.key] as { name: string }[] : [];
-      w.text(`${files.map((file) => file.name).join(", ") || "-"} (attached at the end of this document)`, { size: 11, gap: 8 });
       return;
     }
     w.text(fieldValueText(f, values, grouped), { size: 11, gap: 8 });
@@ -574,7 +576,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   }
 
   // Written Statement pitch plans belong after every signature, never between statement clauses.
-  if (orderedSignatures && !input.draft) await drawAttachments(w, input.attachments ?? []);
+  if (orderedSignatures && !input.draft) await drawAttachments(w, input.attachments ?? [], true);
 
   // Safety net: drop any trailing page that only has the running header.
   if (w.fresh && w.doc.getPageCount() > 1) w.doc.removePage(w.doc.getPageCount() - 1);

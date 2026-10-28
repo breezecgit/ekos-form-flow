@@ -54,7 +54,7 @@ Property Address 1 Test Pitch
 (a) the size and location of the pitch.
 (b) the size of the base on which the mobile home is to be stationed; and
 (c) measurements between identifiable fixed points on the site and the pitch and base.
-Your pitch plan is attached here Test Plan.pdf (attached at the end of this document)
+Your pitch plan is attached here – Test Plan.pdf (attached at the end of this document)
 Site owner’s interest
 6. In Perpetuity
 Pitch fee
