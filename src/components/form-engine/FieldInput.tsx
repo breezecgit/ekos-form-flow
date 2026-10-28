@@ -1,4 +1,4 @@
-import { STATEMENT_V1, classifyStatementLine } from "@/lib/forms/written-statement-text";
+import { STATEMENT_V2, classifyStatementLine } from "@/lib/forms/written-statement-text";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -390,7 +390,7 @@ function StaticContent({
   templates?: Record<string, string> | undefined;
 }) {
   if (field.templateKey) {
-    const body = templates?.[field.templateKey] ?? STATEMENT_V1[field.templateKey] ?? "";
+    const body = templates ? templates[field.templateKey] ?? "" : STATEMENT_V2[field.templateKey] ?? "";
     return (
       <div className="space-y-1.5">
         {body.split("\n").map((line, i) => {

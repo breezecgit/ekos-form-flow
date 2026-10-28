@@ -13,6 +13,7 @@
 - Staff email links go through the login page with an encoded internal return path so drafts and reviews reopen after sign-in.
 - PDFs render in director context to keep signatures; one shared field filter drops workflow/approval fields so review and completed copies cannot drift.
 - Written Statement uses ordered-signatures PDF layout and the same field order in Word; pdfHide is honored by both exports, keeping statement inputs inline and signatures before attachments without changing other forms.
+- Legal statement templates are immutable version rows; reads never seed or switch missing pins to latest, and resubmission preserves existing pins so corrected wording only defaults for new unpinned forms.
 - Generated PDFs use a fixed form.pdf storage key under the submission UUID, separate from their readable download filename, so customer text cannot invalidate storage keys.
 - Drive backups use a fail-closed gate, immutable snapshots and a service-role-only journal drained by leased workers (waitUntil + authenticated schedule), never inline; test destinations are expiring sale scopes verified against the approved parent.
 - Park autofill: form fields declare parkField (a parks column); FormRunner fills them on park change (overwrite) and on load (empty only). parks.inbox_email is the single park inbox/Email source.

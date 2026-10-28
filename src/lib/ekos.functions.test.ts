@@ -113,7 +113,7 @@ describe("deletion authority and failed saves", () => {
     fixture.submission.form_type = "written_statement";
     fixture.submission.status = "Draft";
     await saveDraft({ data: { submissionId: fixture.submission.id, values: {
-      customer_name: "Written Statement Test", accept_terms: true, accept_extras: true,
+      customer_name: "Written Statement Test", accept_terms: true, accept_extras: true, party_customer_name: "Removed Party Test",
     }, emailLink: false } });
     expect(fixture.writes.find((write) => write.table === "form_submissions")?.patch["data"])
       .toEqual({ customer_name: "Written Statement Test" });

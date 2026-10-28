@@ -19,7 +19,7 @@ it("prints Written Statement answers inline, one signatures section, witnesses i
       attachments: [{ fileName: "Test pitch.png", mimeType: "image/png", bytes: Uint8Array.from(atob(TEST_SIGNATURE.split(",")[1] ?? ""), (c) => c.charCodeAt(0)) }] });
     expect((await PDFDocument.load(bytes)).getPageCount()).toBeGreaterThan(0);
     const printed = text.mock.calls.map(([t]) => t).join("\n");
-    const sequence = ["Clause part2_intro", "Inline Company Test", "Inline Number Test", "Clause part2_address", "Inline Party Test",
+    const sequence = ["Clause part2_intro", "Inline Company Test", "Inline Number Test", "Clause part2_address",
       "Clause part2_start", "3. The agreement will begin on", "Clause part2_pitch", "Inline Address Test", "Clause part2_plan",
       "Test pitch.png (attached at the end of this document)", "Clause part2_additional", "Inline Charges Test", "Clause part2_home",
       "Inline Model Test", "Clause annex", "Signatures", "Occupier One", "Test occupier_one", "Witness to Occupier One",
