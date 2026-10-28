@@ -1,5 +1,8 @@
 # EKOS Customer Sales Form — roadmap
 
+## Written Statement approved wording v2 — 28 October
+- [ ] Apply only listed Part 2 labels/Annex spacing; retire Parties customer field; immutable template v2 with v1 preserved; unsigned EKOS placeholder; verify embedded pitch plans and full extracted-PDF wording. No emails or publishing.
+
 ## Written Statement order and occupier witnesses — 28 October
 - [x] Legal wording untouched; PDF/Word follow online field order with one final Signatures section, pitch plans after signatures (Word embeds images and links PDF plans). Each occupier's witness required on-site/offsite; specified step-4 metadata hidden in exports only. All 296 tests pass, preview clean; fictional local PDF pages visually inspected. No emails, hosted record/PDF changes or publishing; EKOS-00087 untouched.
 
