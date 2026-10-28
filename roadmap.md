@@ -1,5 +1,8 @@
 # EKOS Customer Sales Form — roadmap
 
+## Written Statement order and occupier witnesses — 28 October
+- [x] Legal wording untouched; PDF/Word follow online field order with one final Signatures section, pitch plans after signatures (Word embeds images and links PDF plans). Each occupier's witness required on-site/offsite; specified step-4 metadata hidden in exports only. All 296 tests pass, preview clean; fictional local PDF pages visually inspected. No emails, hosted record/PDF changes or publishing; EKOS-00087 untouched.
+
 ## Written Statement acceptance removal — 28 October
 - [x] Removed only Written Statement acceptance fields; normalized legacy answers on load/save/sign/PDF/Word export. All 283 isolated regression tests pass, including real PDF/Word generation and server save. Test email settings and hosted records/PDFs untouched; not published.
 

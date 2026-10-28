@@ -14,10 +14,20 @@ function useWordDownload(submissionId: string) {
       const res = await getFn({ data: { submissionId } });
       const { buildWrittenStatementDocx } = await import("@/lib/word/written-statement-docx");
       const values = (res.submission.data ?? {}) as FormValues;
+      const plans = Array.isArray(values["pitch_plan"]) ? values["pitch_plan"] as { name: string; path: string; mime: string }[] : [];
+      const pitchPlans = await Promise.all(plans.map(async (plan) => {
+        const url = res.fileUrls[plan.path];
+        if (!url) throw new Error("The pitch plan could not be included. Please retry.");
+        if (!["image/png", "image/jpeg"].includes(plan.mime)) return { name: plan.name, mime: plan.mime, url };
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("The pitch plan could not be included. Please retry.");
+        return { name: plan.name, mime: plan.mime, bytes: new Uint8Array(await response.arrayBuffer()) };
+      }));
       const blob = await buildWrittenStatementDocx({
         values,
         templates: res.statement?.sections ?? null,
         orderNumber: res.submission.order_number,
+        pitchPlans,
       });
       const name = [values["customer_name"], values["park_name"], res.submission.order_number]
         .filter(Boolean)

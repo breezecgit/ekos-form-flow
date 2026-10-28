@@ -369,6 +369,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
 
   const templates = ctx.templates ?? STATEMENT_V1;
   const grouped = def.pdfLayout === "grouped";
+  const orderedSignatures = def.type === "written_statement" && def.pdfLayout === "ordered-signatures";
   // Completed customer copies retain signatures, not the staff approval instructions.
   const completed = values["status"] === "Completed" || Boolean(input.directorSignature);
   const printable = (f: FieldDef) => isVisible(f, values, ctx) && !f.pdfHide &&
@@ -376,6 +377,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
 
   const renderField = async (f: FieldDef) => {
     if (f.sectionLabel) {
+      if (orderedSignatures && f.type === "signature") w.ensure(165);
       w.y -= 4;
       w.text(f.sectionLabel, { size: 12.5, font: w.bold, color: BRAND, gap: 4 });
     }
@@ -417,7 +419,8 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       const dataUrl = String(values[f.key] ?? "");
       const meta = signatureMeta(f.key, values);
       if (dataUrl) {
-        await drawSignature(w, f.label ?? "Signature", dataUrl, meta.name, meta.date);
+        const witnessAddress = orderedSignatures && f.key.includes("witness_signature");
+        await drawSignature(w, f.label ?? "Signature", dataUrl, meta.name, witnessAddress ? "" : meta.date);
       } else {
         w.text(`${f.label}: not signed`, { font: w.bold, color: MUTED, gap: 6 });
       }
@@ -459,7 +462,25 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     w.text(fieldValueText(f, values, grouped), { size: 11, gap: 8 });
   };
 
-  if (!grouped) {
+  if (orderedSignatures) {
+    const fields = def.steps.flatMap((step) => step.fields).filter(printable);
+    for (const f of fields) if (f.pdfSection !== "signatures") await renderField(f);
+    w.newPage();
+    w.text("Signatures", { size: 15, font: w.bold, color: BRAND, gap: 8 });
+    const consumed = new Set<string>();
+    for (const f of fields) {
+      if (f.type !== "signature") continue;
+      const base = f.key.replace(/_signature$/, "");
+      // Signed images already render name/date. Unsigned blocks retain their entered details.
+      if (!input.draft && values[f.key]) {
+        consumed.add(`${base}_name`);
+        if (!f.key.includes("witness_signature")) {
+          for (const key of [`${base}_date`, `${base}_sign_date`]) consumed.add(key);
+        }
+      }
+    }
+    for (const f of fields) if (f.pdfSection === "signatures" && !consumed.has(f.key)) await renderField(f);
+  } else if (!grouped) {
     for (const step of def.steps) {
       const fields = step.fields.filter(printable);
       if (!fields.length) continue;
@@ -540,6 +561,9 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
     w.text(ds.title, { size: 10, color: MUTED });
     w.text(`Date: ${formatDate(ds.date)}`, { size: 10 });
   }
+
+  // Written Statement pitch plans belong after every signature, never between statement clauses.
+  if (orderedSignatures && !input.draft) await drawAttachments(w, input.attachments ?? []);
 
   // Safety net: drop any trailing page that only has the running header.
   if (w.fresh && w.doc.getPageCount() > 1) w.doc.removePage(w.doc.getPageCount() - 1);

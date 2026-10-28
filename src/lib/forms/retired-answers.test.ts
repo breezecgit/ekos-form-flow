@@ -36,7 +36,9 @@ describe("Written Statement-only acceptance retirement", () => {
     const ctx = { mode: "offsite" as const, isDirector: false };
     const signing = { accept_terms: true, accept_extras: true, occupier_one_name: "Test Occupier",
       occupier_one_signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aXioAAAAASUVORK5CYII=",
-      occupier_one_date: "2026-10-28", second_occupier: "No" };
+      occupier_one_date: "2026-10-28", second_occupier: "No",
+      occupier_one_witness_signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aXioAAAAASUVORK5CYII=",
+      occupier_one_witness_name: "Test Witness", occupier_one_witness_address: "Test Address", occupier_one_witness_date: "2026-10-28" };
     const { accept_terms: _terms, accept_extras: _extras, ...expected } = signing;
     expect(validateSigningWrite(writtenStatementForm, signing, legacy, ctx, "customerSignature", "EKOS-TEST"))
       .toEqual(expected);

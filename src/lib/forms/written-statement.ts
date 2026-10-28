@@ -30,12 +30,19 @@ const directorVisible = (v: FormValues, ctx: RenderContext) =>
 
 const sig = (f: FieldDef): FieldDef => ({ ...f, pdfSection: "signatures" });
 
+const occupierWitness = (occupier: "one" | "two", showIf: (v: FormValues, ctx: RenderContext) => boolean): FieldDef[] => [
+  sig({ key: `occupier_${occupier}_witness_signature`, label: "Signed (Witness)", sectionLabel: `Witness to Occupier ${occupier === "one" ? "One" : "Two"}`, type: "signature", group: "customerSignature", showIf, required: true }),
+  sig({ key: `occupier_${occupier}_witness_name`, label: "Name", type: "text", group: "customerSignature", showIf, required: true }),
+  sig({ key: `occupier_${occupier}_witness_address`, label: "Address of Witness", type: "textarea", group: "customerSignature", showIf, required: true }),
+  sig({ key: `occupier_${occupier}_witness_date`, label: "Date", type: "date", defaultToday: true, group: "customerSignature", showIf, required: true }),
+];
+
 export const writtenStatementForm: FormDef = {
   type: "written_statement",
   title: "Your Written Statement",
   signingTitle: "Your Written Statement Signatures",
   directorSigningTitle: "Your Written Statement – Director & Witness Signatures",
-  pdfLayout: "grouped",
+  pdfLayout: "ordered-signatures",
   steps: [
     {
       id: "step-1",
@@ -106,12 +113,12 @@ export const writtenStatementForm: FormDef = {
     {
       id: "step-4",
       fields: [
-        { key: "customer_name", label: "Customer Name", type: "text" },
-        { key: "customer_email", label: "Customer Email", type: "email", placeholder: "Email Address" },
-        { key: "customer_phone", label: "Customer Phone", type: "tel" },
-        { ...fieldFromReservation("park_name"), key: "park_name_confirm", label: "Park Name", lockIfSet: true },
-        fieldFromReservation("sales_person"),
-        ...repSignatureFields().map(sig),
+        { key: "customer_name", label: "Customer Name", type: "text", pdfHide: true },
+        { key: "customer_email", label: "Customer Email", type: "email", placeholder: "Email Address", pdfHide: true },
+        { key: "customer_phone", label: "Customer Phone", type: "tel", pdfHide: true },
+        { ...fieldFromReservation("park_name"), key: "park_name_confirm", label: "Park Name", lockIfSet: true, pdfHide: true },
+        { ...fieldFromReservation("sales_person"), pdfHide: true },
+        ...repSignatureFields().map((f) => sig({ ...f, pdfHide: true })),
         {
           key: "status_guide",
           type: "static",
@@ -146,6 +153,7 @@ export const writtenStatementForm: FormDef = {
           group: "customerSignature",
           showIf: occupierVisible,
         }),
+        ...occupierWitness("one", occupierVisible),
         sig({
           key: "second_occupier",
           label: "Add Second Occupier?",
@@ -153,6 +161,7 @@ export const writtenStatementForm: FormDef = {
           options: opts(["Yes", "No"]),
           group: "customerSignature",
           showIf: occupierVisible,
+          pdfHide: true,
         }),
         sig({
           key: "occupier_two_signature",
@@ -171,6 +180,7 @@ export const writtenStatementForm: FormDef = {
           group: "customerSignature",
           showIf: secondOccupier,
         }),
+        ...occupierWitness("two", secondOccupier),
       ],
     },
     {
