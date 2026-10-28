@@ -23,7 +23,7 @@ it("exports a legacy Written Statement to Word without acceptance boxes, retaini
     }
     expect(xml).toContain("Test Occupier");
     expect(xml).toContain("Test Director");
-    expect(xml).not.toContain("Written Statement Test");
+    expect(xml).toContain("Written Statement Test");
   } finally { vi.unstubAllGlobals(); }
 });
 
