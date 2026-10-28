@@ -115,7 +115,7 @@ describe("deletion authority and failed saves", () => {
     await saveDraft({ data: { submissionId: fixture.submission.id, values: {
       customer_name: "Written Statement Test", accept_terms: true, accept_extras: true,
     }, emailLink: false } });
-    expect(fixture.writes.find((write) => write.table === "form_submissions")?.patch.data)
+    expect(fixture.writes.find((write) => write.table === "form_submissions")?.patch["data"])
       .toEqual({ customer_name: "Written Statement Test" });
     expect(fixture.audit).toHaveBeenCalledOnce();
   });

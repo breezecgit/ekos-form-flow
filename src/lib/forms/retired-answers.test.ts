@@ -34,8 +34,12 @@ describe("Written Statement-only acceptance retirement", () => {
   });
   it("ignores legacy ticks at the public signing boundary without granting other write access", () => {
     const ctx = { mode: "offsite" as const, isDirector: false };
-    expect(validateSigningWrite(writtenStatementForm, { accept_terms: true, accept_extras: true, occupier_one_name: "Test Occupier" }, legacy, ctx, "customerSignature", "EKOS-TEST"))
-      .toEqual({ occupier_one_name: "Test Occupier" });
+    const signing = { accept_terms: true, accept_extras: true, occupier_one_name: "Test Occupier",
+      occupier_one_signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aXioAAAAASUVORK5CYII=",
+      occupier_one_date: "2026-10-28", second_occupier: "No" };
+    const { accept_terms: _terms, accept_extras: _extras, ...expected } = signing;
+    expect(validateSigningWrite(writtenStatementForm, signing, legacy, ctx, "customerSignature", "EKOS-TEST"))
+      .toEqual(expected);
     expect(() => validateSigningWrite(writtenStatementForm, { new_home_address: "changed" }, legacy, ctx, "customerSignature", "EKOS-TEST")).toThrow("Only the signing");
   });
   it("generates a real PDF from legacy answers with signatures but no acceptance boxes", async () => {
