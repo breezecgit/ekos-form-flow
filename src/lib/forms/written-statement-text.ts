@@ -17,6 +17,8 @@ export const STATEMENT_SECTION_LABELS: Record<string, string> = {
   part2_interest: "Part 2 – Site owner’s interest",
   part2_fee: "Part 2 – Pitch fee heading",
   part2_monthly: "Part 2 – Pitch fee frequency",
+  part2_review: "Part 2 – Review of pitch fee heading",
+  part2_review_date: "Part 2 – Review date sentence",
   part2_additional: "Part 2 – Additional charges heading",
   part2_home: "Part 2 – Details of the mobile home",
   part2_max: "Part 2 – Maximum occupants",
@@ -452,6 +454,27 @@ Meaning of expressions used in the express terms and interpretation
 };
 
 export type LineStyle = "title" | "heading" | "body";
+
+/** Only the client's enumerated corrections; v1 remains immutable for pinned submissions. */
+export const STATEMENT_V2: Record<string, string> = {
+  ...STATEMENT_V1,
+  part2_pitch: "Particulars of the pitch\n4. The particulars of the land on which you will be entitled to station your mobile home are:",
+  part2_review: "Review of pitch fee",
+  part2_review_date: "This date is the review date.",
+  annex: (STATEMENT_V1["annex"] ?? "")
+    .replace("(b)then,", "(b) then,")
+    .replace("sub-paragraph (2)(a):\n(a)the", "sub-paragraph (2) (a):\n(a) the")
+    .replace("(b)it also considers", "(b) it also considers")
+    .replace("(c)the occupier indicates", "(c) the occupier indicates")
+    .replace("(a)specifying", "(a) specifying")
+    .replace("(b)adjourning", "(b) adjourning")
+    .replace("(b)contain incidental", "(b) contain incidental")
+    .replace("notice under subparagraph (6)(b) but,", "notice under subparagraph (6) (b) but,"),
+};
+
+export function defaultStatementSections(values: Record<string, unknown>): Record<string, string> {
+  return Number(values["statement_version"]) === 1 ? STATEMENT_V1 : STATEMENT_V2;
+}
 
 /** Shared line classifier so the page, PDF and Word file style lines identically. */
 export function classifyStatementLine(line: string): LineStyle {

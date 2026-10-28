@@ -1,9 +1,9 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { STATEMENT_V1 } from "@/lib/forms/written-statement-text";
+import { STATEMENT_V1, STATEMENT_V2 } from "@/lib/forms/written-statement-text";
 
 const FORM = "written_statement";
 
-/** Current (or a pinned) version of the Written Statement wording. Seeds v1 on first use. */
+/** Immutable pinned wording; reads never create or alter legal templates. */
 export async function getStatementTemplate(
   version?: number,
 ): Promise<{ version: number; sections: Record<string, string> }> {
@@ -14,19 +14,15 @@ export async function getStatementTemplate(
     .order("version", { ascending: false })
     .limit(1);
   if (version) q = q.eq("version", version);
-  const { data } = await q;
+  const { data, error } = await q;
+  if (error) throw new Error("The Written Statement wording could not be loaded. Please retry.");
   const row = data?.[0];
   if (row) {
-    return { version: row.version, sections: { ...STATEMENT_V1, ...(row.sections as Record<string, string>) } };
+    return { version: row.version, sections: { ...(row.version === 1 ? STATEMENT_V1 : STATEMENT_V2), ...(row.sections as Record<string, string>) } };
   }
-  if (version) return getStatementTemplate();
-  await supabaseAdmin
-    .from("statement_templates")
-    .upsert(
-      { form_type: FORM, version: 1, sections: STATEMENT_V1, note: "Initial wording" },
-      { onConflict: "form_type,version", ignoreDuplicates: true },
-    );
-  return { version: 1, sections: { ...STATEMENT_V1 } };
+  if (version === 1) return { version: 1, sections: { ...STATEMENT_V1 } };
+  if (version && version !== 2) throw new Error("The saved Written Statement wording version could not be found.");
+  return { version: 2, sections: { ...STATEMENT_V2 } };
 }
 
 export async function templatesForSubmission(formType: string, values: Record<string, unknown>) {

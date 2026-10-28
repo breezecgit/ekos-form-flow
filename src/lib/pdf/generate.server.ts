@@ -12,7 +12,7 @@ import { EKOS_LOGO_PNG_BASE64 } from "./logo-base64";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { ContentBlock, FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
 import { isVisible, labelRepeatsSection } from "@/lib/forms/types";
-import { STATEMENT_V1, classifyStatementLine } from "@/lib/forms/written-statement-text";
+import { defaultStatementSections, classifyStatementLine } from "@/lib/forms/written-statement-text";
 import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
 
 const BRAND = rgb(0.027, 0.212, 0.18); // #07362E
@@ -367,7 +367,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   w.text(`Customer: ${customerName || "-"}`, { size: 10.5, align: "center", gap: 10 });
   w.rule();
 
-  const templates = ctx.templates ?? STATEMENT_V1;
+  const templates = ctx.templates ?? defaultStatementSections(values);
   const grouped = def.pdfLayout === "grouped";
   const orderedSignatures = def.type === "written_statement" && def.pdfLayout === "ordered-signatures";
   // Completed customer copies retain signatures, not the staff approval instructions.
@@ -459,6 +459,11 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       w.text("Uploaded documents are not included in the draft PDF.", { size: 11, color: MUTED, gap: 8 });
       return;
     }
+    if (orderedSignatures && f.key === "pitch_plan") {
+      const files = Array.isArray(values[f.key]) ? values[f.key] as { name: string }[] : [];
+      w.text(`${files.map((file) => file.name).join(", ") || "-"} (attached at the end of this document)`, { size: 11, gap: 8 });
+      return;
+    }
     w.text(fieldValueText(f, values, grouped), { size: 11, gap: 8 });
   };
 
@@ -479,7 +484,13 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
         }
       }
     }
-    for (const f of fields) if (f.pdfSection === "signatures" && !consumed.has(f.key)) await renderField(f);
+    const ekosSigned = Boolean(values["director_signature"] && values["witness_signature"]);
+    for (const f of fields) {
+      if (f.pdfSection !== "signatures" || consumed.has(f.key)) continue;
+      if (f.group === "directorSignature" && !ekosSigned) continue;
+      await renderField(f);
+    }
+    if (!ekosSigned) w.text("To be signed by EKOS Group", { size: 11, color: MUTED, gap: 8 });
   } else if (!grouped) {
     for (const step of def.steps) {
       const fields = step.fields.filter(printable);

@@ -230,7 +230,6 @@ async function buildPrefill(
   }
   if (formType === "written_statement") {
     if (sale.park_name) out["park_name_confirm"] = sale.park_name;
-    if (!out["party_customer_name"] && out["customer_name"]) out["party_customer_name"] = out["customer_name"];
   }
   return prepareHomeCost(formType, out);
 }
@@ -534,7 +533,8 @@ export const submitForm = createServerFn({ method: "POST" })
     validateFormWrite(getForm(submission.form_type), data.values, { mode: "rep", isDirector: director }, "submit", (submission.data ?? {}) as Record<string, unknown>);
     if (isWS) {
       const { getStatementTemplate } = await import("@/lib/statement.server");
-      data.values["statement_version"] = (await getStatementTemplate()).version;
+      const pinned = Number(((submission.data ?? {}) as Record<string, unknown>)["statement_version"]) || undefined;
+      data.values["statement_version"] = (await getStatementTemplate(pinned)).version;
     }
     const signedOnSite = isWS && status === "In Review";
     const { error: submitError } = await db
