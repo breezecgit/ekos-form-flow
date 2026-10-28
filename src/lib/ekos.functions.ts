@@ -5,7 +5,7 @@ import { assertCustomerEmail, assertEditable, canResend, parseSubmitStatus } fro
 import { validateFormWrite } from "@/lib/forms/write-validation";
 import { getForm } from "@/lib/forms/registry";
 import { validateUpload } from "@/lib/forms/upload-validation";
-import { withoutRetiredTopup } from "@/lib/forms/retired-topup";
+import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
 import { prepareHomeCost, prepareHomeCostDraft, hasHomeCost } from "@/lib/forms/home-cost";
 
 const idInput = z.object({ submissionId: z.string().uuid() });
@@ -321,7 +321,7 @@ export const getSubmission = createServerFn({ method: "GET" })
         }
       }
     }
-    submission.data = withoutRetiredTopup(submission.form_type, (submission.data ?? {}) as Record<string, unknown>) as never;
+    submission.data = withoutRetiredAnswers(submission.form_type, (submission.data ?? {}) as Record<string, unknown>) as never;
     if (submission.is_draft && submission.status !== "Completed" && hasHomeCost(submission.form_type)) {
       // No saved-answer history means the stored value is still the original prefill.
       const { data: saved, error: historyError } = await db.from("audit_log").select("id")
@@ -409,7 +409,7 @@ export const saveDraft = createServerFn({ method: "POST" })
     const submission = await assertAccess(data.submissionId, context.userId);
     assertEditable(submission.status, await isDirector(context.userId));
     const db = await admin();
-    data.values = prepareHomeCost(submission.form_type, withoutRetiredTopup(submission.form_type, await lockPark(submission, data.values)));
+    data.values = prepareHomeCost(submission.form_type, withoutRetiredAnswers(submission.form_type, await lockPark(submission, data.values)));
     validateFormWrite(getForm(submission.form_type), data.values, { mode: "rep", isDirector: await isDirector(context.userId) }, "draft", (submission.data ?? {}) as Record<string, unknown>);
     await expectRows(db
       .from("form_submissions")
@@ -456,7 +456,7 @@ export const downloadDraftPdf = createServerFn({ method: "POST" })
     const submission = await assertAccess(data.submissionId, context.userId);
     const db = await admin();
     if (data.values) {
-      const values = prepareHomeCost(submission.form_type, withoutRetiredTopup(submission.form_type, await lockPark(submission, data.values)));
+      const values = prepareHomeCost(submission.form_type, withoutRetiredAnswers(submission.form_type, await lockPark(submission, data.values)));
       validateFormWrite(getForm(submission.form_type), values, { mode: "rep", isDirector: true }, "draft", (submission.data ?? {}) as Record<string, unknown>);
       await expectRows(db
         .from("form_submissions")
@@ -530,7 +530,7 @@ export const submitForm = createServerFn({ method: "POST" })
       data.values["customer_email"] = assertCustomerEmail(data.values["customer_email"]);
     }
     const status = requested;
-    data.values = prepareHomeCost(submission.form_type, withoutRetiredTopup(submission.form_type, await lockPark(submission, data.values)));
+    data.values = prepareHomeCost(submission.form_type, withoutRetiredAnswers(submission.form_type, await lockPark(submission, data.values)));
     validateFormWrite(getForm(submission.form_type), data.values, { mode: "rep", isDirector: director }, "submit", (submission.data ?? {}) as Record<string, unknown>);
     if (isWS) {
       const { getStatementTemplate } = await import("@/lib/statement.server");

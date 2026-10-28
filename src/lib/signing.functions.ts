@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { validateSigningWrite } from "@/lib/forms/write-validation";
+import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
 
 /**
  * Public (tokenised) signing pages: customer off-site signing and the
@@ -40,6 +41,7 @@ async function loadByToken(token: string) {
     .maybeSingle();
   if (submissionReadError) throw new Error("The form could not be loaded. Please try again later.");
   if (!submission) throw new TokenError("This signing link is not valid.");
+  submission.data = withoutRetiredAnswers(submission.form_type, (submission.data ?? {}) as Record<string, unknown>) as never;
   if (submission.form_type === "identification") throw new TokenError("This signing link is not valid.");
   if (submission.status === "Completed") throw new TokenError("This form has already been completed.");
   if (!["customer_offsite", "construction", "director"].includes(row.kind)) throw new TokenError("This signing link is not valid.");
