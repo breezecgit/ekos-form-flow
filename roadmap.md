@@ -1,7 +1,7 @@
 # EKOS Customer Sales Form — roadmap
 
 ## Written Statement acceptance removal — 28 October
-- [ ] Remove only Written Statement acceptance fields; normalize legacy answers on load/save/sign/export, add regression coverage, keep test emails ON and do not publish.
+- [x] Removed only Written Statement acceptance fields; normalized legacy answers on load/save/sign/PDF/Word export. All 283 isolated regression tests pass, including real PDF/Word generation and server save. Test email settings and hosted records/PDFs untouched; not published.
 
 ## Automatic incentive discounts — 20 October
 - [x] Calculate NHO/Unit Sale home cost from local List Price and selected discounts; no discounted Reservation-total prefill. Persist auto/manual home-cost mode. Repair pristine matching old prefills and automatic dependent totals on draft open; historical saved answers without override provenance remain unchanged rather than risk overwriting staff amounts.
