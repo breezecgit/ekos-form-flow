@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getForm, FORM_TITLES } from "@/lib/forms/registry";
 import { AMENDMENT_STATUS, OPEN_AMENDMENT_STATUSES, buildChangeList, prepareAmendment, type AmendmentChange } from "@/lib/forms/amendments";
-import { withoutRetiredTopup } from "@/lib/forms/retired-topup";
+import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
 import { prepareHomeCost } from "@/lib/forms/home-cost";
 import { validateFormWrite } from "@/lib/forms/write-validation";
 import { pdfFileName, todayISO } from "@/lib/format";
@@ -80,8 +80,8 @@ export async function startAmendment(input: { submissionId: string; userId: stri
   const { submission } = await loadSale(input.submissionId);
   if (submission.status !== "Completed") throw new Error("Only Completed forms can be amended.");
   const def = getForm(submission.form_type);
-  const before = withoutRetiredTopup(submission.form_type, (submission.data ?? {}) as FormValues);
-  const edited = prepareHomeCost(submission.form_type, withoutRetiredTopup(submission.form_type, input.values));
+  const before = withoutRetiredAnswers(submission.form_type, (submission.data ?? {}) as FormValues);
+  const edited = prepareHomeCost(submission.form_type, withoutRetiredAnswers(submission.form_type, input.values));
   // Carried-over amendments change only figures the approved NHO already validated; a signed form
   // missing a box made required later must not block them, so only value types are checked.
   validateFormWrite(def, edited, { mode: "rep", isDirector: input.isDirector ?? true }, input.carriedOver ? "draft" : "submit", before);
@@ -227,7 +227,7 @@ export async function approveAmendment(amendmentId: string, userId: string, acto
   if (a.status !== AMENDMENT_STATUS.awaitingApproval) throw new Error("This amendment is not waiting for approval.");
   const { submission, sale } = await loadSale(a.submission_id);
   if (submission.status !== "Completed") throw new Error("The form is no longer Completed. Please reload.");
-  const current = withoutRetiredTopup(submission.form_type, (submission.data ?? {}) as FormValues);
+  const current = withoutRetiredAnswers(submission.form_type, (submission.data ?? {}) as FormValues);
   if (buildChangeList(getForm(submission.form_type), a.values_before, current).length) {
     throw new Error("The signed form was edited after this amendment started. Cancel this amendment and start a new one.");
   }
@@ -273,7 +273,7 @@ export async function approveAmendment(amendmentId: string, userId: string, acto
     .replace(/[\u2013\u2014]/g, "-").replace(/[^A-Za-z0-9 ._()&'-]/g, "");
 
   const d = db();
-  const wrote = check(await d.from("form_submissions").update({ data: a.values_after, updated_at: new Date().toISOString() })
+  const wrote = check(await d.from("form_submissions").update({ data: withoutRetiredAnswers(submission.form_type, a.values_after), updated_at: new Date().toISOString() })
     .eq("id", a.submission_id).eq("status", "Completed").select("id"), "The form could not be updated with the amendment. Please retry.") as unknown[];
   if (!wrote?.length) throw new Error("The form changed elsewhere. Please reload.");
   const done = check(await d.from("form_amendments").update({
@@ -304,7 +304,7 @@ export async function syncUsaFromNhoAmendment(input: { saleId: string; amendment
     { id: string; status: string; is_draft: boolean; customer_signed_at: string | null; data: FormValues }[];
   const usa = rows[0] ?? null;
   const usaDef = getForm("unit_sale_agreement");
-  const plan = planUsaUpdate(usaDef, usa ? { ...usa, data: withoutRetiredTopup("unit_sale_agreement", usa.data ?? {}) } : null, input.before, input.after);
+  const plan = planUsaUpdate(usaDef, usa ? { ...usa, data: withoutRetiredAnswers("unit_sale_agreement", usa.data ?? {}) } : null, input.before, input.after);
   if (!usa || plan.action === "none") {
     if (usa && plan.action === "none" && plan.why === "awaiting-approval") {
       await audit(usa.id, input.userId, input.actorLabel, `Unit Sale Agreement not updated from New Home Order Amendment ${n}`,

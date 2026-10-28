@@ -1,5 +1,5 @@
 import type { ContentBlock, FieldDef, FormDef, FormValues, RenderContext } from "./types";
-import { customerSignatureFields, fieldFromReservation, opts, repSignatureFields } from "./common";
+import { fieldFromReservation, opts, repSignatureFields } from "./common";
 
 const text = (key: string): FieldDef => ({ key: `ws_${key}`, type: "static", templateKey: key });
 
@@ -27,10 +27,6 @@ const secondOccupier = (v: FormValues, ctx: RenderContext) =>
 /** Director & witness: only on Sadie's signing page, and in the PDF once signed. */
 const directorVisible = (v: FormValues, ctx: RenderContext) =>
   ctx.mode === "director" || Boolean(v["director_signature"]);
-
-const acceptance = customerSignatureFields().filter(
-  (f) => f.key === "accept_terms" || f.key === "accept_extras",
-);
 
 const sig = (f: FieldDef): FieldDef => ({ ...f, pdfSection: "signatures" });
 
@@ -175,7 +171,6 @@ export const writtenStatementForm: FormDef = {
           group: "customerSignature",
           showIf: secondOccupier,
         }),
-        ...acceptance.map((f) => sig({ ...f, showIf: occupierVisible })),
       ],
     },
     {

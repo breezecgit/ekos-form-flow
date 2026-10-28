@@ -2,6 +2,7 @@ import { z } from "zod";
 import { allFields, isInput, type FieldDef, type FormDef, type FormValues, type RenderContext } from "./types";
 import { validateAll, validateFields } from "./validate";
 import { HOME_COST_MODE, hasHomeCost } from "./home-cost";
+import { withoutRetiredAnswers } from "./retired-answers";
 
 // Transport limits, not business limits; uploads use their separate bounded endpoint.
 export const MAX_FORM_BYTES = 8_000_000;
@@ -54,6 +55,8 @@ export function checkPayloadSize(values: FormValues) {
 /** Drafts allow missing values; submission uses the same visible required rules as the webpage. */
 export function validateFormWrite(def: FormDef, values: FormValues, ctx: RenderContext, stage: "draft" | "submit", existing: FormValues = {}) {
   checkPayloadSize(values);
+  values = withoutRetiredAnswers(def.type, values);
+  existing = withoutRetiredAnswers(def.type, existing);
   const fields = new Map(allFields(def).filter(isInput).map((f) => [f.key, f]));
   for (const [key, value] of Object.entries(values)) {
     if (key === HOME_COST_MODE && hasHomeCost(def.type)) {
@@ -77,6 +80,8 @@ export function validateFormWrite(def: FormDef, values: FormValues, ctx: RenderC
 /** Public signers cannot write another group's fields or alter echoed context. */
 export function validateSigningWrite(def: FormDef, values: FormValues, existing: FormValues, ctx: RenderContext, group: FieldDef["group"], orderNumber: string) {
   checkPayloadSize(values);
+  values = withoutRetiredAnswers(def.type, values);
+  existing = withoutRetiredAnswers(def.type, existing);
   const fields = allFields(def).filter((f) => f.group === group && isInput(f));
   const byKey = new Map(fields.map((f) => [f.key, f]));
   const patch: FormValues = {};

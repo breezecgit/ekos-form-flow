@@ -15,6 +15,7 @@ import { writtenStatementForm } from "@/lib/forms/written-statement";
 import { STATEMENT_V1, classifyStatementLine } from "@/lib/forms/written-statement-text";
 import type { FieldDef, FormValues } from "@/lib/forms/types";
 import { formatDate, formatMoney } from "@/lib/format";
+import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
 
 const GREEN = "07362E";
 const GOLD = "C18F4C";
@@ -77,7 +78,8 @@ export async function buildWrittenStatementDocx(opts: {
   templates?: Record<string, string> | null;
   orderNumber: string;
 }): Promise<Blob> {
-  const { values, orderNumber } = opts;
+  const { orderNumber } = opts;
+  const values = withoutRetiredAnswers(writtenStatementForm.type, opts.values);
   const templates = opts.templates ?? STATEMENT_V1;
   const children: (Paragraph | Table)[] = [];
 
