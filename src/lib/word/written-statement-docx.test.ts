@@ -8,7 +8,7 @@ it("exports a legacy Written Statement to Word without acceptance boxes, retaini
   vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("No logo in isolated test")));
   try {
     const blob = await buildWrittenStatementDocx({ orderNumber: "EKOS-TEST", values: {
-      customer_name: "Written Statement Test", accept_terms: true, accept_extras: true,
+      customer_name: "Hidden Customer Test", party_customer_name: "Written Statement Test", status: "In Review", accept_terms: true, accept_extras: true,
       occupier_one_name: "Test Occupier", director_name: "Test Director",
     } });
     const zip = await JSZip.loadAsync(await blob.arrayBuffer());

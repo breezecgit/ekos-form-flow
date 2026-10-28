@@ -1,6 +1,5 @@
 # EKOS Customer Sales Form — roadmap
 
-## Written Statement acceptance removal — 28 October
 ## Written Statement order and occupier witnesses — 28 October
 - [ ] Preserve legal wording; render PDF/Word in online field order with one final Signatures section and pitch plans after it; require each occupier's witness and hide specified step-4 metadata only in exports. Full regression suite; no emails, hosted edits or publishing.
 

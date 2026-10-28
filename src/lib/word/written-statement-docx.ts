@@ -196,7 +196,7 @@ export async function buildWrittenStatementDocx(opts: {
         pending.push(row(f.label ?? "", f.options.map((o) => `${v === o.value ? "☒" : "☐"} ${o.value}`).join("    ")));
         continue;
       }
-      pending.push(row(f.label ?? f.key, valueText(f, values), f.type === "signature" || f.type === "textarea"));
+      pending.push(row(f.label ?? f.key, valueText(f, values), f.type === "textarea"));
   }
   flush();
 

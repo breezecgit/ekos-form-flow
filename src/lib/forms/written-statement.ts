@@ -30,7 +30,7 @@ const directorVisible = (v: FormValues, ctx: RenderContext) =>
 
 const sig = (f: FieldDef): FieldDef => ({ ...f, pdfSection: "signatures" });
 
-const occupierWitness = (occupier: "one" | "two", showIf: FieldDef["showIf"]): FieldDef[] => [
+const occupierWitness = (occupier: "one" | "two", showIf: (v: FormValues, ctx: RenderContext) => boolean): FieldDef[] => [
   sig({ key: `occupier_${occupier}_witness_signature`, label: "Signed (Witness)", sectionLabel: `Witness to Occupier ${occupier === "one" ? "One" : "Two"}`, type: "signature", group: "customerSignature", showIf, required: true }),
   sig({ key: `occupier_${occupier}_witness_name`, label: "Name", type: "text", group: "customerSignature", showIf, required: true }),
   sig({ key: `occupier_${occupier}_witness_address`, label: "Address of Witness", type: "textarea", group: "customerSignature", showIf, required: true }),
