@@ -1,5 +1,8 @@
 # EKOS Customer Sales Form — roadmap
 
+## Written Statement acceptance removal — 28 October
+- [ ] Remove only Written Statement acceptance fields; normalize legacy answers on load/save/sign/export, add regression coverage, keep test emails ON and do not publish.
+
 ## Automatic incentive discounts — 20 October
 - [x] Calculate NHO/Unit Sale home cost from local List Price and selected discounts; no discounted Reservation-total prefill. Persist auto/manual home-cost mode. Repair pristine matching old prefills and automatic dependent totals on draft open; historical saved answers without override provenance remain unchanged rather than risk overwriting staff amounts.
 - [x] Fictional hosted EKOS-00085: Reservation £300,000 / £10,000 discount gives £290,000 in both later forms (not £280,000). Direct UI changes to £15,000 give £285,000 cost/total, £280,000 QMP balance with £5,000 deposit, -£20,000 payment with £300,000 proceeds. Approval answers and actual PDFs read back; override/clear checked. Removed sale/three forms/six app files, audit recorded. Test-classified, email test mode ON; no publishing.
