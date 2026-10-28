@@ -26,7 +26,7 @@ it("locks full extracted PDF wording and exact approved Part 2 label/value order
     agreement_start_date: "2026-10-28", new_home_address: "1 Test Pitch", pitch_plan: [{ name: "Test Plan.pdf" }],
     pitch_fee_from: "2026-10-28", monthly_pitch_fee: "250", services_included: "Sewage", pitch_fee_review_date: "1 January",
     additional_charges: "Test Charges", home_model: "Test Model", serial_number: "TEST456", year_of_manufacture: "2026",
-    home_length: "40", home_width: "20", customer_name: "Cover Test Customer", party_customer_name: "Removed Party",
+    home_length: "40", home_width: "20", customer_name: "Cover Test Customer", party_customer_name: "Party Name Value",
     customer_email: "hidden@example.invalid", customer_phone: "Hidden Phone", sales_person: "Hidden Sales Person",
     accept_terms: true, accept_extras: true };
   const plan = await PDFDocument.create(); const page = plan.addPage();
@@ -45,6 +45,7 @@ Park Limited Company Name Test Company
 Registered Number TEST123
 c/o LT Management Services Ltd
 31 Haverscroft Industrial Estate, New Road, Attleborough, Norfolk, NR17 1YE
+Party Name Value
 Start date
 3. The agreement will begin on: 28/10/2026
 Particulars of the pitch
@@ -76,7 +77,8 @@ Maximum number of people permitted to occupy the home: 2
 Length (Feet): 40
 Width (Feet): 20`;
   expect(normalize(body)).toBe(normalize([approved.intro, approved.part1, part2, approved.annex_intro, approved.annex].join("\n")));
-  for (const removed of ["Customer Name", "Removed Party", "hidden@example.invalid", "Hidden Phone", "Hidden Sales Person", "not signed", "I have read and agree", "I understand that the cost"]) expect(extracted).not.toContain(removed);
+  expect(normalize(body)).toContain(normalize("NR17 1YE\nParty Name Value\nStart date"));
+  for (const removed of ["Customer Name", "Customer name", "hidden@example.invalid", "Hidden Phone", "Hidden Sales Person", "not signed", "I have read and agree", "I understand that the cost"]) expect(extracted).not.toContain(removed);
   expect(extracted.match(/To be signed by EKOS Group/g)).toHaveLength(1);
   expect(extracted.indexOf("EMBEDDED PITCH PLAN TEST")).toBeGreaterThan(extracted.indexOf("To be signed by EKOS Group"));
 });
