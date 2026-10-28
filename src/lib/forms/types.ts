@@ -77,6 +77,8 @@ export interface FieldDef {
   type: FieldType;
   options?: OptionDef[];
   placeholder?: string;
+  /** Label is for screen readers only; screen, PDF and Word show the value without label text. */
+  labelHidden?: boolean;
   /** Small grey helper line under the label. */
   help?: string;
   /** Defaults to true for every input field — "no empty boxes". */

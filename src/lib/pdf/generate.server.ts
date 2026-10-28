@@ -439,7 +439,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       return;
     }
     w.ensure(28);
-    if (!labelRepeatsSection(f, "pdf")) {
+    if (!labelRepeatsSection(f, "pdf") && !f.labelHidden) {
       w.text(`${f.pdfLabel ?? f.label ?? f.key}`, { size: 10, font: w.bold, color: BRAND });
     }
     const chosen = f.type === "radio" ? f.options?.find((o) => o.value === values[f.key]) : undefined;

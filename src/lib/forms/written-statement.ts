@@ -59,12 +59,12 @@ export const writtenStatementForm: FormDef = {
         { key: "park_company_name", parkField: "company_name", label: "Park Limited Company Name", type: "text" },
         { key: "park_registered_number", parkField: "company_number", label: "Registered Number", type: "text" },
         text("part2_address"),
+        { key: "party_customer_name", label: "Customer name", labelHidden: true, placeholder: "Insert customer name", type: "text" },
         text("part2_start"),
         { key: "agreement_start_date", label: "3. The agreement will begin on:", type: "date" },
         text("part2_pitch"),
         {
           key: "new_home_address",
-          parkField: "address",
           label: "Property Address",
           type: "text",
         },

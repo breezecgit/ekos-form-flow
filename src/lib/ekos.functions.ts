@@ -230,6 +230,8 @@ async function buildPrefill(
   }
   if (formType === "written_statement") {
     if (sale.park_name) out["park_name_confirm"] = sale.park_name;
+    if (!out["party_customer_name"]) out["party_customer_name"] = out["customer_name"] || sale.customer_name || undefined;
+    if (!out["party_customer_name"]) delete out["party_customer_name"];
   }
   return prepareHomeCost(formType, out);
 }

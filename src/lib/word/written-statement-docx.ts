@@ -200,6 +200,11 @@ export async function buildWrittenStatementDocx(opts: {
         pending.push(row(f.label ?? "", f.options.map((o) => `${v === o.value ? "☒" : "☐"} ${o.value}`).join("    ")));
         continue;
       }
+      if (f.labelHidden) {
+        flush();
+        children.push(new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: valueText(f, values), font: FONT, size: 20 })] }));
+        continue;
+      }
       pending.push(row(f.label ?? f.key, valueText(f, values), f.type === "textarea"));
   }
   flush();
