@@ -13,7 +13,7 @@ import {
   WidthType,
 } from "docx";
 import { writtenStatementForm } from "@/lib/forms/written-statement";
-import { STATEMENT_V1, classifyStatementLine } from "@/lib/forms/written-statement-text";
+import { defaultStatementSections, classifyStatementLine } from "@/lib/forms/written-statement-text";
 import { isVisible, type FieldDef, type FormValues } from "@/lib/forms/types";
 import { formatDate, formatMoney } from "@/lib/format";
 import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
@@ -82,7 +82,7 @@ export async function buildWrittenStatementDocx(opts: {
 }): Promise<Blob> {
   const { orderNumber } = opts;
   const values = withoutRetiredAnswers(writtenStatementForm.type, opts.values);
-  const templates = opts.templates ?? STATEMENT_V1;
+  const templates = opts.templates ?? defaultStatementSections(values);
   const children: (Paragraph | Table)[] = [];
 
   try {
@@ -120,7 +120,9 @@ export async function buildWrittenStatementDocx(opts: {
     .filter((f) => !f.pdfHide && isVisible(f, values, { mode: "director", isDirector: true }));
   const ordered = [...fields.filter((f) => f.pdfSection !== "signatures"), ...fields.filter((f) => f.pdfSection === "signatures")];
   let signaturesStarted = false;
+  const ekosSigned = Boolean(values["director_signature"] && values["witness_signature"]);
     for (const f of ordered) {
+      if (f.group === "directorSignature" && !ekosSigned) continue;
       if (f.pdfSection === "signatures" && !signaturesStarted) {
         flush();
         children.push(heading("Signatures", 30));
@@ -159,7 +161,7 @@ export async function buildWrittenStatementDocx(opts: {
           new Paragraph({
             spacing: { before: 120, after: 120 },
             children: [
-              new TextRun({ text: `${f.label} `, bold: true, color: GREEN, font: FONT, size: 20 }),
+              new TextRun({ text: `${f.label} – `, bold: true, color: GREEN, font: FONT, size: 20 }),
               new TextRun({ text: `${Array.isArray(values[f.key]) ? (values[f.key] as { name: string }[]).map((file) => file.name).join(", ") : ""} (attached at the end of this document)`, italics: true, font: FONT, size: 20 }),
             ],
           }),
@@ -201,6 +203,7 @@ export async function buildWrittenStatementDocx(opts: {
       pending.push(row(f.label ?? f.key, valueText(f, values), f.type === "textarea"));
   }
   flush();
+  if (!ekosSigned) children.push(new Paragraph({ children: [new TextRun({ text: "To be signed by EKOS Group", font: FONT, size: 22 })] }));
 
   // Word supports image pages; PDF plans remain secure links rather than silently disappearing.
   for (const plan of opts.pitchPlans ?? []) {

@@ -12,7 +12,7 @@ import { EKOS_LOGO_PNG_BASE64 } from "./logo-base64";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { ContentBlock, FieldDef, FormDef, FormValues, RenderContext } from "@/lib/forms/types";
 import { isVisible, labelRepeatsSection } from "@/lib/forms/types";
-import { STATEMENT_V1, classifyStatementLine } from "@/lib/forms/written-statement-text";
+import { defaultStatementSections, classifyStatementLine } from "@/lib/forms/written-statement-text";
 import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
 
 const BRAND = rgb(0.027, 0.212, 0.18); // #07362E
@@ -63,7 +63,7 @@ export function omitPdfField(key: string, completed: boolean): boolean {
     (completed && ["authorised_signatory_note", "construction_note"].includes(key));
 }
 
-async function drawAttachments(w: Writer, attachments: PdfAttachment[]) {
+async function drawAttachments(w: Writer, attachments: PdfAttachment[], requireEmbedded = false) {
   for (const att of attachments) {
     if (att.mimeType === "application/pdf") {
       try {
@@ -73,6 +73,7 @@ async function drawAttachments(w: Writer, attachments: PdfAttachment[]) {
         w.text(`Attached document: ${att.label ?? att.fileName}`, { size: 12, font: w.bold, color: BRAND });
         for (const p of pages) w.doc.addPage(p);
       } catch {
+        if (requireEmbedded) throw new Error("The pitch plan could not be embedded. Please check the file before generating the Written Statement.");
         w.text(`Attached document (could not be embedded): ${att.fileName}`, { color: MUTED });
       }
     } else {
@@ -87,6 +88,7 @@ async function drawAttachments(w: Writer, attachments: PdfAttachment[]) {
         w.fresh = false;
         w.y -= ih + 12;
       } catch {
+        if (requireEmbedded) throw new Error("The pitch plan could not be embedded. Please check the file before generating the Written Statement.");
         w.text(`Attached file: ${att.fileName}`, { color: MUTED });
       }
     }
@@ -367,7 +369,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   w.text(`Customer: ${customerName || "-"}`, { size: 10.5, align: "center", gap: 10 });
   w.rule();
 
-  const templates = ctx.templates ?? STATEMENT_V1;
+  const templates = ctx.templates ?? defaultStatementSections(values);
   const grouped = def.pdfLayout === "grouped";
   const orderedSignatures = def.type === "written_statement" && def.pdfLayout === "ordered-signatures";
   // Completed customer copies retain signatures, not the staff approval instructions.
@@ -431,6 +433,11 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       w.text(`${ticked ? "[X]" : "[ ]"}  ${f.label ?? ""}`, { size: 10, gap: 6 });
       return;
     }
+    if (orderedSignatures && f.key === "pitch_plan" && !input.draft) {
+      const files = Array.isArray(values[f.key]) ? values[f.key] as { name: string }[] : [];
+      w.text(`${f.label} – ${files.map((file) => file.name).join(", ") || "-"} (attached at the end of this document)`, { size: 11, gap: 8 });
+      return;
+    }
     w.ensure(28);
     if (!labelRepeatsSection(f, "pdf")) {
       w.text(`${f.pdfLabel ?? f.label ?? f.key}`, { size: 10, font: w.bold, color: BRAND });
@@ -479,7 +486,13 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
         }
       }
     }
-    for (const f of fields) if (f.pdfSection === "signatures" && !consumed.has(f.key)) await renderField(f);
+    const ekosSigned = Boolean(values["director_signature"] && values["witness_signature"]);
+    for (const f of fields) {
+      if (f.pdfSection !== "signatures" || consumed.has(f.key)) continue;
+      if (f.group === "directorSignature" && !ekosSigned) continue;
+      await renderField(f);
+    }
+    if (!ekosSigned) w.text("To be signed by EKOS Group", { size: 11, color: MUTED, gap: 8 });
   } else if (!grouped) {
     for (const step of def.steps) {
       const fields = step.fields.filter(printable);
@@ -563,7 +576,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   }
 
   // Written Statement pitch plans belong after every signature, never between statement clauses.
-  if (orderedSignatures && !input.draft) await drawAttachments(w, input.attachments ?? []);
+  if (orderedSignatures && !input.draft) await drawAttachments(w, input.attachments ?? [], true);
 
   // Safety net: drop any trailing page that only has the running header.
   if (w.fresh && w.doc.getPageCount() > 1) w.doc.removePage(w.doc.getPageCount() - 1);

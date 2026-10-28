@@ -130,8 +130,12 @@ export async function buildAndStorePdf(
     if (f.type !== "file" || !isVisible(f, values, pdfCtx)) continue;
     const list = Array.isArray(values[f.key]) ? (values[f.key] as UploadedFile[]) : [];
     for (const file of list) {
-      if (!(await allowedPrefixes()).some((p) => typeof file?.path === "string" && file.path.startsWith(p) && !file.path.includes(".."))) continue;
+      if (!(await allowedPrefixes()).some((p) => typeof file?.path === "string" && file.path.startsWith(p) && !file.path.includes(".."))) {
+        if (submission.form_type === "written_statement") throw new Error("The pitch plan could not be included in the Written Statement. Please check the attachment.");
+        continue;
+      }
       const dl = await supabaseAdmin.storage.from(BUCKET).download(file.path);
+      if (!dl.data && submission.form_type === "written_statement") throw new Error("The pitch plan could not be downloaded for the Written Statement. Please retry.");
       if (dl.data) {
         attachments.push({
           fileName: file.name,
