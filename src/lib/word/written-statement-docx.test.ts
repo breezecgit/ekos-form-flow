@@ -59,13 +59,13 @@ it("keeps Word clauses and answers inline, hides step-4 details and embeds each 
     const document = zip.file("word/document.xml");
     if (!document) throw new Error("Missing Word document");
     const xml = await document.async("string");
-    const sequence = ["Clause part2_intro", "Inline Company Test", "Clause part2_address", "Clause part2_pitch",
+    const sequence = ["Clause part2_intro", "Inline Company Test", "Clause part2_address", "Inline Party Test", "Clause part2_start", "Clause part2_pitch",
       "Inline Address Test", "Clause part2_home", "Inline Model Test", "Clause annex", "Signatures", "Occupier One", "Test occupier_one",
       "Witness to Occupier One", "Test occupier_one_witness", "Test address occupier_one_witness", "Occupier Two", "Test occupier_two",
       "Witness to Occupier Two", "Test occupier_two_witness", "Test address occupier_two_witness", "Director", "Test director", "Test witness", "Attached document: Test pitch.png"];
     let previous = -1;
     for (const part of sequence) { const position = xml.indexOf(part, previous + 1); expect(position, part).toBeGreaterThan(previous); previous = position; }
-    for (const value of [values.customer_name, values.customer_email, values.rep_name, values.sales_person, "Add Second Occupier?", "Customer and Home Details"]) expect(xml).not.toContain(value);
+    for (const value of [values.customer_name, values.customer_email, values.rep_name, values.sales_person, "Add Second Occupier?", "Customer and Home Details", "Customer name"]) expect(xml).not.toContain(value);
     expect(xml.match(/<w:drawing>/g)).toHaveLength(7);
     expect(xml.match(/>Signatures<\/w:t>/g)).toHaveLength(1);
   } finally { vi.unstubAllGlobals(); }
