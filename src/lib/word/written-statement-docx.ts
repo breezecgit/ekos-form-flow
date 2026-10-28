@@ -13,7 +13,7 @@ import {
 } from "docx";
 import { writtenStatementForm } from "@/lib/forms/written-statement";
 import { STATEMENT_V1, classifyStatementLine } from "@/lib/forms/written-statement-text";
-import type { FieldDef, FormValues } from "@/lib/forms/types";
+import { isVisible, type FieldDef, type FormValues } from "@/lib/forms/types";
 import { formatDate, formatMoney } from "@/lib/format";
 import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
 
@@ -114,9 +114,16 @@ export async function buildWrittenStatementDocx(opts: {
     pending = [];
   };
 
-  for (const step of writtenStatementForm.steps) {
-    for (const f of step.fields) {
-      if (f.key === "status" || f.key === "status_guide") continue;
+  const fields = writtenStatementForm.steps.flatMap((step) => step.fields)
+    .filter((f) => !f.pdfHide && isVisible(f, values, { mode: "director", isDirector: true }));
+  const ordered = [...fields.filter((f) => f.pdfSection !== "signatures"), ...fields.filter((f) => f.pdfSection === "signatures")];
+  let signaturesStarted = false;
+    for (const f of ordered) {
+      if (f.pdfSection === "signatures" && !signaturesStarted) {
+        flush();
+        children.push(heading("Signatures", 30));
+        signaturesStarted = true;
+      }
       if (f.sectionLabel) {
         flush();
         children.push(heading(f.sectionLabel, 24));
@@ -151,10 +158,24 @@ export async function buildWrittenStatementDocx(opts: {
             spacing: { before: 120, after: 120 },
             children: [
               new TextRun({ text: `${f.label} `, bold: true, color: GREEN, font: FONT, size: 20 }),
-              new TextRun({ text: "Pitch plan attached separately", italics: true, font: FONT, size: 20 }),
+              new TextRun({ text: `${Array.isArray(values[f.key]) ? (values[f.key] as { name: string }[]).map((file) => file.name).join(", ") : ""} (attached at the end of this document)`, italics: true, font: FONT, size: 20 }),
             ],
           }),
         );
+        continue;
+      }
+      if (f.type === "signature") {
+        flush();
+        children.push(heading(f.label ?? "Signature", 20));
+        const dataUrl = String(values[f.key] ?? "");
+        if (dataUrl.startsWith("data:image/png;base64,")) {
+          try {
+            const data = Uint8Array.from(atob(dataUrl.slice("data:image/png;base64,".length)), (c) => c.charCodeAt(0));
+            children.push(new Paragraph({ children: [new ImageRun({ type: "png", data, transformation: { width: 190, height: 65 } })] }));
+          } catch { children.push(new Paragraph({ text: "(signature captured)" })); }
+        } else {
+          pending.push(row(f.label ?? "Signature", "", true));
+        }
         continue;
       }
       if (f.type === "checkbox") {
@@ -176,9 +197,8 @@ export async function buildWrittenStatementDocx(opts: {
         continue;
       }
       pending.push(row(f.label ?? f.key, valueText(f, values), f.type === "signature" || f.type === "textarea"));
-    }
-    flush();
   }
+  flush();
 
   const doc = new Document({
     creator: "EKOS Group",

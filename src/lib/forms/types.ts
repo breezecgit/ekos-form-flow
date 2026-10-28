@@ -136,8 +136,8 @@ export interface FormDef {
   signingTitle?: string;
   /** Director & witness signing page title. */
   directorSigningTitle?: string;
-  /** "grouped" = statement text first, then answers + attachments, then all signatures. */
-  pdfLayout?: "grouped";
+  /** "ordered-signatures" keeps fields in online order, with signatures then attachments at the end. */
+  pdfLayout?: "grouped" | "ordered-signatures";
   steps: StepDef[];
 }
 
