@@ -23,8 +23,8 @@ describe("Written Statement-only acceptance retirement", () => {
     expect(withoutRetiredAnswers(type, legacy)).toBe(legacy);
   });
   it("strips both legacy keys without mutating saved answers or signatures", () => {
-    const values = { ...legacy, party_customer_name: "Removed Party Test", occupier_one_signature: "saved-signature" };
-    expect(withoutRetiredAnswers("written_statement", values)).toEqual({ customer_name: legacy.customer_name, status: "In Review", occupier_one_signature: "saved-signature" });
+    const values = { ...legacy, party_customer_name: "Kept Party Test", occupier_one_signature: "saved-signature" };
+    expect(withoutRetiredAnswers("written_statement", values)).toEqual({ customer_name: legacy.customer_name, status: "In Review", party_customer_name: "Kept Party Test", occupier_one_signature: "saved-signature" });
     expect(values.accept_terms).toBe(true);
     expect(values.accept_extras).toBe(true);
   });

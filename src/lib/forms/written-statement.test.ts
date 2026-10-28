@@ -50,7 +50,10 @@ describe("Written Statement witnesses and export-only omissions", () => {
   });
   it("hides only specified step-4 metadata in exports, keeping web fields and signature blocks", () => {
     for (const key of hidden) expect(fields.find((f) => f.key === key)?.pdfHide).toBe(true);
-    expect(fields.find((f) => f.key === "party_customer_name")).toBeUndefined();
+    const party = fields.find((f) => f.key === "party_customer_name");
+    expect(party).toMatchObject({ labelHidden: true, placeholder: "Insert customer name" });
+    expect(fields[fields.indexOf(party!) - 1]?.key).toBe("ws_part2_address");
+    expect(fields.find((f) => f.key === "new_home_address")?.parkField).toBeUndefined();
     for (const f of fields.filter((f) => f.type === "signature" && f.group !== undefined)) expect(f.pdfHide).not.toBe(true);
     expect(fields.find((f) => f.key === "customer_email")?.type).toBe("email");
   });

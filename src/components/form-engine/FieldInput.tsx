@@ -87,7 +87,7 @@ export function FieldInput({
     );
   }
 
-  const label = labelRepeatsSection(field) ? (
+  const label = labelRepeatsSection(field) || field.labelHidden ? (
     // Section heading above already shows these words; keep the label for screen readers only.
     <label className="sr-only" htmlFor={field.key}>
       {field.label}
