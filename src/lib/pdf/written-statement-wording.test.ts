@@ -88,3 +88,9 @@ it("keeps version-one legal text unchanged, including deliberately uncorrected w
   expect(STATEMENT_V2["annex"]).toContain("paragraph 10 of Part 2");
   expect(STATEMENT_V2["annex"]).toContain("Owner’s estate or interest\n1. (1)");
 });
+
+it("refuses a Written Statement when a pitch plan cannot be embedded rather than issuing a text-only substitute", async () => {
+  await expect(generateFormPdf({ def: writtenStatementForm, values: statementSignatures(false), ctx: { mode: "director", isDirector: true },
+    orderNumber: "EKOS-TEST", park: "Test Park", customerName: "Test", parkLinks: {},
+    attachments: [{ fileName: "Broken.pdf", mimeType: "application/pdf", bytes: new Uint8Array([1, 2, 3]) }] })).rejects.toThrow("could not be embedded");
+});
