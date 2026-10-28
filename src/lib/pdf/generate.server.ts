@@ -418,7 +418,8 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       const dataUrl = String(values[f.key] ?? "");
       const meta = signatureMeta(f.key, values);
       if (dataUrl) {
-        await drawSignature(w, f.label ?? "Signature", dataUrl, meta.name, meta.date);
+        const witnessAddress = orderedSignatures && f.key.includes("witness_signature");
+        await drawSignature(w, f.label ?? "Signature", dataUrl, meta.name, witnessAddress ? "" : meta.date);
       } else {
         w.text(`${f.label}: not signed`, { font: w.bold, color: MUTED, gap: 6 });
       }
@@ -471,7 +472,10 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
       const base = f.key.replace(/_signature$/, "");
       // Signed images already render name/date. Unsigned blocks retain their entered details.
       if (!input.draft && values[f.key]) {
-        for (const key of [`${base}_name`, `${base}_date`, `${base}_sign_date`]) consumed.add(key);
+        consumed.add(`${base}_name`);
+        if (!f.key.includes("witness_signature")) {
+          for (const key of [`${base}_date`, `${base}_sign_date`]) consumed.add(key);
+        }
       }
     }
     for (const f of fields) if (f.pdfSection === "signatures" && !consumed.has(f.key)) await renderField(f);
