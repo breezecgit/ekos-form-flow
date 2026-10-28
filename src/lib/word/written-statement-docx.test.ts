@@ -4,7 +4,7 @@ import { buildWrittenStatementDocx } from "./written-statement-docx";
 import { allFields } from "../forms/types";
 import { getForm } from "../forms/registry";
 import { writtenStatementForm } from "../forms/written-statement";
-import { statementSignatures } from "../forms/written-statement.test-fixture";
+import { statementSignatures, TEST_SIGNATURE } from "../forms/written-statement.test-fixture";
 
 it("exports a legacy Written Statement to Word without acceptance boxes, retaining occupier and Director fields", async () => {
   vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("No logo in isolated test")));
@@ -34,7 +34,8 @@ it("keeps Word clauses and answers inline, hides step-4 details and embeds each 
     const values = { ...statementSignatures(), park_company_name: "Inline Company Test", party_customer_name: "Inline Party Test",
       new_home_address: "Inline Address Test", home_model: "Inline Model Test", customer_name: "Hidden Customer Test",
       customer_email: "hidden@example.invalid", rep_name: "Hidden Rep Test", sales_person: "Hidden Sales Person Test" };
-    const blob = await buildWrittenStatementDocx({ orderNumber: "EKOS-TEST", values, templates });
+    const blob = await buildWrittenStatementDocx({ orderNumber: "EKOS-TEST", values, templates,
+      pitchPlans: [{ name: "Test pitch.png", mime: "image/png", bytes: Uint8Array.from(atob(TEST_SIGNATURE.split(",")[1] ?? ""), (c) => c.charCodeAt(0)) }] });
     const zip = await JSZip.loadAsync(await blob.arrayBuffer());
     const document = zip.file("word/document.xml");
     if (!document) throw new Error("Missing Word document");
@@ -42,11 +43,11 @@ it("keeps Word clauses and answers inline, hides step-4 details and embeds each 
     const sequence = ["Clause part2_intro", "Inline Company Test", "Clause part2_address", "Inline Party Test", "Clause part2_pitch",
       "Inline Address Test", "Clause part2_home", "Inline Model Test", "Clause annex", "Signatures", "Occupier One", "Test occupier_one",
       "Witness to Occupier One", "Test occupier_one_witness", "Test address occupier_one_witness", "Occupier Two", "Test occupier_two",
-      "Witness to Occupier Two", "Test occupier_two_witness", "Test address occupier_two_witness", "Director", "Test director", "Test witness"];
+      "Witness to Occupier Two", "Test occupier_two_witness", "Test address occupier_two_witness", "Director", "Test director", "Test witness", "Attached document: Test pitch.png"];
     let previous = -1;
     for (const part of sequence) { const position = xml.indexOf(part, previous + 1); expect(position, part).toBeGreaterThan(previous); previous = position; }
     for (const value of [values.customer_name, values.customer_email, values.rep_name, values.sales_person, "Add Second Occupier?", "Customer and Home Details"]) expect(xml).not.toContain(value);
-    expect(xml.match(/<w:drawing>/g)).toHaveLength(6);
+    expect(xml.match(/<w:drawing>/g)).toHaveLength(7);
     expect(xml.match(/>Signatures<\/w:t>/g)).toHaveLength(1);
   } finally { vi.unstubAllGlobals(); }
 });

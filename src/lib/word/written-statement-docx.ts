@@ -2,6 +2,7 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  ExternalHyperlink,
   ImageRun,
   Packer,
   Paragraph,
@@ -77,6 +78,7 @@ export async function buildWrittenStatementDocx(opts: {
   values: FormValues;
   templates?: Record<string, string> | null;
   orderNumber: string;
+  pitchPlans?: { name: string; mime: string; bytes?: Uint8Array; url?: string }[];
 }): Promise<Blob> {
   const { orderNumber } = opts;
   const values = withoutRetiredAnswers(writtenStatementForm.type, opts.values);
@@ -199,6 +201,16 @@ export async function buildWrittenStatementDocx(opts: {
       pending.push(row(f.label ?? f.key, valueText(f, values), f.type === "textarea"));
   }
   flush();
+
+  // Word supports image pages; PDF plans remain secure links rather than silently disappearing.
+  for (const plan of opts.pitchPlans ?? []) {
+    children.push(new Paragraph({ pageBreakBefore: true, children: [new TextRun({ text: `Attached document: ${plan.name}`, bold: true, font: FONT, color: GREEN })] }));
+    if (plan.bytes && ["image/png", "image/jpeg"].includes(plan.mime)) {
+      children.push(new Paragraph({ children: [new ImageRun({ type: plan.mime === "image/png" ? "png" : "jpg", data: plan.bytes, transformation: { width: 480, height: 480 } })] }));
+    } else if (plan.url) {
+      children.push(new Paragraph({ children: [new ExternalHyperlink({ link: plan.url, children: [new TextRun({ text: plan.name, style: "Hyperlink" })] })] }));
+    }
+  }
 
   const doc = new Document({
     creator: "EKOS Group",
