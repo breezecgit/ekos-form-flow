@@ -34,7 +34,11 @@ it("locks full extracted PDF wording and exact approved Part 2 label/value order
   const bytes = await generateFormPdf({ def: writtenStatementForm, values, ctx: { mode: "director", isDirector: true },
     orderNumber: "EKOS-WORDING", park: "Test Park", customerName: values.customer_name, parkLinks: {},
     attachments: [{ fileName: "Test Plan.pdf", mimeType: "application/pdf", bytes: await plan.save() }] });
-  const extracted = extract(bytes).split(/\r?\n/).filter((line) => !line.includes("Your Written Statement") && !line.includes("EKOS-WORDING")).join("\n");
+  const fullText = extract(bytes);
+  for (const removed of ["Order Number", "EKOS-", "Select Park"]) expect(fullText).not.toContain(removed);
+  expect(fullText).toContain("Park: Test Park");
+  expect(fullText).toContain("Customer: Cover Test Customer");
+  const extracted = fullText.split(/\r?\n/).filter((line) => !line.includes("Your Written Statement") && line.trim() !== "Test Park").join("\n");
   const body = extracted.slice(extracted.indexOf("WRITTEN STATEMENT"), extracted.indexOf("Signatures"));
   const part2 = `PART 2
 Particulars of the agreement

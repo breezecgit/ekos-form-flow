@@ -1,5 +1,8 @@
 # EKOS Customer Sales Form — roadmap
 
+## Written Statement export tidy-up — 29 October
+- [ ] Omit order cover/header references and Select Park from Written Statement PDF/Word only; retain PDF Park/Customer cover, filenames, web fields, emails/tracker and legal wording. Verify generated exports and full suite; no emails, hosted changes or publishing.
+
 ## Written Statement approved wording v2 — 28 October
 - [x] Only enumerated Part 2/Annex changes applied; legacy Parties name stripped. Inserted immutable hosted template v2; v1 hashes unchanged and v2 hashes match local fixture. Existing pins preserved on resubmission; missing pins fail rather than switch wording. Unsigned EKOS block replaced in PDF/Word; actual PDF/image pitch plans embedded after signatures, unreadable plans fail generation. Permanent full extracted-PDF wording/Part 2 sequence test passes against fixed approved fixture. All 303 tests pass, preview clean. No emails, sale/PDF updates or publishing.
 
