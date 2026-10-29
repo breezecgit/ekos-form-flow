@@ -155,7 +155,9 @@ function SignPage() {
               onSubmit={async (values) => {
                 try {
                   const group = kind === "construction" ? "constructionSignature" : kind === "director" ? "directorSignature" : "customerSignature";
-                  const keys = new Set(def.steps.flatMap((step) => step.fields).filter((field) => field.group === group).map((field) => field.key));
+                  const signCtx = { mode: kind === "construction" ? "construction" : kind === "director" ? "director" : "offsite", isDirector: false } as const;
+                  // Send only signing boxes the signer can currently see.
+                  const keys = new Set(def.steps.flatMap((step) => step.fields).filter((field) => field.group === group && (!field.showIf || field.showIf(values, signCtx as never))).map((field) => field.key));
                   const signingValues = Object.fromEntries(Object.entries(values).filter(([key]) => keys.has(key)));
                   const res = await submitFn({ data: { token, values: signingValues } });
                   if (res && "error" in res && res.error) {

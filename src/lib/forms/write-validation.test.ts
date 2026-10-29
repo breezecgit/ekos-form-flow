@@ -72,3 +72,40 @@ describe("form write validation", () => {
     expect(() => validateSigningWrite(def, { name: "changed" }, {}, { mode: "offsite", isDirector: false }, "customerSignature", "EKOS-FICTIONAL")).toThrow("Only the signing");
   });
 });
+
+describe("off-site signing with hidden second-signer boxes", () => {
+  const off = { mode: "offsite", isDirector: false } as const;
+  it("Reservation with no second customer accepts an unchanged hidden auto date and does not save it", async () => {
+    const { getForm } = await import("./registry");
+    const res = getForm("reservation");
+    const existing = { customer_one_date: "2026-10-29", customer_two_date: "2026-10-29" };
+    const patch = validateSigningWrite(res, { customer_one_name: "Fictional Person", customer_one_signature: png, customer_one_date: "2026-10-29", second_customer: "No", customer_two_date: "2026-10-29", customer_two_name: "", accept_terms: true, accept_extras: true }, existing, off, "customerSignature", "EKOS-FICTIONAL");
+    expect(patch["customer_two_date"]).toBeUndefined();
+    expect(patch["customer_two_name"]).toBeUndefined();
+    expect(patch["customer_one_signature"]).toBe(png);
+  });
+  it("still refuses a hidden box sent with a changed value", async () => {
+    const { getForm } = await import("./registry");
+    const res = getForm("reservation");
+    expect(() => validateSigningWrite(res, { second_customer: "No", customer_two_date: "2026-10-30" }, { customer_two_date: "2026-10-29" }, off, "customerSignature", "EKOS-FICTIONAL")).toThrow("Only the visible signing");
+  });
+  it("still refuses a box outside the signing section", async () => {
+    const { getForm } = await import("./registry");
+    expect(() => validateSigningWrite(getForm("reservation"), { customer_phone: "000" }, {}, off, "customerSignature", "EKOS-FICTIONAL")).toThrow("Only the signing");
+  });
+});
+describe("hidden auto-dated signing boxes on every form", () => {
+  it("are ignored when echoed unchanged (Written Statement, NHO, USA, Reservation)", async () => {
+    const { getForm } = await import("./registry");
+    const { allFields } = await import("./types");
+    for (const type of ["reservation", "written_statement", "new_home_order", "unit_sale"]) {
+      let def; try { def = getForm(type); } catch { continue; }
+      const hidden = allFields(def).filter((f) => f.group === "customerSignature" && f.defaultToday && f.showIf && !f.showIf({}, { mode: "offsite", isDirector: false }));
+      for (const f of hidden) {
+        let message = "";
+        try { validateSigningWrite(def, { [f.key]: "2026-10-29" }, { [f.key]: "2026-10-29" }, { mode: "offsite", isDirector: false }, "customerSignature", "EKOS-FICTIONAL"); } catch (e) { message = (e as Error).message; }
+        expect(message).not.toContain("Only the visible");
+      }
+    }
+  });
+});
