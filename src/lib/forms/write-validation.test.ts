@@ -80,9 +80,9 @@ describe("off-site signing with hidden second-signer boxes", () => {
     const res = getForm("reservation");
     const existing = { customer_one_date: "2026-10-29", customer_two_date: "2026-10-29" };
     const patch = validateSigningWrite(res, { customer_one_name: "Fictional Person", customer_one_signature: png, customer_one_date: "2026-10-29", second_customer: "No", customer_two_date: "2026-10-29", customer_two_name: "", accept_terms: true, accept_extras: true }, existing, off, "customerSignature", "EKOS-FICTIONAL");
-    expect(patch.customer_two_date).toBeUndefined();
-    expect(patch.customer_two_name).toBeUndefined();
-    expect(patch.customer_one_signature).toBe(png);
+    expect(patch["customer_two_date"]).toBeUndefined();
+    expect(patch["customer_two_name"]).toBeUndefined();
+    expect(patch["customer_one_signature"]).toBe(png);
   });
   it("still refuses a hidden box sent with a changed value", async () => {
     const { getForm } = await import("./registry");
