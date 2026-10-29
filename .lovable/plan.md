@@ -1,37 +1,35 @@
-# Answers: Chris Harris and amendments on the dashboard (nothing changed)
+# EKOS-00093 off-site signing error – findings and proposed fix
 
-## 1. Where Chris Harris still appears
+Investigation only so far. No code changes, no emails, nothing published. Email test mode stays ON.
 
-| Place | Found? | Detail |
-|---|---|---|
-| Sales Person dropdown (app code) | Removed | Already done earlier |
-| Admin, Settings, Sales people list (database) | **Yes, still active** | "Chris Harris, chris.harris@ekosgroup.co.uk", marked active |
-| Rep notification emails | **Yes, possible** | The app looks up the sales person's email in that Settings list to notify the rep. If a form still has Chris Harris as Sales Person, he would be the intended recipient. Test mode blocks this for now; after go-live it would go to him. No email has ever been addressed to him (email log: 0) |
-| Park rep and manager assignments | No | No park has him as rep or manager |
-| Other settings | No | Not mentioned in any setting |
-| User accounts / profiles | No | No profile with his name or email, so no app login was ever set up for him |
-| Roles / permissions | No | None for him |
-| Sales and in-progress forms | No | No sale or form (draft or completed) has him as Sales Person |
-| Other code, defaults, seed data | No | The only "Harris" match is "Daniel Harrison-Cox" in Reservation text, which is a different person |
+## 1. Where the error comes from
+`validateSigningWrite` in `src/lib/forms/write-validation.ts` (line 92) runs when the customer presses Submit on the signing link. It checks each signing box the page sends. If a box is currently **hidden** (its show rule says no), the server refuses the whole signature with "Only the visible signing details can be changed through this link." The check refuses hidden boxes even when their value has not changed.
 
-**Login:** he has no account and cannot get into the app. Public sign-up is turned off, so he cannot create one.
+## 2. What is tripping it on EKOS-00093
+The submission is a Reservation, status "In Review (Offsite)". It has a valid, unused `customer_offsite` token that expires 27 Jan 2027. Its saved answers include:
+- `customer_one_date` = 2026-10-29
+- `customer_two_date` = 2026-10-29
+- no `second_customer` answer
 
-**Suggested fix (needs your OK):** remove him from Admin, Settings, Sales people. You or Sadie can do this on that screen, or I can do it. This also ends any chance of rep emails going to him.
+The "Customer Two Date of signing" box fills in today's date automatically. That automatic date is added to every date box with that setting, including hidden ones. It happened when the rep saved the form, and it happens again when the signing page loads. The signing page then sends **every** customer-signature box, visible or not (`src/routes/sign.$token.tsx`, line 158). The Customer Two boxes only show when "Is there a second customer?" = Yes. So when Sadie picks No, or leaves it blank, the hidden `customer_two_date` still goes to the server, and the server refuses it.
 
-## 2. How amendments show on the dashboard
+This is not about Castle View or anything park-specific. Any off-site Reservation with no second customer will hit this. A signer who answers "Yes" gets through.
 
-**Today the dashboard and tracker don't show amendments at all.** When an amendment is in progress, the form stays "Completed" and the sale stays wherever it already was. There's no sign that it's being amended. Amendments only appear on the form's own detail page (the Amendments panel).
+## 3. Was today's change (0b5022f) the cause?
+No. That change only touched the copying of answers from earlier forms (`prefill.ts`, `ekos.functions.ts`, one NHO field, one email line). It did not touch the signing page, the automatic date, or this check. The check dates from 18 Oct, and the automatic hidden date was there before that.
 
-**What the dashboard has now (Sadie's view):**
-1. Filter bar (park, from and to dates)
-2. Four totals boxes: Total Sales in Process, Total Sales Complete, Total Orders, Average Sale Completion
-3. Park goals chart
-4. Park value chart
-5. Incomplete Actions, Needs Your Review (Director only)
-6. Orders in Process, counted by form stage
+## 4. Smallest safe fix
+Both parts below keep the protection: a signer still cannot change any box they cannot see, and still cannot touch anything outside the signing section.
+- **Server (`validateSigningWrite`):** if a hidden signing box is sent with its value **unchanged** from what is saved (or empty), ignore it: don't save it and don't reject. Still reject if a hidden box is sent with a **different** value.
+- **Signing page (`sign.$token.tsx`):** only send signing boxes that are currently visible, so hidden automatic dates are never sent.
+- **Optional extra:** the hidden `customer_two_date` is unchanged on the server, so with the fix the signature goes through for this sale. One edge case: if the customer's browser date is a different day from the saved date, the date counts as changed. The signing-page part of the fix covers that. Existing data can stay as it is.
 
-Reps see the same, minus box 5.
+## Other forms' signing links
+The same pattern (hidden box with an automatic date, or a second-person box behind Yes/No) also exists on the Written Statement: the occupier 2 boxes and the second witness date. The Construction and Director signing links use the same check. The two-part fix is in shared code, so it covers every form's signing link. NHO and Unit Sale Agreement customer-signature boxes will be checked for the same pattern during the fix, and tests will cover them.
 
-**Emma's rule (amended sales stay in their existing section, no 6th box) already works.** Nothing needs changing for that.
-
-**Optional extra (only if wanted):** add a small "Amendment in progress" tag next to the Completed status on the tracker and dashboard. It would sit in the same row and section, with no new box. It would use the shared status display, so the tracker and dashboard stay the same. Say if you'd like it.
+## Tests to add
+- Reservation off-site, second customer = No, with a hidden pre-filled Customer Two date: signing succeeds, and Customer Two values are not saved.
+- A hidden box sent with a **changed** value is still refused.
+- A box outside the signing section is still refused.
+- Written Statement: the same no-second-occupier case.
+- Run the full test suite. Then sign EKOS-00093 on preview only if you approve. That sends a test-mode email to the test recipients only.
