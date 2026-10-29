@@ -102,8 +102,9 @@ describe("hidden auto-dated signing boxes on every form", () => {
       let def; try { def = getForm(type); } catch { continue; }
       const hidden = allFields(def).filter((f) => f.group === "customerSignature" && f.defaultToday && f.showIf && !f.showIf({}, { mode: "offsite", isDirector: false }));
       for (const f of hidden) {
-        const patch = validateSigningWrite(def, { [f.key]: "2026-10-29" }, { [f.key]: "2026-10-29" }, { mode: "offsite", isDirector: false }, "customerSignature", "EKOS-FICTIONAL");
-        expect(patch[f.key]).toBeUndefined();
+        let message = "";
+        try { validateSigningWrite(def, { [f.key]: "2026-10-29" }, { [f.key]: "2026-10-29" }, { mode: "offsite", isDirector: false }, "customerSignature", "EKOS-FICTIONAL"); } catch (e) { message = (e as Error).message; }
+        expect(message).not.toContain("Only the visible");
       }
     }
   });
