@@ -433,7 +433,7 @@ export async function sendCompletionEmails(submissionId: string, pdfBytes: Uint8
     bodyHtml: `
       ${goldBox(`We're happy to confirm that we've received your completed ${esc(c.formName)}.`)}
       ${p(c.pdfLink ? `<a href="${c.pdfLink}" style="color:#d2a065;">Please click here for your copy of the form you completed with your sales executive for your records.</a>` : "Please find attached your copy of the form you completed with your sales executive for your records.")}
-      ${p("To help you prepare for the next steps, please refer to the What Happens Next Guide at the bottom of the form.")}
+      ${p(c.submission.form_type === "unit_sale_agreement" || c.submission.form_type === "written_statement" ? "We hope you'll be very happy in your new home." : "To help you prepare for the next steps, please refer to the What Happens Next Guide at the bottom of the form.")}
       ${p("If you have any questions, don't hesitate to contact us – we're here to help.")}
       <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#d2a065;">Welcome to the EKOS Homes family!</p>`,
   });

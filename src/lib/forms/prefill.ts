@@ -2,19 +2,45 @@ import type { FormDef } from "./types";
 import { prepareHomeCost } from "./home-cost";
 
 type SaleLike = { park_name: string; customer_name: string; customer_email: string; customer_phone: string; sales_person: string };
-type EarlierRow = { form_type: string; data: unknown; is_draft?: boolean | null };
+type EarlierRow = { form_type: string; data: unknown; is_draft?: boolean | null; submitted_at?: string | null; updated_at?: string | null; created_at?: string | null };
+
+const isBlankValue = (v: unknown) => v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
+const stamp = (r: EarlierRow) => Date.parse(r.submitted_at ?? r.updated_at ?? r.created_at ?? "") || 0;
+
+/** Earlier rows in apply order: drafts only fill gaps, then submitted forms oldest→newest so the latest submitted value wins. */
+export function orderEarlierRows<T extends EarlierRow>(others: T[]): T[] {
+  const drafts = others.filter((r) => r.is_draft).sort((a, b) => stamp(a) - stamp(b));
+  const submitted = others.filter((r) => !r.is_draft).sort((a, b) => stamp(a) - stamp(b));
+  return [...drafts, ...submitted];
+}
+
+/**
+ * Re-sync an open later-form draft: empty boxes take the latest value, and boxes still holding a
+ * value that an older earlier form supplied (stale carry-over) move to the latest value. Anything
+ * else the user typed is kept.
+ */
+export function refreshDraftFromPrefill(current: Record<string, unknown>, prefill: Record<string, unknown>, others: EarlierRow[]): { data: Record<string, unknown>; changed: boolean } {
+  const cur = { ...current };
+  let changed = false;
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+  for (const [k, v] of Object.entries(prefill)) {
+    const c = cur[k];
+    if (same(c, v)) continue;
+    const stale = !isBlankValue(c) && others.some((r) => same(((r.data ?? {}) as Record<string, unknown>)[k], c));
+    if (isBlankValue(c) || stale) {
+      cur[k] = v;
+      changed = true;
+    }
+  }
+  return { data: cur, changed };
+}
 
 /** Pure cross-form prefill: earlier forms of the same sale fill matching keys on a new form. */
 export function prefillFromEarlierForms(def: FormDef, formType: string, sale: SaleLike, others: EarlierRow[]): Record<string, unknown> {
   const merged: Record<string, unknown> = {};
-  const isBlank = (v: unknown) => v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
-  // Reservation Form answers win; other earlier forms only fill gaps.
-  const reservation = others.find((r) => r.form_type === "reservation");
-  // Submitted forms win over drafts; the Reservation Form wins over everything.
-  const rest = others.filter((r) => r !== reservation) as Array<(typeof others)[number] & { is_draft?: boolean }>;
-  const ordered = [...rest.filter((r) => r.is_draft), ...rest.filter((r) => !r.is_draft)];
-  for (const row of [...ordered, ...(reservation ? [reservation] : [])]) {
-    for (const [k, v] of Object.entries((row.data ?? {}) as Record<string, unknown>)) if (!isBlank(v)) merged[k] = v;
+  // Latest submitted value wins for every carried field; drafts only fill gaps.
+  for (const row of orderEarlierRows(others)) {
+    for (const [k, v] of Object.entries((row.data ?? {}) as Record<string, unknown>)) if (!isBlankValue(v)) merged[k] = v;
   }
 
   const out: Record<string, unknown> = {};

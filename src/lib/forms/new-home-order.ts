@@ -201,6 +201,7 @@ export const newHomeOrderForm: FormDef = {
           key: "decking_plan",
           label: "Decking Plan",
           type: "file",
+          required: false, // EKOS usually has no decking plan when the home goes into build
           showIf: (v) => v["include_decking"] === "Yes",
         },
         { key: "omar_extras", label: "£", pdfLabel: "Omar Extras", sectionLabel: "Omar Extras", type: "money" },
