@@ -94,3 +94,17 @@ describe("off-site signing with hidden second-signer boxes", () => {
     expect(() => validateSigningWrite(getForm("reservation"), { customer_phone: "000" }, {}, off, "customerSignature", "EKOS-FICTIONAL")).toThrow("Only the signing");
   });
 });
+describe("hidden auto-dated signing boxes on every form", () => {
+  it("are ignored when echoed unchanged (Written Statement, NHO, USA, Reservation)", async () => {
+    const { getForm } = await import("./registry");
+    const { allFields } = await import("./types");
+    for (const type of ["reservation", "written_statement", "new_home_order", "unit_sale"]) {
+      let def; try { def = getForm(type); } catch { continue; }
+      const hidden = allFields(def).filter((f) => f.group === "customerSignature" && f.defaultToday && f.showIf && !f.showIf({}, { mode: "offsite", isDirector: false }));
+      for (const f of hidden) {
+        const patch = validateSigningWrite(def, { [f.key]: "2026-10-29" }, { [f.key]: "2026-10-29" }, { mode: "offsite", isDirector: false }, "customerSignature", "EKOS-FICTIONAL");
+        expect(patch[f.key]).toBeUndefined();
+      }
+    }
+  });
+});
