@@ -47,7 +47,7 @@ export const writtenStatementForm: FormDef = {
     {
       id: "step-1",
       fields: [
-        { ...fieldFromReservation("park_name"), label: "Select Park", lockIfSet: true },
+        { ...fieldFromReservation("park_name"), label: "Select Park", lockIfSet: true, pdfHide: true },
         text("intro"),
         text("part1"),
       ],

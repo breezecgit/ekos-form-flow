@@ -10,6 +10,7 @@ it("prints Written Statement answers inline, one signatures section, witnesses i
   try {
     const values = { ...statementSignatures(), park_company_name: "Inline Company Test", park_registered_number: "Inline Number Test",
       party_customer_name: "Inline Party Test", agreement_start_date: "2026-10-28", new_home_address: "Inline Address Test",
+      park_name: "Hidden Selected Park Test",
       pitch_plan: [{ name: "Test pitch.png" }], additional_charges: "Inline Charges Test", home_model: "Inline Model Test",
       customer_name: "Cover Customer Test", customer_email: "hidden@example.invalid", customer_phone: "Hidden Phone Test",
       park_name_confirm: "Hidden Confirm Park Test", sales_person: "Hidden Sales Person Test", rep_name: "Hidden Rep Test", rep_signature: TEST_SIGNATURE };
@@ -29,7 +30,8 @@ it("prints Written Statement answers inline, one signatures section, witnesses i
     for (const part of sequence) { const position = printed.indexOf(part, previous + 1); expect(position, part).toBeGreaterThan(previous); previous = position; }
     expect(text.mock.calls.filter(([t]) => t === "Signatures")).toHaveLength(1);
     expect(printed).not.toContain("Customer and Home Details");
-    for (const value of [values.customer_email, values.customer_phone, values.park_name_confirm, values.sales_person, values.rep_name, "Add Second Occupier?"]) expect(printed).not.toContain(value);
+    for (const value of [values.customer_email, values.customer_phone, values.park_name_confirm, values.park_name, values.sales_person, values.rep_name, "Add Second Occupier?", "Order Number", "EKOS-", "Select Park"]) expect(printed).not.toContain(value);
+    expect(printed).toContain("Park: Test Park");
     expect(printed).toContain("Customer: Cover Customer Test");
     expect(images).toHaveBeenCalledTimes(8); // cover, six signatures, pitch plan
   } finally { text.mockRestore(); images.mockRestore(); }

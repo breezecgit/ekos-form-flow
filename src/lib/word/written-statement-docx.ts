@@ -106,7 +106,7 @@ export async function buildWrittenStatementDocx(opts: {
       alignment: AlignmentType.CENTER,
       border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: GOLD, space: 6 } },
       spacing: { after: 240 },
-      children: [new TextRun({ text: `Order Number ${orderNumber}`, bold: true, color: GOLD, font: FONT, size: 22 })],
+      children: [],
     }),
   );
 

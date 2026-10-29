@@ -347,8 +347,9 @@ function signatureMeta(key: string, values: FormValues) {
 export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Array> {
   const { def, ctx, orderNumber, park, customerName, parkLinks } = input;
   const values = withoutRetiredAnswers(def.type, input.values);
+  const writtenStatement = def.type === "written_statement";
   const w = new Writer();
-  await w.init(def.title, `${orderNumber}  |  ${park}`);
+  await w.init(def.title, writtenStatement ? park : `${orderNumber}  |  ${park}`);
 
   // --- Cover header -------------------------------------------------------
   const logoBytes = Uint8Array.from(atob(EKOS_LOGO_PNG_BASE64), (c) => c.charCodeAt(0));
@@ -364,7 +365,7 @@ export async function generateFormPdf(input: GeneratePdfInput): Promise<Uint8Arr
   }
 
   w.text(def.title, { size: 22, font: w.bold, color: BRAND, align: "center", gap: 8 });
-  w.text(`Order Number: ${orderNumber}`, { size: 10.5, align: "center", color: GOLD });
+  if (!writtenStatement) w.text(`Order Number: ${orderNumber}`, { size: 10.5, align: "center", color: GOLD });
   w.text(`Park: ${park || "-"}`, { size: 10.5, align: "center" });
   w.text(`Customer: ${customerName || "-"}`, { size: 10.5, align: "center", gap: 10 });
   w.rule();
