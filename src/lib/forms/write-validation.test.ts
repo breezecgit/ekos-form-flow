@@ -72,3 +72,25 @@ describe("form write validation", () => {
     expect(() => validateSigningWrite(def, { name: "changed" }, {}, { mode: "offsite", isDirector: false }, "customerSignature", "EKOS-FICTIONAL")).toThrow("Only the signing");
   });
 });
+
+describe("off-site signing with hidden second-signer boxes", () => {
+  const off = { mode: "offsite", isDirector: false } as const;
+  it("Reservation with no second customer accepts an unchanged hidden auto date and does not save it", async () => {
+    const { getForm } = await import("./registry");
+    const res = getForm("reservation");
+    const existing = { customer_one_date: "2026-10-29", customer_two_date: "2026-10-29" };
+    const patch = validateSigningWrite(res, { customer_one_name: "Fictional Person", customer_one_signature: png, customer_one_date: "2026-10-29", second_customer: "No", customer_two_date: "2026-10-29", customer_two_name: "", accept_terms: true, accept_extras: true }, existing, off, "customerSignature", "EKOS-FICTIONAL");
+    expect(patch.customer_two_date).toBeUndefined();
+    expect(patch.customer_two_name).toBeUndefined();
+    expect(patch.customer_one_signature).toBe(png);
+  });
+  it("still refuses a hidden box sent with a changed value", async () => {
+    const { getForm } = await import("./registry");
+    const res = getForm("reservation");
+    expect(() => validateSigningWrite(res, { second_customer: "No", customer_two_date: "2026-10-30" }, { customer_two_date: "2026-10-29" }, off, "customerSignature", "EKOS-FICTIONAL")).toThrow("Only the visible signing");
+  });
+  it("still refuses a box outside the signing section", async () => {
+    const { getForm } = await import("./registry");
+    expect(() => validateSigningWrite(getForm("reservation"), { customer_phone: "000" }, {}, off, "customerSignature", "EKOS-FICTIONAL")).toThrow("Only the signing");
+  });
+});

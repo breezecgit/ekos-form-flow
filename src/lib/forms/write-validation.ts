@@ -89,7 +89,13 @@ export function validateSigningWrite(def: FormDef, values: FormValues, existing:
   for (const [key, value] of Object.entries(values)) {
     const f = byKey.get(key);
     if (f) {
-      if (f.showIf && !f.showIf({ ...existing, ...values }, ctx)) throw new Error("Only the visible signing details can be changed through this link.");
+      if (f.showIf && !f.showIf({ ...existing, ...values }, ctx)) {
+        // Hidden boxes (e.g. auto-dated second-signer fields) may be echoed back
+        // unchanged or empty; they are ignored, never saved. Changes are refused.
+        const blank = value === undefined || value === null || value === "";
+        if (blank || JSON.stringify(value) === JSON.stringify(existing[key])) continue;
+        throw new Error("Only the visible signing details can be changed through this link.");
+      }
       checkValue(f, value, existing[key]); patch[key] = value; continue;
     }
     if (!["order_number", "customer_name", "customer_email", "park_name", "status"].includes(key) || value !== echo[key]) throw new Error("Only the signing details can be changed through this link.");
