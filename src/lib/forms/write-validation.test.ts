@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { getForm } from "./registry";
 import { MAX_FORM_BYTES, checkPayloadSize, validateFormWrite, validateSigningWrite } from "./write-validation";
-import type { FormDef } from "./types";
+import { allFields, findField, isVisible, type FormDef, type FormValues } from "./types";
+import { validateAll } from "./validate";
 
 const ctx = { mode: "rep" as const, isDirector: false };
 const def: FormDef = { type: "fixture", title: "Fictional", steps: [{ id: "one", fields: [
@@ -13,6 +14,60 @@ const def: FormDef = { type: "fixture", title: "Fictional", steps: [{ id: "one",
   { key: "conditional", type: "text", showIf: (v) => v["choice"] === "Yes" },
 ] }] };
 const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4f8AAAAASUVORK5CYII=";
+
+// Build valid fictional answers so submit tests exercise the actual full definition.
+function validAnswers(form: FormDef): FormValues {
+  const values: FormValues = {};
+  for (const f of allFields(form)) {
+    if (f.type === "static" || f.type === "links") continue;
+    values[f.key] = f.type === "checkbox" ? true
+      : f.type === "signature" ? png
+      : f.type === "date" ? "2026-11-20"
+      : f.type === "email" ? "fictional@example.com"
+      : f.type === "money" ? "0"
+      : f.type === "file" ? [{ id: "11111111-1111-4111-8111-111111111111", name: "fictional.pdf", path: "fictional/plan.pdf", mime: "application/pdf" }]
+      : f.type === "multiselect" ? [f.options?.[0]?.value ?? ""]
+      : f.type === "radio" || f.type === "select" ? f.options?.find((o) => !o.directorOnly)?.value ?? ""
+      : "Fictional";
+  }
+  values["second_customer"] = "No";
+  values["include_decking"] = "Yes";
+  return values;
+}
+
+describe("decking plan submission rules", () => {
+  const usa = getForm("unit_sale_agreement");
+  const nho = getForm("new_home_order");
+  it("USA requires the plan only when the upload is visible", () => {
+    const field = findField(usa, "decking_plan");
+    if (!field) throw new Error("Missing decking plan field");
+    const values = { ...validAnswers(usa), decking_plan: [] };
+    expect(isVisible(field, values, ctx)).toBe(true);
+    expect(validateAll(usa, values, ctx)).toEqual({ decking_plan: expect.any(String) });
+    expect(() => validateFormWrite(usa, values, ctx, "submit")).toThrow("required");
+    const noDecking = { ...values, include_decking: "No" };
+    expect(isVisible(field, noDecking, ctx)).toBe(false);
+    expect(() => validateFormWrite(usa, noDecking, ctx, "submit")).not.toThrow();
+    expect(() => validateFormWrite(usa, validAnswers(usa), ctx, "submit")).not.toThrow();
+  });
+  it("NHO still submits with decking selected and no plan", () => {
+    expect(() => validateFormWrite(nho, { ...validAnswers(nho), decking_plan: [] }, ctx, "submit")).not.toThrow();
+  });
+  it("existing USA drafts without a plan still save but require it on staff submission", () => {
+    const existing = { ...validAnswers(usa), decking_plan: [] };
+    expect(() => validateFormWrite(usa, existing, ctx, "draft", existing)).not.toThrow();
+    expect(() => validateFormWrite(usa, existing, ctx, "submit", existing)).toThrow("required");
+  });
+  it("existing remote USA signing still accepts only customer signing details without demanding a staff upload", () => {
+    const existing = { ...validAnswers(usa), decking_plan: [] };
+    const patch = { customer_one_name: "Fictional Customer", customer_one_signature: png, customer_one_date: "2026-11-20", second_customer: "No", accept_terms: true, accept_extras: true };
+    expect(validateSigningWrite(usa, patch, existing, { mode: "offsite", isDirector: false }, "customerSignature", "EKOS-FICTIONAL")).toEqual(patch);
+    expect(() => validateSigningWrite(usa, { ...patch, decking_plan: validAnswers(usa)["decking_plan"] }, existing, { mode: "offsite", isDirector: false }, "customerSignature", "EKOS-FICTIONAL")).toThrow("Only the signing");
+  });
+  it.each(["new_home_order", "unit_sale_agreement"])("%s still saves a deliberately selected handover TBC", (type) => {
+    expect(() => validateFormWrite(getForm(type), { handover_date: "TBC" }, ctx, "draft")).not.toThrow();
+  });
+});
 
 describe("form write validation", () => {
   it("rep draft payloads cannot choose the Director-only Completed option", () => {
