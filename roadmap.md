@@ -1,5 +1,10 @@
 # EKOS Customer Sales Form — roadmap
 
+## Sadie's handover and decking-plan changes — 30 October
+- [ ] Do not prefill earlier handover TBC into NHO/USA; retain actual dates and deliberate saved TBC.
+- [ ] Require USA decking plan only when selected; retain optional NHO upload, partial draft saving and customer-only signing.
+- [ ] Run full isolated suite and check preview errors; no emails, hosted records/settings changes or publishing.
+
 ## Written Statement export tidy-up — 29 October
 - [x] Omit order cover/header references and Select Park from Written Statement PDF/Word only; retain PDF Park/Customer cover, park-only running header, filenames, web fields, emails/tracker and legal wording. Actual generated-PDF text and Word content checks pass; approved full wording sequence unchanged, all 305 tests pass and preview build OK. No emails, hosted changes or publishing; existing stored documents not regenerated.
 
