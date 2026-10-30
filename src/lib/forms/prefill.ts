@@ -50,6 +50,9 @@ export function prefillFromEarlierForms(def: FormDef, formType: string, sale: Sa
     if (f.compute) continue; // auto-calculated boxes recalculate on load from the filled values
     const v = merged[f.key];
     if (v === undefined || v === null || v === "") continue;
+    // Later stages should prompt for a confirmed date, not inherit an earlier TBC.
+    // Omit the value rather than clear it so an existing saved TBC is untouched.
+    if (f.key === "handover_date" && v === "TBC" && ["new_home_order", "unit_sale_agreement"].includes(formType)) continue;
     if ((f.type === "select" || f.type === "radio") && !(f.options ?? []).some((o) => o.value === v)) continue;
     if (f.type === "multiselect") {
       const allowed = new Set((f.options ?? []).map((o) => o.value));

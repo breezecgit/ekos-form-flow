@@ -79,7 +79,7 @@ export const unitSaleAgreementForm: FormDef = {
       heading: "Confirming Customisations",
       fields: nho("step-3")
         .filter((f) => f.key !== "spec_check_sheet")
-        .map((f) => ({ ...f })),
+        .map((f) => f.key === "decking_plan" ? { ...f, required: true } : { ...f }),
     },
     {
       id: "step-4",
