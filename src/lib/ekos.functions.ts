@@ -721,7 +721,16 @@ export const getMyPermissions = createServerFn({ method: "GET" })
 /** Permanently deletes a sale + its forms, tokens, files and stored files. Never touches Drive/Sheets, sends no email. */
 export const deleteSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ saleId: z.string().uuid(), confirmOrderNumber: z.string() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        saleId: z.string().uuid(),
+        confirmOrderNumber: z.string(),
+        /** Only these forms; omitted (or every form) deletes the whole sale. */
+        formTypes: z.array(z.string()).max(10).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     if (!(await canDeleteSales(context.userId, context.claims["email"]))) {
       throw new Error("You do not have permission to delete sales.");
@@ -732,10 +741,17 @@ export const deleteSale = createServerFn({ method: "POST" })
     if (data.confirmOrderNumber.trim() !== sale.order_number) {
       throw new Error("The order number typed does not match.");
     }
-    const { data: subs } = await db
+    const { data: allSubs } = await db
       .from("form_submissions")
       .select("id, form_type, pdf_path")
       .eq("sale_id", sale.id);
+    const chosen = data.formTypes ? Array.from(new Set(data.formTypes)) : null;
+    if (chosen && !chosen.length) throw new Error("Tick at least one form to delete.");
+    if (chosen?.some((f) => !(allSubs ?? []).some((x) => x.form_type === f))) {
+      throw new Error("One of the ticked forms no longer exists on this sale. Please reload.");
+    }
+    const wholeSale = !chosen || (allSubs ?? []).every((x) => chosen.includes(x.form_type));
+    const subs = wholeSale ? allSubs : (allSubs ?? []).filter((x) => chosen!.includes(x.form_type));
     const subIds = (subs ?? []).map((s) => s.id);
     const paths: string[] = (subs ?? []).map((s) => s.pdf_path).filter((p): p is string => Boolean(p));
     if (subIds.length) {
@@ -757,8 +773,10 @@ export const deleteSale = createServerFn({ method: "POST" })
       const { error: subErr } = await db.from("form_submissions").delete().in("id", subIds);
       if (subErr) throw new Error(subErr.message);
     }
-    const { error: saleErr } = await db.from("sales").delete().eq("id", sale.id);
-    if (saleErr) throw new Error(saleErr.message);
+    if (wholeSale) {
+      const { error: saleErr } = await db.from("sales").delete().eq("id", sale.id);
+      if (saleErr) throw new Error(saleErr.message);
+    }
 
     const { data: profile } = await db.from("profiles").select("email, full_name").eq("id", context.userId).maybeSingle();
     const { FORM_TITLES } = await import("@/lib/forms/registry");
@@ -767,9 +785,9 @@ export const deleteSale = createServerFn({ method: "POST" })
       submission_id: null,
       actor_id: context.userId,
       actor_label: profile?.full_name || profile?.email || "",
-      action: "sale_deleted",
-      note: `Deleted sale ${sale.order_number} · Customer: ${sale.customer_name || "—"} · Park: ${sale.park_name || "—"} · Forms deleted: ${forms.join(", ") || "none"} · Files removed: ${unique.length}`,
+      action: wholeSale ? "sale_deleted" : "forms_deleted",
+      note: `${wholeSale ? "Deleted sale" : "Deleted forms from sale"} ${sale.order_number} · Customer: ${sale.customer_name || "—"} · Park: ${sale.park_name || "—"} · Forms deleted: ${forms.join(", ") || "none"} · Files removed: ${unique.length}`,
     });
-    if (auditError) throw new Error("The sale was deleted but its audit entry could not be recorded. Contact EKOS; do not repeat the deletion.");
-    return { ok: true, orderNumber: sale.order_number };
+    if (auditError) throw new Error("The deletion went through but its audit entry could not be recorded. Contact EKOS; do not repeat the deletion.");
+    return { ok: true, orderNumber: sale.order_number, wholeSale, formsDeleted: forms };
   });
