@@ -571,16 +571,43 @@ export const setStatus = createServerFn({ method: "POST" })
       );
     }
 
+    const disapproving = data.status === "Disapproved";
+    if (disapproving && submission.pdf_path) {
+      // Keep the copy from before disapproval: the next submission overwrites form.pdf.
+      await db.storage
+        .from("ekos-documents")
+        .copy(submission.pdf_path, `submissions/${submission.id}/before-disapproval-${Date.now()}.pdf`)
+        .catch(() => undefined);
+    }
+    const { getForm } = await import("@/lib/forms/registry");
+    const { clearAllSignatures } = await import("@/lib/forms/signatures");
     const { data: statusRows, error: statusError } = await db
       .from("form_submissions")
       .update({
         status: data.status,
-        is_draft: data.status === "Disapproved",
-        disapproval_note: data.status === "Disapproved" ? (data.note ?? "") : null,
+        is_draft: disapproving,
+        disapproval_note: disapproving ? (data.note ?? "") : null,
         updated_at: new Date().toISOString(),
+        // Everyone signs again after a disapproval, so nobody can say they didn't approve the changes.
+        ...(disapproving
+          ? {
+              data: clearAllSignatures(getForm(submission.form_type), (submission.data ?? {}) as FormValues) as Json,
+              customer_signed_at: null,
+              construction_signed_at: null,
+            }
+          : {}),
       })
       .eq("id", data.submissionId)
+      .eq("status", submission.status)
       .select("id");
+    if (disapproving) {
+      // Unused signing links would otherwise let the old version be signed.
+      await db
+        .from("signing_tokens")
+        .update({ used_at: new Date().toISOString() })
+        .eq("submission_id", data.submissionId)
+        .is("used_at", null);
+    }
     if (statusError || !statusRows?.length) throw new Error("The status could not be saved. Please retry.");
 
     await s.addAudit({
