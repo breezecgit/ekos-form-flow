@@ -56,7 +56,7 @@ export function DeleteSaleButton({
       reset();
       qc.invalidateQueries({ queryKey: ["sales"] });
       qc.invalidateQueries({ queryKey: ["submission"] });
-      if (r.wholeSale) onDeleted?.();
+      onDeleted?.();
     },
     onError: (e: Error) => toast.error(e.message),
   });
