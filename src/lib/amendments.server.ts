@@ -7,6 +7,7 @@ import { validateFormWrite } from "@/lib/forms/write-validation";
 import { pdfFileName, todayISO } from "@/lib/format";
 import type { FormValues } from "@/lib/forms/types";
 import { planUsaUpdate } from "@/lib/forms/nho-to-usa";
+import { amendmentSignatures, amendmentSigningRoute, firstCustomerSignature } from "@/lib/forms/signatures";
 
 /** Untyped service-role client: form_amendments is not in generated types until its migration is applied. */
 function db(): SupabaseClient {
@@ -85,14 +86,18 @@ export async function startAmendment(input: { submissionId: string; userId: stri
   // Carried-over amendments change only figures the approved NHO already validated; a signed form
   // missing a box made required later must not block them, so only value types are checked.
   validateFormWrite(def, edited, { mode: "rep", isDirector: input.isDirector ?? true }, input.carriedOver ? "draft" : "submit", before);
-  const { after, changes } = prepareAmendment(def, before, edited);
+  // Carried-over (NHO → USA) amendments always go to the customer by email.
+  const route = input.carriedOver ? amendmentSigningRoute(submission.form_type, before) === "none" ? "none" : "offsite" : amendmentSigningRoute(submission.form_type, edited);
+  const signed = amendmentSignatures(def, before, edited, route);
+  const { after, changes } = prepareAmendment(def, before, signed);
+  const live = route === "live" ? firstCustomerSignature(def, after) : null;
 
   const d = db();
   const existing = (check(await d.from("form_amendments").select("amendment_number,status").eq("submission_id", input.submissionId), "Amendments could not be checked.") ?? []) as { amendment_number: number; status: string }[];
   if (existing.some((a) => OPEN_AMENDMENT_STATUSES.includes(a.status))) throw new Error("This form already has an open amendment. Complete or cancel it first.");
   const number = Math.max(0, ...existing.map((a) => a.amendment_number)) + 1;
-  // Identification Checks are never signed by the customer, so they go straight to Sadie's approval.
-  const customerSigns = submission.form_type !== "identification";
+  // Identification Checks are never signed by the customer; live amendments are signed on this device.
+  const emailCustomer = route === "offsite";
   const row = check(await d.from("form_amendments").insert({
     submission_id: input.submissionId,
     amendment_number: number,
@@ -100,15 +105,17 @@ export async function startAmendment(input: { submissionId: string; userId: stri
     changes,
     values_before: before,
     values_after: after,
-    status: customerSigns ? AMENDMENT_STATUS.awaitingCustomer : AMENDMENT_STATUS.awaitingApproval,
+    status: emailCustomer ? AMENDMENT_STATUS.awaitingCustomer : AMENDMENT_STATUS.awaitingApproval,
     created_by: input.userId,
+    ...(live ? { customer_signature: live.signature, customer_signed_name: live.name, customer_signed_at: new Date().toISOString() } : {}),
   }).select("*").single(), "The amendment could not be saved – another amendment may have just been started. Please reload.") as AmendmentRow;
   await audit(input.submissionId, input.userId, input.actorLabel, `Amendment ${number} started`, `Reason: ${reason} · ${changes.length} change(s)`);
-  if (customerSigns) {
+  if (emailCustomer) {
     const { sendAmendmentCustomerEmail } = await import("@/lib/ekos.server");
     await sendAmendmentCustomerEmail(input.submissionId, number);
     await audit(input.submissionId, input.userId, input.actorLabel, `Amendment ${number} sent to customer for signature`);
   } else {
+    if (live) await audit(input.submissionId, input.userId, input.actorLabel, `Amendment ${number} signed live by customer`, "Earlier customer signatures replaced; original signed PDF kept");
     await notifyDirector(input.submissionId, number);
   }
   return row;

@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCustomerEmail, assertEditable, canResend, parseSubmitStatus } from "@/lib/security-rules";
 import { validateFormWrite } from "@/lib/forms/write-validation";
 import { getForm } from "@/lib/forms/registry";
+import { clearAllSignatures } from "@/lib/forms/signatures";
 import { validateUpload } from "@/lib/forms/upload-validation";
 import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
 import { prepareHomeCost, prepareHomeCostDraft, hasHomeCost } from "@/lib/forms/home-cost";
@@ -571,17 +572,42 @@ export const setStatus = createServerFn({ method: "POST" })
       );
     }
 
+    const disapproving = data.status === "Disapproved";
+    if (disapproving && submission.pdf_path) {
+      // Keep the copy from before disapproval: the next submission overwrites form.pdf.
+      await db.storage
+        .from("ekos-documents")
+        .copy(submission.pdf_path, `submissions/${submission.id}/before-disapproval-${Date.now()}.pdf`)
+        .catch(() => undefined);
+    }
     const { data: statusRows, error: statusError } = await db
       .from("form_submissions")
       .update({
         status: data.status,
-        is_draft: data.status === "Disapproved",
-        disapproval_note: data.status === "Disapproved" ? (data.note ?? "") : null,
+        is_draft: disapproving,
+        disapproval_note: disapproving ? (data.note ?? "") : null,
         updated_at: new Date().toISOString(),
+        // Everyone signs again after a disapproval, so nobody can say they didn't approve the changes.
+        ...(disapproving
+          ? {
+              data: clearAllSignatures(getForm(submission.form_type), (submission.data ?? {}) as Record<string, unknown>) as never,
+              customer_signed_at: null,
+              construction_signed_at: null,
+            }
+          : {}),
       })
       .eq("id", data.submissionId)
+      .eq("status", submission.status)
       .select("id");
     if (statusError || !statusRows?.length) throw new Error("The status could not be saved. Please retry.");
+    if (disapproving) {
+      // Unused signing links would otherwise let the old version be signed.
+      await db
+        .from("signing_tokens")
+        .update({ used_at: new Date().toISOString() })
+        .eq("submission_id", data.submissionId)
+        .is("used_at", null);
+    }
 
     await s.addAudit({
       submissionId: data.submissionId,
@@ -592,6 +618,15 @@ export const setStatus = createServerFn({ method: "POST" })
       toStatus: data.status,
       note: data.note ?? null,
     });
+    if (disapproving) {
+      await s.addAudit({
+        submissionId: data.submissionId,
+        actorId: context.userId,
+        actorLabel: String(context.claims["email"] ?? ""),
+        action: "Signatures cleared",
+        note: "All signatures and signing dates removed – everyone must sign again before resubmitting.",
+      });
+    }
 
     if (data.status === "Completed") {
       const result = await s.runCompletion(data.submissionId);
@@ -686,7 +721,16 @@ export const getMyPermissions = createServerFn({ method: "GET" })
 /** Permanently deletes a sale + its forms, tokens, files and stored files. Never touches Drive/Sheets, sends no email. */
 export const deleteSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ saleId: z.string().uuid(), confirmOrderNumber: z.string() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        saleId: z.string().uuid(),
+        confirmOrderNumber: z.string(),
+        /** Only these forms; omitted (or every form) deletes the whole sale. */
+        formTypes: z.array(z.string()).max(10).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     if (!(await canDeleteSales(context.userId, context.claims["email"]))) {
       throw new Error("You do not have permission to delete sales.");
@@ -697,10 +741,17 @@ export const deleteSale = createServerFn({ method: "POST" })
     if (data.confirmOrderNumber.trim() !== sale.order_number) {
       throw new Error("The order number typed does not match.");
     }
-    const { data: subs } = await db
+    const { data: allSubs } = await db
       .from("form_submissions")
       .select("id, form_type, pdf_path")
       .eq("sale_id", sale.id);
+    const chosen = data.formTypes ? Array.from(new Set(data.formTypes)) : null;
+    if (chosen && !chosen.length) throw new Error("Tick at least one form to delete.");
+    if (chosen?.some((f) => !(allSubs ?? []).some((x) => x.form_type === f))) {
+      throw new Error("One of the ticked forms no longer exists on this sale. Please reload.");
+    }
+    const wholeSale = !chosen || (allSubs ?? []).every((x) => chosen.includes(x.form_type));
+    const subs = wholeSale ? allSubs : (allSubs ?? []).filter((x) => chosen!.includes(x.form_type));
     const subIds = (subs ?? []).map((s) => s.id);
     const paths: string[] = (subs ?? []).map((s) => s.pdf_path).filter((p): p is string => Boolean(p));
     if (subIds.length) {
@@ -722,8 +773,10 @@ export const deleteSale = createServerFn({ method: "POST" })
       const { error: subErr } = await db.from("form_submissions").delete().in("id", subIds);
       if (subErr) throw new Error(subErr.message);
     }
-    const { error: saleErr } = await db.from("sales").delete().eq("id", sale.id);
-    if (saleErr) throw new Error(saleErr.message);
+    if (wholeSale) {
+      const { error: saleErr } = await db.from("sales").delete().eq("id", sale.id);
+      if (saleErr) throw new Error(saleErr.message);
+    }
 
     const { data: profile } = await db.from("profiles").select("email, full_name").eq("id", context.userId).maybeSingle();
     const { FORM_TITLES } = await import("@/lib/forms/registry");
@@ -732,9 +785,9 @@ export const deleteSale = createServerFn({ method: "POST" })
       submission_id: null,
       actor_id: context.userId,
       actor_label: profile?.full_name || profile?.email || "",
-      action: "sale_deleted",
-      note: `Deleted sale ${sale.order_number} · Customer: ${sale.customer_name || "—"} · Park: ${sale.park_name || "—"} · Forms deleted: ${forms.join(", ") || "none"} · Files removed: ${unique.length}`,
+      action: wholeSale ? "sale_deleted" : "forms_deleted",
+      note: `${wholeSale ? "Deleted sale" : "Deleted forms from sale"} ${sale.order_number} · Customer: ${sale.customer_name || "—"} · Park: ${sale.park_name || "—"} · Forms deleted: ${forms.join(", ") || "none"} · Files removed: ${unique.length}`,
     });
-    if (auditError) throw new Error("The sale was deleted but its audit entry could not be recorded. Contact EKOS; do not repeat the deletion.");
-    return { ok: true, orderNumber: sale.order_number };
+    if (auditError) throw new Error("The deletion went through but its audit entry could not be recorded. Contact EKOS; do not repeat the deletion.");
+    return { ok: true, orderNumber: sale.order_number, wholeSale, formsDeleted: forms };
   });
