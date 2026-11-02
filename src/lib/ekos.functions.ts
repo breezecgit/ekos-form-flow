@@ -599,6 +599,7 @@ export const setStatus = createServerFn({ method: "POST" })
       .eq("id", data.submissionId)
       .eq("status", submission.status)
       .select("id");
+    if (statusError || !statusRows?.length) throw new Error("The status could not be saved. Please retry.");
     if (disapproving) {
       // Unused signing links would otherwise let the old version be signed.
       await db
@@ -607,7 +608,6 @@ export const setStatus = createServerFn({ method: "POST" })
         .eq("submission_id", data.submissionId)
         .is("used_at", null);
     }
-    if (statusError || !statusRows?.length) throw new Error("The status could not be saved. Please retry.");
 
     await s.addAudit({
       submissionId: data.submissionId,
@@ -618,6 +618,15 @@ export const setStatus = createServerFn({ method: "POST" })
       toStatus: data.status,
       note: data.note ?? null,
     });
+    if (disapproving) {
+      await s.addAudit({
+        submissionId: data.submissionId,
+        actorId: context.userId,
+        actorLabel: String(context.claims["email"] ?? ""),
+        action: "Signatures cleared",
+        note: "All signatures and signing dates removed – everyone must sign again before resubmitting.",
+      });
+    }
 
     if (data.status === "Completed") {
       const result = await s.runCompletion(data.submissionId);
