@@ -86,7 +86,7 @@ export const startFormAmendment = createServerFn({ method: "POST" })
     const { director } = await amendAccess(data.submissionId, context.userId);
     const s = await import("@/lib/amendments.server");
     const row = await s.startAmendment({ ...data, userId: context.userId, actorLabel: await actor(context.userId, context.claims), isDirector: director });
-    return { number: row.amendment_number, status: row.status };
+    return { number: row.amendment_number, status: row.status, signedLive: Boolean(row.customer_signature) };
   });
 
 export const cancelFormAmendment = createServerFn({ method: "POST" })

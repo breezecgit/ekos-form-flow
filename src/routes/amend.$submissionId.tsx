@@ -11,6 +11,7 @@ import { getBootstrap, getSubmission } from "@/lib/ekos.functions";
 import { startFormAmendment } from "@/lib/amendments.functions";
 import { getForm } from "@/lib/forms/registry";
 import type { FormValues } from "@/lib/forms/types";
+import { clearCustomerSignatures } from "@/lib/forms/signatures";
 
 export const Route = createFileRoute("/amend/$submissionId")({
   head: () => ({
@@ -56,7 +57,8 @@ function AmendPage() {
   if (s.status !== "Completed") return shell(<p className="text-center text-muted-foreground" role="alert">Only Completed forms can be amended.</p>);
 
   const def = getForm(s.form_type);
-  const values = (s.data ?? {}) as FormValues;
+  // Earlier customer signatures are taken off: a live amendment is signed afresh on this device.
+  const values = clearCustomerSignatures(def, (s.data ?? {}) as FormValues);
   const park = sub.data.parks.find((p) => p.name === values["park_name"]);
 
   return shell(
@@ -73,7 +75,7 @@ function AmendPage() {
       }}
       parks={sub.data.parks as unknown as Array<Record<string, unknown>>}
       orderNumber={s.order_number}
-      submitLabel={s.form_type === "identification" ? "Save amendment for approval" : "Save amendment & send to customer"}
+      submitLabel={s.form_type === "identification" ? "Save amendment for approval" : "Save amendment"}
       amendMode
       headerExtra={
         <div className="mx-auto mt-6 max-w-3xl space-y-2 rounded-lg border border-gold/50 bg-muted/40 p-4 text-sm">
@@ -81,6 +83,12 @@ function AmendPage() {
             Change any answers below. Only the changed answers (and any totals that change as a result) are sent to the customer to sign.
             The original signed form and PDF stay exactly as they are.
           </p>
+          {s.form_type !== "identification" && (
+            <p>
+              <strong>Customer Signing Live:</strong> the customer signs the updated form on this device now and no email is sent.{" "}
+              <strong>Customer Signing Offsite:</strong> the customer is emailed a link to sign the changes.
+            </p>
+          )}
           <label htmlFor="amend-reason" className="block font-semibold text-brand">
             Reason for amendment <span className="text-destructive">*</span>
           </label>
@@ -93,6 +101,7 @@ function AmendPage() {
         toast.success(
           res.status === "Awaiting customer signature"
             ? `Amendment ${res.number} saved – the customer has been emailed a link to sign it.`
+            : res.signedLive ? `Amendment ${res.number} signed by the customer and sent to Sadie for approval.`
             : me.data?.isDirector ? `Amendment ${res.number} saved and waiting for your approval.` : `Amendment ${res.number} saved – Sadie has been emailed to approve it.`,
         );
         if (me.data?.isDirector) router.navigate({ to: "/admin/submissions/$id", params: { id: submissionId } });
