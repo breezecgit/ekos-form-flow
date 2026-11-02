@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCustomerEmail, assertEditable, canResend, parseSubmitStatus } from "@/lib/security-rules";
 import { validateFormWrite } from "@/lib/forms/write-validation";
 import { getForm } from "@/lib/forms/registry";
+import { clearAllSignatures } from "@/lib/forms/signatures";
 import { validateUpload } from "@/lib/forms/upload-validation";
 import { withoutRetiredAnswers } from "@/lib/forms/retired-answers";
 import { prepareHomeCost, prepareHomeCostDraft, hasHomeCost } from "@/lib/forms/home-cost";
@@ -579,8 +580,6 @@ export const setStatus = createServerFn({ method: "POST" })
         .copy(submission.pdf_path, `submissions/${submission.id}/before-disapproval-${Date.now()}.pdf`)
         .catch(() => undefined);
     }
-    const { getForm } = await import("@/lib/forms/registry");
-    const { clearAllSignatures } = await import("@/lib/forms/signatures");
     const { data: statusRows, error: statusError } = await db
       .from("form_submissions")
       .update({
@@ -591,7 +590,7 @@ export const setStatus = createServerFn({ method: "POST" })
         // Everyone signs again after a disapproval, so nobody can say they didn't approve the changes.
         ...(disapproving
           ? {
-              data: clearAllSignatures(getForm(submission.form_type), (submission.data ?? {}) as FormValues) as Json,
+              data: clearAllSignatures(getForm(submission.form_type), (submission.data ?? {}) as Record<string, unknown>) as never,
               customer_signed_at: null,
               construction_signed_at: null,
             }
