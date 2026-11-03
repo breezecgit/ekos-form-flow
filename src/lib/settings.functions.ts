@@ -78,6 +78,8 @@ export const saveSettings = createServerFn({ method: "POST" })
             manager_phone: z.string().optional(),
             manager_email: z.string().optional(),
             rep_name: z.string().optional(),
+            services_included: z.string().optional(),
+            additional_charges: z.string().optional(),
           }),
         ),
         salesPeople: z.array(z.object({ name: z.string(), email: z.string() })),
@@ -130,6 +132,8 @@ export const saveSettings = createServerFn({ method: "POST" })
           ...(p.manager_phone !== undefined ? { manager_phone: p.manager_phone } : {}),
           ...(p.manager_email !== undefined ? { manager_email: p.manager_email } : {}),
           ...(p.rep_name !== undefined ? { rep_name: p.rep_name } : {}),
+          ...(p.services_included !== undefined ? { services_included: p.services_included } : {}),
+          ...(p.additional_charges !== undefined ? { additional_charges: p.additional_charges } : {}),
         })
         .eq("id", p.id));
     }

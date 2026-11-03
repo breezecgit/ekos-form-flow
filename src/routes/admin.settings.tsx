@@ -51,6 +51,8 @@ interface ParkRow {
   manager_phone: string;
   manager_email: string;
   rep_name: string;
+  services_included: string;
+  additional_charges: string;
 }
 
 function SettingsPage() {
@@ -95,6 +97,8 @@ function SettingsPage() {
         manager_phone: (p as Record<string, unknown>)["manager_phone"] as string ?? "",
         manager_email: (p as Record<string, unknown>)["manager_email"] as string ?? "",
         rep_name: (p as Record<string, unknown>)["rep_name"] as string ?? "",
+        services_included: (p as Record<string, unknown>)["services_included"] as string ?? "",
+        additional_charges: (p as Record<string, unknown>)["additional_charges"] as string ?? "",
 
         park_rules_url: p.park_rules_url ?? "",
       })),
@@ -155,8 +159,8 @@ function SettingsPage() {
     mutationFn: () =>
       saveFn({
         data: {
-          parks: parks.map(({ id, address, inbox_email, brochure_url, site_licence_url, park_rules_url, bank_account, sort_code, goldshield, company_name, company_number, phone, pitch_fee_review_date, manager_name, manager_phone, manager_email, rep_name }) => ({
-            bank_account, sort_code, goldshield, company_name, company_number, phone, pitch_fee_review_date, manager_name, manager_phone, manager_email, rep_name,
+          parks: parks.map(({ id, address, inbox_email, brochure_url, site_licence_url, park_rules_url, bank_account, sort_code, goldshield, company_name, company_number, phone, pitch_fee_review_date, manager_name, manager_phone, manager_email, rep_name, services_included, additional_charges }) => ({
+            bank_account, sort_code, goldshield, company_name, company_number, phone, pitch_fee_review_date, manager_name, manager_phone, manager_email, rep_name, services_included, additional_charges,
             id,
             address,
             inbox_email,
@@ -225,6 +229,8 @@ function SettingsPage() {
                 <Field label="Manager Phone" value={p.manager_phone} onChange={(v) => setPark(p.id, "manager_phone", v)} />
                 <Field label="Manager Email" value={p.manager_email} onChange={(v) => setPark(p.id, "manager_email", v)} />
                 <Field label="Sales Rep" value={p.rep_name} onChange={(v) => setPark(p.id, "rep_name", v)} />
+                <Field label="Services included in pitch fee (Written Statement)" value={p.services_included} onChange={(v) => setPark(p.id, "services_included", v)} />
+                <Field label="Additional charges (Written Statement)" value={p.additional_charges} onChange={(v) => setPark(p.id, "additional_charges", v)} />
                 <Field label="Brochure URL" value={p.brochure_url} onChange={(v) => setPark(p.id, "brochure_url", v)} />
                 <Field label="Site Licence URL" value={p.site_licence_url} onChange={(v) => setPark(p.id, "site_licence_url", v)} />
                 <Field label="Park Rules URL" value={p.park_rules_url} onChange={(v) => setPark(p.id, "park_rules_url", v)} />
