@@ -1,0 +1,4 @@
+ALTER TABLE public.parks ADD COLUMN IF NOT EXISTS services_included text, ADD COLUMN IF NOT EXISTS additional_charges text;
+UPDATE public.parks SET services_included='Sewerage', additional_charges='Electricity, Gas, Water, Council Tax, WiFi / Broadband' WHERE name IN ('Castle View','Outhill View','Carlton Manor','Coastal Retreat','Sun Valley');
+UPDATE public.parks SET services_included='Sewerage, Water', additional_charges='Electricity, Gas, Council Tax, WiFi / Broadband' WHERE name IN ('Haveringland Hall','Merry Hill','Walworth Retreat','Harvey''s Nurseries');
+UPDATE public.parks SET services_included='', additional_charges='Sewerage, Electricity, Gas, Water, Council Tax, WiFi / Broadband' WHERE name='Dales View';

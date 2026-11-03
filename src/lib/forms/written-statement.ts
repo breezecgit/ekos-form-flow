@@ -79,7 +79,7 @@ export const writtenStatementForm: FormDef = {
           key: "services_included",
           label: "The following services are included in the pitch fee:",
           type: "text",
-          defaultValue: "Sewage",
+          parkField: "services_included",
         },
         text("part2_review"),
         {
@@ -95,7 +95,7 @@ export const writtenStatementForm: FormDef = {
           label: "An additional charge will be made for the following matters:",
           type: "textarea",
           placeholder: "List additional charges",
-          defaultValue: "Electricity, Gas, Water, Council Tax, WiFi / Broadband",
+          parkField: "additional_charges",
         },
         text("part2_home"),
         { key: "home_model", label: "Model:", type: "text", placeholder: "Enter model" },
