@@ -442,6 +442,7 @@ export type Database = {
       parks: {
         Row: {
           active: boolean
+          additional_charges: string | null
           address: string | null
           bank_account: string
           brochure_url: string | null
@@ -459,12 +460,14 @@ export type Database = {
           pitch_fee: string
           pitch_fee_review_date: string
           rep_name: string
+          services_included: string | null
           site_licence_url: string | null
           sort_code: string
           sort_order: number
         }
         Insert: {
           active?: boolean
+          additional_charges?: string | null
           address?: string | null
           bank_account?: string
           brochure_url?: string | null
@@ -482,12 +485,14 @@ export type Database = {
           pitch_fee?: string
           pitch_fee_review_date?: string
           rep_name?: string
+          services_included?: string | null
           site_licence_url?: string | null
           sort_code?: string
           sort_order?: number
         }
         Update: {
           active?: boolean
+          additional_charges?: string | null
           address?: string | null
           bank_account?: string
           brochure_url?: string | null
@@ -505,6 +510,7 @@ export type Database = {
           pitch_fee?: string
           pitch_fee_review_date?: string
           rep_name?: string
+          services_included?: string | null
           site_licence_url?: string | null
           sort_code?: string
           sort_order?: number
