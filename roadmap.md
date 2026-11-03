@@ -160,3 +160,4 @@
 - [x] Remove Chris Harris from Settings sales people list and verify gone (approved by Emma)
 - [x] Amendment in progress tag on tracker/dashboard status (approved)
 - [x] Written Statement park wording: Harvey's Nurseries now "Sewerage and Water" (live park details updated 3 Nov 2026; other parks left as the spreadsheet)
+- [x] Written Statement park wording: Haveringland Hall, Merry Hill and Walworth Retreat also switched to "Sewerage and Water" on Emma's instruction (3 Nov 2026). Five parks stay "Sewerage"; Dales View stays blank with Sewerage in Additional Charges.
